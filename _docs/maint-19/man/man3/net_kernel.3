@@ -1,0 +1,467 @@
+.TH net_kernel 3 "kernel 5.2.0.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+net_kernel \- Erlang networking kernel.
+.SH DESCRIPTION
+.LP
+The net kernel is a system process, registered as \fInet_kernel\fR\&, which must be operational for distributed Erlang to work\&. The purpose of this process is to implement parts of the BIFs \fIspawn/4\fR\& and \fIspawn_link/4\fR\&, and to provide monitoring of the network\&.
+.LP
+An Erlang node is started using command-line flag \fI-name\fR\& or \fI-sname\fR\&:
+.LP
+.nf
+
+$ erl -sname foobar
+.fi
+.LP
+It is also possible to call \fInet_kernel:start([foobar])\fR\& directly from the normal Erlang shell prompt:
+.LP
+.nf
+
+1> net_kernel:start([foobar, shortnames])\&.
+{ok,<0.64.0>}
+(foobar@gringotts)2>
+.fi
+.LP
+If the node is started with command-line flag \fI-sname\fR\&, the node name is \fIfoobar@Host\fR\&, where \fIHost\fR\& is the short name of the host (not the fully qualified domain name)\&. If started with flag \fI-name\fR\&, the node name is \fIfoobar@Host\fR\&, where \fIHost\fR\& is the fully qualified domain name\&. For more information, see \fB\fIerl\fR\&\fR\&\&.
+.LP
+Normally, connections are established automatically when another node is referenced\&. This functionality can be disabled by setting Kernel configuration parameter \fIdist_auto_connect\fR\& to \fIfalse\fR\&, see \fB\fIkernel(6)\fR\&\fR\&\&. In this case, connections must be established explicitly by calling \fB\fIconnect_node/1\fR\&\fR\&\&.
+.LP
+Which nodes that are allowed to communicate with each other is handled by the magic cookie system, see section \fBDistributed Erlang\fR\& in the Erlang Reference Manual\&.
+.SH EXPORTS
+.LP
+.nf
+
+.B
+allow(Nodes) -> ok | error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Nodes = [node()]
+.br
+.RE
+.RE
+.RS
+.LP
+Permits access to the specified set of nodes\&.
+.LP
+Before the first call to \fIallow/1\fR\&, any node with the correct cookie can be connected\&. When \fIallow/1\fR\& is called, a list of allowed nodes is established\&. Any access attempts made from (or to) nodes not in that list will be rejected\&.
+.LP
+Subsequent calls to \fIallow/1\fR\& will add the specified nodes to the list of allowed nodes\&. It is not possible to remove nodes from the list\&.
+.LP
+Returns \fIerror\fR\& if any element in \fINodes\fR\& is not an atom\&.
+.RE
+.LP
+.nf
+
+.B
+connect_node(Node) -> boolean() | ignored
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+.RE
+.RE
+.RS
+.LP
+Establishes a connection to \fINode\fR\&\&. Returns \fItrue\fR\& if successful, \fIfalse\fR\& if not, and \fIignored\fR\& if the local node is not alive\&.
+.RE
+.LP
+.nf
+
+.B
+get_net_ticktime() -> Res
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Res = NetTicktime | {ongoing_change_to, NetTicktime} | ignored
+.br
+NetTicktime = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+Gets \fInet_ticktime\fR\& (see \fB\fIkernel(6)\fR\&\fR\&)\&.
+.LP
+Defined return values (\fIRes\fR\&):
+.RS 2
+.TP 2
+.B
+\fINetTicktime\fR\&:
+\fInet_ticktime\fR\& is \fINetTicktime\fR\& seconds\&.
+.TP 2
+.B
+\fI{ongoing_change_to, NetTicktime}\fR\&:
+\fInet_kernel\fR\& is currently changing \fInet_ticktime\fR\& to \fINetTicktime\fR\& seconds\&.
+.TP 2
+.B
+\fIignored\fR\&:
+The local node is not alive\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+getopts(Node, Options) ->
+.B
+           {ok, OptionValues} | {error, Reason} | ignored
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Options = [\fBinet:socket_getopt()\fR\&]
+.br
+OptionValues = [\fBinet:socket_setopt()\fR\&]
+.br
+Reason = \fBinet:posix()\fR\& | noconnection
+.br
+.RE
+.RE
+.RS
+.LP
+Get one or more options for the distribution socket connected to \fINode\fR\&\&.
+.LP
+If \fINode\fR\& is a connected node the return value is the same as from \fB\fIinet:getopts(Sock, Options)\fR\&\fR\& where \fISock\fR\& is the distribution socket for \fINode\fR\&\&.
+.LP
+Returns \fIignored\fR\& if the local node is not alive or \fI{error, noconnection}\fR\& if \fINode\fR\& is not connected\&.
+.RE
+.LP
+.nf
+
+.B
+monitor_nodes(Flag) -> ok | Error
+.br
+.fi
+.br
+.nf
+
+.B
+monitor_nodes(Flag, Options) -> ok | Error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Flag = boolean()
+.br
+Options = [Option]
+.br
+Option = {node_type, NodeType} | nodedown_reason
+.br
+NodeType = visible | hidden | all
+.br
+Error = error | {error, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+The calling process subscribes or unsubscribes to node status change messages\&. A \fInodeup\fR\& message is delivered to all subscribing processes when a new node is connected, and a \fInodedown\fR\& message is delivered when a node is disconnected\&.
+.LP
+If \fIFlag\fR\& is \fItrue\fR\&, a new subscription is started\&. If \fIFlag\fR\& is \fIfalse\fR\&, all previous subscriptions started with the same \fIOptions\fR\& are stopped\&. Two option lists are considered the same if they contain the same set of options\&.
+.LP
+As from Kernel version 2\&.11\&.4, and ERTS version 5\&.5\&.4, the following is guaranteed:
+.RS 2
+.TP 2
+*
+\fInodeup\fR\& messages are delivered before delivery of any message from the remote node passed through the newly established connection\&.
+.LP
+.TP 2
+*
+\fInodedown\fR\& messages are not delivered until all messages from the remote node that have been passed through the connection have been delivered\&.
+.LP
+.RE
+
+.LP
+Notice that this is \fInot\fR\& guaranteed for Kernel versions before 2\&.11\&.4\&.
+.LP
+As from Kernel version 2\&.11\&.4, subscriptions can also be made before the \fInet_kernel\fR\& server is started, that is, \fInet_kernel:monitor_nodes/[1,2]\fR\& does not return \fIignored\fR\&\&.
+.LP
+As from Kernel version 2\&.13, and ERTS version 5\&.7, the following is guaranteed:
+.RS 2
+.TP 2
+*
+\fInodeup\fR\& messages are delivered after the corresponding node appears in results from \fIerlang:nodes/X\fR\&\&.
+.LP
+.TP 2
+*
+\fInodedown\fR\& messages are delivered after the corresponding node has disappeared in results from \fIerlang:nodes/X\fR\&\&.
+.LP
+.RE
+
+.LP
+Notice that this is \fInot\fR\& guaranteed for Kernel versions before 2\&.13\&.
+.LP
+The format of the node status change messages depends on \fIOptions\fR\&\&. If \fIOptions\fR\& is \fI[]\fR\&, which is the default, the format is as follows:
+.LP
+.nf
+
+{nodeup, Node} | {nodedown, Node}
+  Node = node()
+.fi
+.LP
+If \fIOptions\fR\& is not \fI[]\fR\&, the format is as follows:
+.LP
+.nf
+
+{nodeup, Node, InfoList} | {nodedown, Node, InfoList}
+  Node = node()
+  InfoList = [{Tag, Val}]
+.fi
+.LP
+\fIInfoList\fR\& is a list of tuples\&. Its contents depends on \fIOptions\fR\&, see below\&.
+.LP
+Also, when \fIOptionList == []\fR\&, only visible nodes, that is, nodes that appear in the result of \fB\fIerlang:nodes/0\fR\&\fR\&, are monitored\&.
+.LP
+\fIOption\fR\& can be any of the following:
+.RS 2
+.TP 2
+.B
+\fI{node_type, NodeType}\fR\&:
+Valid values for \fINodeType\fR\&:
+.RS 2
+.TP 2
+.B
+\fIvisible\fR\&:
+Subscribe to node status change messages for visible nodes only\&. The tuple \fI{node_type, visible}\fR\& is included in \fIInfoList\fR\&\&.
+.TP 2
+.B
+\fIhidden\fR\&:
+Subscribe to node status change messages for hidden nodes only\&. The tuple \fI{node_type, hidden}\fR\& is included in \fIInfoList\fR\&\&.
+.TP 2
+.B
+\fIall\fR\&:
+Subscribe to node status change messages for both visible and hidden nodes\&. The tuple \fI{node_type, visible | hidden}\fR\& is included in \fIInfoList\fR\&\&.
+.RE
+.TP 2
+.B
+\fInodedown_reason\fR\&:
+The tuple \fI{nodedown_reason, Reason}\fR\& is included in \fIInfoList\fR\& in \fInodedown\fR\& messages\&.
+.RS 2
+.LP
+\fIReason\fR\& can be any of the following:
+.RE
+.RS 2
+.TP 2
+.B
+\fIconnection_setup_failed\fR\&:
+The connection setup failed (after \fInodeup\fR\& messages were sent)\&.
+.TP 2
+.B
+\fIno_network\fR\&:
+No network is available\&.
+.TP 2
+.B
+\fInet_kernel_terminated\fR\&:
+The \fInet_kernel\fR\& process terminated\&.
+.TP 2
+.B
+\fIshutdown\fR\&:
+Unspecified connection shutdown\&.
+.TP 2
+.B
+\fIconnection_closed\fR\&:
+The connection was closed\&.
+.TP 2
+.B
+\fIdisconnect\fR\&:
+The connection was disconnected (forced from the current node)\&.
+.TP 2
+.B
+\fInet_tick_timeout\fR\&:
+Net tick time-out\&.
+.TP 2
+.B
+\fIsend_net_tick_failed\fR\&:
+Failed to send net tick over the connection\&.
+.TP 2
+.B
+\fIget_status_failed\fR\&:
+Status information retrieval from the \fIPort\fR\& holding the connection failed\&.
+.RE
+.RE
+.RE
+.LP
+.nf
+
+.B
+set_net_ticktime(NetTicktime) -> Res
+.br
+.fi
+.br
+.nf
+
+.B
+set_net_ticktime(NetTicktime, TransitionPeriod) -> Res
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+NetTicktime = integer() >= 1
+.br
+TransitionPeriod = integer() >= 0
+.br
+Res = 
+.br
+    unchanged |
+.br
+    change_initiated |
+.br
+    {ongoing_change_to, NewNetTicktime}
+.br
+NewNetTicktime = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+Sets \fInet_ticktime\fR\& (see \fB\fIkernel(6)\fR\&\fR\&) to \fINetTicktime\fR\& seconds\&. \fITransitionPeriod\fR\& defaults to \fI60\fR\&\&.
+.LP
+Some definitions:
+.RS 2
+.TP 2
+.B
+Minimum transition traffic interval (\fIMTTI\fR\&):
+\fIminimum(NetTicktime, PreviousNetTicktime)*1000 div 4\fR\& milliseconds\&.
+.TP 2
+.B
+Transition period:
+The time of the least number of consecutive \fIMTTI\fR\&s to cover \fITransitionPeriod\fR\& seconds following the call to \fIset_net_ticktime/2\fR\& (that is, ((\fITransitionPeriod*1000 - 1) div MTTI + 1)*MTTI\fR\& milliseconds)\&.
+.RE
+.LP
+If \fINetTicktime < PreviousNetTicktime\fR\&, the \fInet_ticktime\fR\& change is done at the end of the transition period; otherwise at the beginning\&. During the transition period, \fInet_kernel\fR\& ensures that there is outgoing traffic on all connections at least every \fIMTTI\fR\& millisecond\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The \fInet_ticktime\fR\& changes must be initiated on all nodes in the network (with the same \fINetTicktime\fR\&) before the end of any transition period on any node; otherwise connections can erroneously be disconnected\&.
+
+.LP
+Returns one of the following:
+.RS 2
+.TP 2
+.B
+\fIunchanged\fR\&:
+\fInet_ticktime\fR\& already has the value of \fINetTicktime\fR\& and is left unchanged\&.
+.TP 2
+.B
+\fIchange_initiated\fR\&:
+\fInet_kernel\fR\& initiated the change of \fInet_ticktime\fR\& to \fINetTicktime\fR\& seconds\&.
+.TP 2
+.B
+\fI{ongoing_change_to, NewNetTicktime}\fR\&:
+The request is \fIignored\fR\& because \fInet_kernel\fR\& is busy changing \fInet_ticktime\fR\& to \fINewNetTicktime\fR\& seconds\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+setopts(Node, Options) -> ok | {error, Reason} | ignored
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node() | new
+.br
+Options = [\fBinet:socket_setopt()\fR\&]
+.br
+Reason = \fBinet:posix()\fR\& | noconnection
+.br
+.RE
+.RE
+.RS
+.LP
+Set one or more options for distribution sockets\&. Argument \fINode\fR\& can be either one node name or the atom \fInew\fR\& to affect the distribution sockets of all future connected nodes\&.
+.LP
+The return value is the same as from \fB\fIinet:setopts/2\fR\&\fR\& or \fI{error, noconnection}\fR\& if \fINode\fR\& is not a connected node or \fInew\fR\&\&.
+.LP
+If \fINode\fR\& is \fInew\fR\& the \fIOptions\fR\& will then also be added to kernel configration parameters \fBinet_dist_listen_options\fR\& and \fBinet_dist_connect_options\fR\&\&.
+.LP
+Returns \fIignored\fR\& if the local node is not alive\&.
+.RE
+.LP
+.B
+start([Name]) -> {ok, pid()} | {error, Reason}
+.br
+.B
+start([Name, NameType]) -> {ok, pid()} | {error, Reason}
+.br
+.B
+start([Name, NameType, Ticktime]) -> {ok, pid()} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom()
+.br
+NameType = shortnames | longnames
+.br
+Reason = {already_started, pid()} | term()
+.br
+.RE
+.RE
+.RS
+.LP
+Turns a non-distributed node into a distributed node by starting \fInet_kernel\fR\& and other necessary processes\&.
+.LP
+Notice that the argument is a list with exactly one, two, or three arguments\&. \fINameType\fR\& defaults to \fIlongnames\fR\& and \fITicktime\fR\& to \fI15000\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+stop() -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Reason = not_allowed | not_found
+.br
+.RE
+.RE
+.RS
+.LP
+Turns a distributed node into a non-distributed node\&. For other nodes in the network, this is the same as the node going down\&. Only possible when the net kernel was started using \fB\fIstart/1\fR\&\fR\&, otherwise \fI{error, not_allowed}\fR\& is returned\&. Returns \fI{error, not_found}\fR\& if the local node is not alive\&.
+.RE

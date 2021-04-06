@@ -1,0 +1,137 @@
+.TH wxPopupTransientWindow 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxPopupTransientWindow \- See external documentation: wxPopupTransientWindow.
+.SH DESCRIPTION
+.LP
+See external documentation: wxPopupTransientWindow\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxPopupWindow\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxPopupTransientWindow():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxPopupTransientWindow()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent) -> \fBwxPopupTransientWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxPopupTransientWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+popup(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPopupTransientWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBpopup(This, [])\fR\&\&.
+.RE
+.LP
+.B
+popup(This, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPopupTransientWindow()\fR\&
+.br
+Option = {focus, \fBwxWindow:wxWindow()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+dismiss(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPopupTransientWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxPopupTransientWindow()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

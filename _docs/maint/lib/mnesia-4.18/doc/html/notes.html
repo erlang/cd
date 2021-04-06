@@ -1,0 +1,1794 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:erl="http://erlang.org" xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- Mnesia Release Notes</title>
+</head>
+<body>
+<div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="leftnav-tube">
+<div class="erlang-logo-wrapper"><a href="../../../../doc/index.html"><img alt="Erlang Logo" src="../../../../doc/erlang-logo.png" class="erlang-logo"></a></div>
+<p class="section-title">Mnesia</p>
+<p class="section-subtitle">Release Notes</p>
+<p class="section-version">Version 4.18</p>
+<ul class="panel-sections">
+<li><a href="users_guide.html">User's Guide</a></li>
+<li><a href="index.html">Reference Manual</a></li>
+<li><a href="release_notes.html">Release Notes</a></li>
+<li><a href="../pdf/mnesia-4.18.pdf">PDF</a></li>
+<li><a href="../../../../doc/index.html">Top</a></li>
+</ul>
+<ul class="expand-collapse-items">
+<li><a href="javascript:openAllFlips()">Expand All</a></li>
+<li><a href="javascript:closeAllFlips()">Contract All</a></li>
+</ul>
+<h3>Chapters</h3>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu"><li id="loadscrollpos" title="Mnesia Release Notes" expanded="true">Mnesia Release Notes<ul>
+<li><a href="notes.html">
+              Top of chapter
+            </a></li>
+<li title="Mnesia 4.18"><a href="notes.html#mnesia-4.18">Mnesia 4.18</a></li>
+<li title="Mnesia 4.17"><a href="notes.html#mnesia-4.17">Mnesia 4.17</a></li>
+<li title="Mnesia 4.16.3.1"><a href="notes.html#mnesia-4.16.3.1">Mnesia 4.16.3.1</a></li>
+<li title="Mnesia 4.16.3"><a href="notes.html#mnesia-4.16.3">Mnesia 4.16.3</a></li>
+<li title="Mnesia 4.16.2"><a href="notes.html#mnesia-4.16.2">Mnesia 4.16.2</a></li>
+<li title="Mnesia 4.16.1"><a href="notes.html#mnesia-4.16.1">Mnesia 4.16.1</a></li>
+<li title="Mnesia 4.16"><a href="notes.html#mnesia-4.16">Mnesia 4.16</a></li>
+<li title="Mnesia 4.15.6"><a href="notes.html#mnesia-4.15.6">Mnesia 4.15.6</a></li>
+<li title="Mnesia 4.15.5"><a href="notes.html#mnesia-4.15.5">Mnesia 4.15.5</a></li>
+<li title="Mnesia 4.15.4"><a href="notes.html#mnesia-4.15.4">Mnesia 4.15.4</a></li>
+<li title="Mnesia 4.15.3.1"><a href="notes.html#mnesia-4.15.3.1">Mnesia 4.15.3.1</a></li>
+<li title="Mnesia 4.15.3"><a href="notes.html#mnesia-4.15.3">Mnesia 4.15.3</a></li>
+<li title="Mnesia 4.15.2"><a href="notes.html#mnesia-4.15.2">Mnesia 4.15.2</a></li>
+<li title="Mnesia 4.15.1"><a href="notes.html#mnesia-4.15.1">Mnesia 4.15.1</a></li>
+<li title="Mnesia 4.15"><a href="notes.html#mnesia-4.15">Mnesia 4.15</a></li>
+<li title="Mnesia 4.14.3"><a href="notes.html#mnesia-4.14.3">Mnesia 4.14.3</a></li>
+<li title="Mnesia 4.14.2"><a href="notes.html#mnesia-4.14.2">Mnesia 4.14.2</a></li>
+<li title="Mnesia 4.14.1"><a href="notes.html#mnesia-4.14.1">Mnesia 4.14.1</a></li>
+<li title="Mnesia 4.14"><a href="notes.html#mnesia-4.14">Mnesia 4.14</a></li>
+<li title="Mnesia 4.13.4"><a href="notes.html#mnesia-4.13.4">Mnesia 4.13.4</a></li>
+<li title="Mnesia 4.13.3"><a href="notes.html#mnesia-4.13.3">Mnesia 4.13.3</a></li>
+<li title="Mnesia 4.13.2"><a href="notes.html#mnesia-4.13.2">Mnesia 4.13.2</a></li>
+<li title="Mnesia 4.13.1"><a href="notes.html#mnesia-4.13.1">Mnesia 4.13.1</a></li>
+<li title="Mnesia 4.13"><a href="notes.html#mnesia-4.13">Mnesia 4.13</a></li>
+<li title="Mnesia 4.12.5"><a href="notes.html#mnesia-4.12.5">Mnesia 4.12.5</a></li>
+<li title="Mnesia 4.12.4"><a href="notes.html#mnesia-4.12.4">Mnesia 4.12.4</a></li>
+<li title="Mnesia 4.12.3"><a href="notes.html#mnesia-4.12.3">Mnesia 4.12.3</a></li>
+<li title="Mnesia 4.12.2"><a href="notes.html#mnesia-4.12.2">Mnesia 4.12.2</a></li>
+<li title="Mnesia 4.12.1"><a href="notes.html#mnesia-4.12.1">Mnesia 4.12.1</a></li>
+<li title="Mnesia 4.12"><a href="notes.html#mnesia-4.12">Mnesia 4.12</a></li>
+<li title="Mnesia 4.11"><a href="notes.html#mnesia-4.11">Mnesia 4.11</a></li>
+<li title="Mnesia 4.10"><a href="notes.html#mnesia-4.10">Mnesia 4.10</a></li>
+<li title="Mnesia 4.9"><a href="notes.html#mnesia-4.9">Mnesia 4.9</a></li>
+<li title="Mnesia 4.8"><a href="notes.html#mnesia-4.8">Mnesia 4.8</a></li>
+<li title="Mnesia 4.7.1"><a href="notes.html#mnesia-4.7.1">Mnesia 4.7.1</a></li>
+<li title="Mnesia 4.7"><a href="notes.html#mnesia-4.7">Mnesia 4.7</a></li>
+<li title="Mnesia 4.6"><a href="notes.html#mnesia-4.6">Mnesia 4.6</a></li>
+<li title="Mnesia 4.5.1"><a href="notes.html#mnesia-4.5.1">Mnesia 4.5.1</a></li>
+<li title="Mnesia 4.5"><a href="notes.html#mnesia-4.5">Mnesia 4.5</a></li>
+<li title="Mnesia 4.4.19"><a href="notes.html#mnesia-4.4.19">Mnesia 4.4.19</a></li>
+<li title="Mnesia 4.4.18"><a href="notes.html#mnesia-4.4.18">Mnesia 4.4.18</a></li>
+<li title="Mnesia 4.4.17"><a href="notes.html#mnesia-4.4.17">Mnesia 4.4.17</a></li>
+<li title="Mnesia 4.4.16"><a href="notes.html#mnesia-4.4.16">Mnesia 4.4.16</a></li>
+<li title="Mnesia 4.4.15"><a href="notes.html#mnesia-4.4.15">Mnesia 4.4.15</a></li>
+<li title="Mnesia 4.4.14"><a href="notes.html#mnesia-4.4.14">Mnesia 4.4.14</a></li>
+<li title="Mnesia 4.4.13"><a href="notes.html#mnesia-4.4.13">Mnesia 4.4.13</a></li>
+<li title="Mnesia 4.4.12"><a href="notes.html#mnesia-4.4.12">Mnesia 4.4.12</a></li>
+<li title="Mnesia 4.4.11"><a href="notes.html#mnesia-4.4.11">Mnesia 4.4.11</a></li>
+<li title="Mnesia 4.4.10"><a href="notes.html#mnesia-4.4.10">Mnesia 4.4.10</a></li>
+<li title="Mnesia 4.4.9"><a href="notes.html#mnesia-4.4.9">Mnesia 4.4.9</a></li>
+<li title="Mnesia 4.4.8"><a href="notes.html#mnesia-4.4.8">Mnesia 4.4.8</a></li>
+<li title="Mnesia 4.4.7"><a href="notes.html#mnesia-4.4.7">Mnesia 4.4.7</a></li>
+<li title="Mnesia 4.4.6"><a href="notes.html#mnesia-4.4.6">Mnesia 4.4.6</a></li>
+<li title="Mnesia 4.4.5"><a href="notes.html#mnesia-4.4.5">Mnesia 4.4.5</a></li>
+<li title="Mnesia 4.4.4"><a href="notes.html#mnesia-4.4.4">Mnesia 4.4.4</a></li>
+<li title="Mnesia 4.4.3"><a href="notes.html#mnesia-4.4.3">Mnesia 4.4.3</a></li>
+<li title="Mnesia 4.4.2"><a href="notes.html#mnesia-4.4.2">Mnesia 4.4.2</a></li>
+<li title="Mnesia 4.4.1"><a href="notes.html#mnesia-4.4.1">Mnesia 4.4.1</a></li>
+<li title="Mnesia 4.4"><a href="notes.html#mnesia-4.4">Mnesia 4.4</a></li>
+</ul>
+</li></ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<h1>1 Mnesia Release Notes</h1>
+  
+  <p>This document describes the changes made to the Mnesia system
+    from version to version.  The intention of this document is to
+    list all incompatibilities as well as all enhancements and
+    bugfixes for every release of Mnesia. Each release of Mnesia
+    thus constitutes one section in this document. The title of each
+    section is the version number of Mnesia.</p>
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.18-idm45180014587408').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.18-idm45180014587408').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.18-idm45180014587408" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L42" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.18" href="#mnesia-4.18">1.1 
+          Mnesia 4.18</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180014586704').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180014586704').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180014586704" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L44" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    FIx mnesia delete object handling in transaction storage.
+	    In a transaction <span class="code">mnesia:read/1</span> could indicate that
+	    exiting objects did not exist after another object was
+	    deleted.</p>
+          <p>
+	    Own Id: OTP-16782 Aux Id: PR-2663 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180014583232').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180014583232').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180014583232" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L59" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed crash during startup, which could happen if a table
+	    was deleted on another node.</p>
+          <p>
+	    Own Id: OTP-16815 Aux Id: ERIERL-500 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.17-idm45180015305552').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.17-idm45180015305552').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.17-idm45180015305552" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L73" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.17" href="#mnesia-4.17">1.2 
+          Mnesia 4.17</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180015304688').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180015304688').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180015304688" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L75" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Make <span class="code">mnesia:create_table/2</span> return correct badarg
+	    value.</p>
+          <p>
+	    Own Id: OTP-16072 Aux Id: PR-2320 </p>
+        </li>
+        <li>
+          <p>
+	    Fixed a bug where mnesia was sometimes not waiting during
+	    start for a commit decision on asymmetric transactions.</p>
+          <p>
+	    Own Id: OTP-16634 Aux Id: PR-2610 ERL-1227 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180014698880').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180014698880').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180014698880" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L95" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Remove usage and documentation of old requests of the
+	    I/O-protocol.</p>
+          <p>
+	    Own Id: OTP-15695</p>
+        </li>
+        <li>
+          <p>
+	    Avoid using <span class="code">rpc</span> calls to do table reads, which
+	    will reduce the load on rpc server and improve
+	    performance.</p>
+          <p>
+	    Own Id: OTP-16189</p>
+        </li>
+      </ul>
+    
+
+
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.16.3.1-idm45180014693776').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.16.3.1-idm45180014693776').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.16.3.1-idm45180014693776" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L117" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.16.3.1" href="#mnesia-4.16.3.1">1.3 
+          Mnesia 4.16.3.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180014692912').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180014692912').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180014692912" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L119" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed crash during startup, which could happen if a table
+	    was deleted on another node.</p>
+          <p>
+	    Own Id: OTP-16815 Aux Id: ERIERL-500 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.16.3-idm45180014689600').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.16.3-idm45180014689600').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.16.3-idm45180014689600" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L133" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.16.3" href="#mnesia-4.16.3">1.4 
+          Mnesia 4.16.3</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180014688736').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180014688736').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180014688736" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L135" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed a timing issue in uninstall fallback functionality.</p>
+          <p>
+	    Own Id: OTP-16468 Aux Id: ERL-1151 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.16.2-idm45180014685536').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.16.2-idm45180014685536').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.16.2-idm45180014685536" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L148" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.16.2" href="#mnesia-4.16.2">1.5 
+          Mnesia 4.16.2</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180014684672').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180014684672').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180014684672" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L150" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed mnesia crash which could happen when trying to
+	    recover from failures in transactions containing
+	    <span class="code">sticky_locks</span>.</p>
+          <p>
+	    Own Id: OTP-16286 Aux Id: ERL-1077 </p>
+        </li>
+        <li>
+          <p>
+	    Fixed mnesia index issue. Could happen when updating
+	    records with a index plugin backend.</p>
+          <p>
+	    Own Id: OTP-16291 Aux Id: ERL-1091 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.16.1-idm45180012396656').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.16.1-idm45180012396656').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.16.1-idm45180012396656" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L172" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.16.1" href="#mnesia-4.16.1">1.6 
+          Mnesia 4.16.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012395792').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012395792').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012395792" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L174" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    <span class="code">mnesia:add_table_copy/3</span> could cause a deadlock if
+	    called when a new node was starting.</p>
+          <p>
+	    Own Id: OTP-15933 Aux Id: ERL-872 </p>
+        </li>
+        <li>
+	    <p>Transactions with sticky locks could with async_asym
+	    transactions be committed in the wrong order, since asym
+	    transaction are spawned on the remote nodes.</p> <p>To
+	    fix this bug the communication protocol between mnesia
+	    nodes had to be updated, thus mnesia will no longer be
+	    able to connect to nodes earlier than mnesia-4.14 ,
+	    OTP-19.0.</p>
+          <p>
+	    *** POTENTIAL INCOMPATIBILITY ***</p>
+          <p>
+	    Own Id: OTP-15979 Aux Id: ERL-768 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.16-idm45180012389472').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.16-idm45180012389472').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.16-idm45180012389472" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L201" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.16" href="#mnesia-4.16">1.7 
+          Mnesia 4.16</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012388608').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012388608').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012388608" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L203" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Optimize mnesia:read/1 if data have been written in the
+	    same transaction.</p>
+          <p>
+	    Own Id: OTP-15550 Aux Id: PR-2029 </p>
+        </li>
+        <li>
+          <p>
+	    Fixed bugs in table index plugin handling.</p>
+          <p>
+	    Own Id: OTP-15689 Aux Id: PR-1695 ERL-556 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012384096').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012384096').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012384096" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L222" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Optimized dumping of tables with plugin backends.</p>
+          <p>
+	    Own Id: OTP-15588 Aux Id: PR-2102 </p>
+        </li>
+        <li>
+          <p>
+	    Include stacktrace in exception if a dirty activity
+	    errors, thus if user have matched on the error thrown it
+	    may not match any more.</p>
+          <p>
+	    *** POTENTIAL INCOMPATIBILITY ***</p>
+          <p>
+	    Own Id: OTP-15804 Aux Id: PR-2216 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.6-idm45180012378800').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.6-idm45180012378800').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.6-idm45180012378800" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L245" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.6" href="#mnesia-4.15.6">1.8 
+          Mnesia 4.15.6</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012377936').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012377936').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012377936" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L247" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Avoid overload warnings caused by a race condition.</p>
+          <p>
+	    Own Id: OTP-15619 Aux Id: ERIERL-310 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.5-idm45180012374672').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.5-idm45180012374672').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.5-idm45180012374672" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L260" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.5" href="#mnesia-4.15.5">1.9 
+          Mnesia 4.15.5</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012373808').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012373808').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012373808" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L262" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed type spec for <span class="code">mnesia:change_config/2</span>.</p>
+          <p>
+	    Own Id: OTP-15201 Aux Id: PR-1881 </p>
+        </li>
+        <li>
+          <p>
+	    When master node is set do not force a load from
+	    ram_copies replica when there are no available
+	    disc_copies, since that would load an empty table. Wait
+	    until a disk replica is available or until user
+	    explicitly force_loads the table.</p>
+          <p>
+	    Own Id: OTP-15221 Aux Id: ERIERL-217 </p>
+        </li>
+        <li>
+          <p>
+	    Allow to add replicas even if all other replicas are down
+	    when the other replicas are not stored on disk.</p>
+          <p>
+	    Own Id: OTP-15226 Aux Id: ERIERL-221 </p>
+        </li>
+        <li>
+          <p>
+	    Fixed <span class="code">mnesia:delete_object/1</span> bug, where
+	    delete_object was deleting the record if it was written
+	    in the same transaction even if it was written to a
+	    different value.</p>
+          <p>
+	    Own Id: OTP-15231 Aux Id: PR-1858 </p>
+        </li>
+        <li>
+          <p>
+	    Fixed a bug where the bag table index data was not
+	    deleted when objects were deleted.</p>
+          <p>
+	    Own Id: OTP-15243</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.4-idm45180012363584').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.4-idm45180012363584').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.4-idm45180012363584" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L308" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.4" href="#mnesia-4.15.4">1.10 
+          Mnesia 4.15.4</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012362720').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012362720').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012362720" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L310" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+	    <p> Calls to <span class="code">erlang:get_stacktrace()</span> are removed.
+	    </p>
+          <p>
+	    Own Id: OTP-14861</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.3.1-idm45180012359008').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.3.1-idm45180012359008').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.3.1-idm45180012359008" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L323" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.3.1" href="#mnesia-4.15.3.1">1.11 
+          Mnesia 4.15.3.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012358144').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012358144').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012358144" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L325" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    When master node is set do not force a load from
+	    ram_copies replica when there are no available
+	    disc_copies, since that would load an empty table. Wait
+	    until a disk replica is available or until user
+	    explicitly force_loads the table.</p>
+          <p>
+	    Own Id: OTP-15221 Aux Id: ERIERL-217 </p>
+        </li>
+        <li>
+          <p>
+	    Allow to add replicas even if all other replicas are down
+	    when the other replicase are not stored on disk.</p>
+          <p>
+	    Own Id: OTP-15226 Aux Id: ERIERL-221 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.3-idm45180012353136').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.3-idm45180012353136').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.3-idm45180012353136" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L349" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.3" href="#mnesia-4.15.3">1.12 
+          Mnesia 4.15.3</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012352272').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012352272').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012352272" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L351" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Removed a quadratic behavior in startup. This change
+	    implies that backend plugins (if used) must be set when
+	    the schema is created or via configuration parameters
+	    before mnesia is started.</p>
+          <p>
+	    Own Id: OTP-14829 Aux Id: ERIERL-84 </p>
+        </li>
+        <li>
+          <p>
+	    Bad timing could crash mnesia after a checkpoint was
+	    deactivated and reactivated with the same checkpoint name
+	    on different tables.</p>
+          <p>
+	    Own Id: OTP-14841 Aux Id: ERIERL-113 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.2-idm45180012347280').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.2-idm45180012347280').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.2-idm45180012347280" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L375" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.2" href="#mnesia-4.15.2">1.13 
+          Mnesia 4.15.2</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012346416').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012346416').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012346416" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L377" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fix backup error handling, the real failure reason was
+	    not returned.</p>
+          <p>
+	    Own Id: OTP-14776 Aux Id: ERIERL-103 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15.1-idm45180012343152').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15.1-idm45180012343152').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15.1-idm45180012343152" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L391" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15.1" href="#mnesia-4.15.1">1.14 
+          Mnesia 4.15.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012342288').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012342288').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012342288" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L393" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    General Unicode improvements.</p>
+          <p>
+	    Own Id: OTP-14462</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.15-idm45180012339008').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.15-idm45180012339008').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.15-idm45180012339008" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L406" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.15" href="#mnesia-4.15">1.15 
+          Mnesia 4.15</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012338144').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012338144').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012338144" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L408" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Removed the wrapping of select continuations in extension
+	    plugin handling. This might require the user to rewrite
+	    user backend plugin if used.</p>
+          <p>
+	    *** POTENTIAL INCOMPATIBILITY ***</p>
+          <p>
+	    Own Id: OTP-14039</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.14.3-idm45180012334272').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.14.3-idm45180012334272').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.14.3-idm45180012334272" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L425" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.14.3" href="#mnesia-4.14.3">1.16 
+          Mnesia 4.14.3</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012333408').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012333408').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012333408" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L427" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed crash in checkpoint handling when table was deleted
+	    during backup.</p>
+          <p>
+	    Own Id: OTP-14167</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.14.2-idm45180012330176').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.14.2-idm45180012330176').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.14.2-idm45180012330176" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L441" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.14.2" href="#mnesia-4.14.2">1.17 
+          Mnesia 4.14.2</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012329312').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012329312').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012329312" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L443" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    A continuation returned by mnesia:select/[14] should be
+	    reusable in different, non-transactional activities.</p>
+          <p>
+	    Own Id: OTP-13944 Aux Id: PR-1184 </p>
+        </li>
+        <li>
+          <p>
+	    Fixed crash when calling block_table multiple times.
+	    Could happen when having locks for a long time and
+	    restarting mnesia.</p>
+          <p>
+	    Own Id: OTP-13970 Aux Id: Seq-13198 </p>
+        </li>
+        <li>
+          <p>
+	    Change mnesia_tm process to have off-heap messages since
+	    mnesia_tm can be the receiver of many non-synchronized
+	    message from other nodes.</p>
+          <p>
+	    Own Id: OTP-14074</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.14.1-idm45180012322928').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.14.1-idm45180012322928').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.14.1-idm45180012322928" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L473" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.14.1" href="#mnesia-4.14.1">1.18 
+          Mnesia 4.14.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012322064').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012322064').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012322064" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L475" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+	    <p> Correct some minor documentation issues. </p>
+          <p>
+	    Own Id: OTP-13891</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.14-idm45180012318768').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.14-idm45180012318768').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.14-idm45180012318768" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L487" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.14" href="#mnesia-4.14">1.19 
+          Mnesia 4.14</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012317904').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012317904').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012317904" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L489" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Added experimental external backend plugin api. This adds
+	    the possibility for the user to write other storage
+	    backends for data, for example by using shared memory or
+	    ram-cached disk storage.</p>
+          <p>
+	    The plugin api may change in future versions after being
+	    battle tested.</p>
+          <p>
+	    Own Id: OTP-13058</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.13.4-idm45180012314032').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.13.4-idm45180012314032').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.13.4-idm45180012314032" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L508" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.13.4" href="#mnesia-4.13.4">1.20 
+          Mnesia 4.13.4</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012313168').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012313168').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012313168" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L510" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Mnesia transactions could hang while waiting on a
+	    response from a node who had stopped.</p>
+          <p>
+	    Own Id: OTP-13423</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.13.3-idm45180012309824').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.13.3-idm45180012309824').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.13.3-idm45180012309824" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L524" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.13.3" href="#mnesia-4.13.3">1.21 
+          Mnesia 4.13.3</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012308960').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012308960').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012308960" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L526" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Avoid deadlock possibility in
+	    <span class="code">mnesia:del_table_copy/2</span></p>
+          <p>
+	    Own Id: OTP-13284</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.13.2-idm45180012305376').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.13.2-idm45180012305376').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.13.2-idm45180012305376" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L540" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.13.2" href="#mnesia-4.13.2">1.22 
+          Mnesia 4.13.2</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012304512').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012304512').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012304512" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L542" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed a process and file descriptor leak in
+	    mnesia:restore/2.</p>
+          <p>
+	    Own Id: OTP-13025 Aux Id: seq12957 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.13.1-idm45180012301248').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.13.1-idm45180012301248').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.13.1-idm45180012301248" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L556" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.13.1" href="#mnesia-4.13.1">1.23 
+          Mnesia 4.13.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012300384').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012300384').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012300384" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L558" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Improved index updates to avoid a timing glitch in
+	    dirty_index_read.</p>
+          <p>
+	    Own Id: OTP-12972</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.13-idm45180012297152').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.13-idm45180012297152').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.13-idm45180012297152" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L572" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.13" href="#mnesia-4.13">1.24 
+          Mnesia 4.13</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012296288').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012296288').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012296288" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L574" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Mnesia's dirty functions did not always exit with
+	    <span class="code">{aborted, Reason}</span> as documented when an error
+	    occurred.</p>
+          <p>
+	    Own Id: OTP-12714</p>
+        </li>
+        <li>
+          <p>
+	    Consider file descriptors limits (emfile) as a fatal
+	    error and do not delete log files. Previously the error
+	    was seen as a corrupted disk and the log files deleted
+	    which caused data loss.</p>
+          <p>
+	    Own Id: OTP-12807</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012291120').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012291120').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012291120" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L597" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Make Mnesia DCD dump behavior at start up optional, when
+	    turned off mnesia loads large disc_copies tables faster.</p>
+          <p>
+	    Own Id: OTP-12481</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.12.5-idm45180012287744').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.12.5-idm45180012287744').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.12.5-idm45180012287744" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L611" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.12.5" href="#mnesia-4.12.5">1.25 
+          Mnesia 4.12.5</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012286880').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012286880').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012286880" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L613" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed race condition in protocol negotiation.</p>
+          <p>
+	    Own Id: OTP-12473</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012283744').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012283744').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012283744" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L625" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Grammar corrections. (Thanks to Derek Brown)</p>
+          <p>
+	    Own Id: OTP-12400</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.12.4-idm45180012280448').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.12.4-idm45180012280448').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.12.4-idm45180012280448" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L638" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.12.4" href="#mnesia-4.12.4">1.26 
+          Mnesia 4.12.4</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012279584').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012279584').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012279584" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L640" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed a spelling mistake in mnesia documentation.</p>
+          <p>
+	    Own Id: OTP-12278</p>
+        </li>
+        <li>
+          <p>
+	    Matching data with <span class="code">mnesia:match_object/1</span> did not
+	    work as expected in some cases, when data was written in
+	    the same transaction before the matching was invoked.</p>
+          <p>
+	    Own Id: OTP-12304 Aux Id: Seq12745 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.12.3-idm45180012274336').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.12.3-idm45180012274336').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.12.3-idm45180012274336" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L661" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.12.3" href="#mnesia-4.12.3">1.27 
+          Mnesia 4.12.3</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012273472').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012273472').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012273472" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L663" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Various logging fixes, including: Add run queue index to
+	    the process dump in crash dumps.<br> Add thread index to
+	    enomem slogan when crashing.<br> Remove error logger
+	    message for sending messages to old instances of the same
+	    node.</p>
+          <p>
+	    Own Id: OTP-12115</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.12.2-idm45180012269440').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.12.2-idm45180012269440').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.12.2-idm45180012269440" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L680" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.12.2" href="#mnesia-4.12.2">1.28 
+          Mnesia 4.12.2</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012268576').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012268576').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012268576" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L682" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed a race which could make create_table fail if a node
+	    was going down during the transaction.</p>
+          <p>
+	    Own Id: OTP-12124 Aux Id: seq12694 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.12.1-idm45180012265184').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.12.1-idm45180012265184').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.12.1-idm45180012265184" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L696" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.12.1" href="#mnesia-4.12.1">1.29 
+          Mnesia 4.12.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012264320').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012264320').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012264320" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L698" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Force load table could hang when a node went away during
+	    start up.</p>
+          <p>
+	    Own Id: OTP-11948 Aux Id: seq12585 </p>
+        </li>
+        <li>
+          <p>
+	    The time for inserting locks for a transaction with large
+	    number of locks is reduced significantly.</p>
+          <p>
+	    Own Id: OTP-11981</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.12-idm45180012259616').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.12-idm45180012259616').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.12-idm45180012259616" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L719" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.12" href="#mnesia-4.12">1.30 
+          Mnesia 4.12</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012258752').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012258752').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012258752" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L721" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Some local implementations of removing the last element
+	    from a list are replaced by <span class="code">lists:droplast/1</span>. Note
+	    that this requires at least <span class="code">stdlib-2.0</span>, which is
+	    the stdlib version delivered in OTP 17.0. (Thanks to Hans
+	    Svensson)</p>
+          <p>
+	    Own Id: OTP-11678</p>
+        </li>
+        <li>
+          <p>
+	    Application upgrade (appup) files are corrected for the
+	    following applications: </p>
+          <p>
+	    <span class="code">asn1, common_test, compiler, crypto, debugger,
+	    dialyzer, edoc, eldap, erl_docgen, et, eunit, gs, hipe,
+	    inets, observer, odbc, os_mon, otp_mibs, parsetools,
+	    percept, public_key, reltool, runtime_tools, ssh,
+	    syntax_tools, test_server, tools, typer, webtool, wx,
+	    xmerl</span></p>
+          <p>
+	    A new test utility for testing appup files is added to
+	    test_server. This is now used by most applications in
+	    OTP.</p>
+          <p>
+	    (Thanks to Tobias Schlager)</p>
+          <p>
+	    Own Id: OTP-11744</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012251104').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012251104').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012251104" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L757" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    To prevent a race condition if there is a short
+	    communication problem when node-down and node-up events
+	    are received. They are now stored and later checked if
+	    the node came up just before mnesia flagged the node as
+	    down. (Thanks to Jonas Falkevik )</p>
+          <p>
+	    Own Id: OTP-11497</p>
+        </li>
+        <li>
+          <p>
+	    Added <span class="code">mnesia:sync_log/0</span> to explicit sync mnesias
+	    transaction log.</p>
+          <p>
+	    Own Id: OTP-11729</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.11-idm45180012245760').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.11-idm45180012245760').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.11-idm45180012245760" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L781" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.11" href="#mnesia-4.11">1.31 
+          Mnesia 4.11</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012244896').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012244896').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012244896" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L783" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed a race in mnesia which could cause hanging
+	    transaction when sticky locks had been used. Thanks
+	    janchochol.</p>
+          <p>
+	    Own Id: OTP-11375</p>
+        </li>
+        <li>
+          <p>
+	    Fixed dirty_update_counter which could return ok, thanks
+	    Anton Ryabkov.</p>
+          <p>
+	    Own Id: OTP-11485</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.10-idm45180012240208').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.10-idm45180012240208').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.10-idm45180012240208" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L805" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.10" href="#mnesia-4.10">1.32 
+          Mnesia 4.10</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012239344').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012239344').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012239344" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L807" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fix timing issues in checkpoint creation.</p>
+          <p>
+	    Own Id: OTP-10957</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012236208').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012236208').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012236208" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L819" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fixed a problem where the fallback BUP file is removed
+	    when calling mnesia:uninstall_fallback and mnesia is not
+	    started.</p>
+          <p>
+	    Own Id: OTP-11241</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.9-idm45180012232816').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.9-idm45180012232816').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.9-idm45180012232816" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L834" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.9" href="#mnesia-4.9">1.33 
+          Mnesia 4.9</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012231952').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012231952').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012231952" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L836" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    If mnesia:clear_table/2 was called during a table load on
+	    that table, the schema record was written to the table
+	    instead of clearing table.</p>
+          <p>
+	    Own Id: OTP-11030 Aux Id: seq12267 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012228672').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012228672').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012228672" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L850" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Optimize index creation for Mnesia set tables. Thanks to
+	    Nick Marino.</p>
+          <p>
+	    Own Id: OTP-11103</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.8-idm45180012225440').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.8-idm45180012225440').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.8-idm45180012225440" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L864" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.8" href="#mnesia-4.8">1.34 
+          Mnesia 4.8</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012224576').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012224576').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012224576" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L866" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Use chained send_after instead of send_interval, to make
+	    decrease the number of messages sent after a sleep
+	    (Thanks to James Wheare)</p>
+          <p>
+	    Own Id: OTP-10636</p>
+        </li>
+        <li>
+          <p>
+	    Fix format of mnesia overload message (Thanks to Ahmed
+	    Omar)</p>
+          <p>
+	    Own Id: OTP-10639</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012219952').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012219952').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012219952" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L887" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Added a general framework for executing benchmarks of
+	    Erlang/OTP. Benchmarks for the Erlang VM and mnesia have
+	    been incorporated in the framework. </p>
+          <p>
+	    For details about how to add more benchmarks see
+	    $ERL_TOP/HOWTO/BENCHMARKS.md in the source distribution.</p>
+          <p>
+	    Own Id: OTP-10156</p>
+        </li>
+        <li>
+	    <p>Where necessary a comment stating encoding has been
+	    added to Erlang files. The comment is meant to be removed
+	    in Erlang/OTP R17B when UTF-8 becomes the default
+	    encoding. </p>
+          <p>
+	    Own Id: OTP-10630</p>
+        </li>
+        <li>
+          <p>
+	    Remove support for the query keyword and query
+	    expressions. Thanks to Loïc Hoguin.</p>
+          <p>
+	    Own Id: OTP-10729</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.7.1-idm45180012213056').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.7.1-idm45180012213056').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.7.1-idm45180012213056" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L920" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.7.1" href="#mnesia-4.7.1">1.35 
+          Mnesia 4.7.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012212192').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012212192').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012212192" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L922" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Add tests showing that trying to delete non-existing
+	    object may corrupt the </p>
+          <p>
+	    In case of bag tables, trying to delete a non-existing
+	    object leads to the index becoming corrupt. This happens
+	    if the non-existing object we try to delete happens to
+	    share its key and index field value with a single
+	    existing object in the table. Result: The index entry
+	    corresponding to the existing object is removed.</p>
+          <p>
+	    Prevent index from being corrupted if a nonexistent item
+	    is deleted</p>
+          <p>
+	    We have to ensure that we actually delete the last object
+	    with a given (key, index) pair before removing the index.
+	    Thanks to Bartlomiej Puzon</p>
+          <p>
+	    Own Id: OTP-10220</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.7-idm45180012207168').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.7-idm45180012207168').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.7-idm45180012207168" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L950" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.7" href="#mnesia-4.7">1.36 
+          Mnesia 4.7</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012206304').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012206304').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012206304" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L952" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Returns the same value for
+	    mnesia_loader:disc_load_table/2 as
+	    mnesia_loader:net_load_table/4 if a table copy cannot be
+	    found. (Thanks to Uwe Dauernheim)</p>
+          <p>
+	    Own Id: OTP-10015</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012203040').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012203040').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012203040" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L967" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Improved table lock algorithm.</p>
+          <p>
+	    Own Id: OTP-9890</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.6-idm45180012199760').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.6-idm45180012199760').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.6-idm45180012199760" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L980" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.6" href="#mnesia-4.6">1.37 
+          Mnesia 4.6</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012198896').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012198896').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012198896" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L982" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Reduce calls to phash in key_to_frag_number</p>
+          <p>
+	    Original code calls phash 1..2 times, based on which
+	    fragment the hashed key targets and how many fragments
+	    exist. New code always calls phash only once.</p>
+          <p>
+	    Add mnesia_frag_hash test (Thanks to Philip Robinson)</p>
+          <p>
+	    Own Id: OTP-9722</p>
+        </li>
+        <li>
+          <p>
+	    Fixed a sticky lock bug which caused mnesia:read(Tab,
+	    Key, write) return undefined.</p>
+          <p>
+	    Own Id: OTP-9786</p>
+        </li>
+        <li>
+          <p>
+	    Use the synchronous log_terms instead of alog_terms in
+	    mnesia_log:ets2dcd()</p>
+          <p>
+	    This avoids the situation where mnesia could dump a very
+	    large ets table in its entirety into the message queue of
+	    the disk_log process, causing memory blowup and choking
+	    the disk logger. (Thanks to Richard Carlsson)</p>
+          <p>
+	    Own Id: OTP-9804</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012191152').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012191152').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012191152" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1019" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Implemented a new option to mnesia:create_table/2 which
+	    allows the user to assign 'ets' and 'dets' options not
+	    available in mnesia.</p>
+          <p>
+	    Own Id: OTP-8970</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.5.1-idm45180012187744').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.5.1-idm45180012187744').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.5.1-idm45180012187744" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1034" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.5.1" href="#mnesia-4.5.1">1.38 
+          Mnesia 4.5.1</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012186864').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012186864').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012186864" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1036" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fix deadlock in mnesia:del_table_copy/2.</p>
+          <p>
+	    Own Id: OTP-9689 Aux Id: seq11927 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012183680').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012183680').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012183680" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1048" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Allow schema operations when using different mnesia
+	    versions.</p>
+          <p>
+	    Own Id: OTP-9657 Aux Id: seq11926 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.5-idm45180012180304').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.5-idm45180012180304').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.5-idm45180012180304" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1062" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.5" href="#mnesia-4.5">1.39 
+          Mnesia 4.5</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012179424').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012179424').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012179424" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1064" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fix protocol issues. Mnesia-4.4.19 could not communicate
+	    with to older nodes.</p>
+          <p>
+	    Own Id: OTP-9473</p>
+        </li>
+        <li>
+	    <p> XML files have been corrected. </p>
+          <p>
+	    Own Id: OTP-9550 Aux Id: OTP-9541 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012174832').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012174832').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012174832" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1082" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Dump the log even if no transactions have been invoked on
+	    local node, otherwise the log will grow forever with
+	    decisions from the other nodes who have tables on disk.
+	    Thanks Marek Majkowski.</p>
+          <p>
+	    Own Id: OTP-9551</p>
+        </li>
+        <li>
+          <p>
+	    Use dedicated api for clear_table, i.e. instead of
+	    match_delete use delete_all_objects. Thanks KukHyun Lee.</p>
+          <p>
+	    Own Id: OTP-9558</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.19-idm45180012169920').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.19-idm45180012169920').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.19-idm45180012169920" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1105" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.19" href="#mnesia-4.4.19">1.40 
+          Mnesia 4.4.19</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012169040').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012169040').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012169040" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1107" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Mnesia could crash if mnesia:add_table_index/2 was
+	    invoked before the table was loaded on all nodes.</p>
+          <p>
+	    Own Id: OTP-9285 Aux Id: seq11844 </p>
+        </li>
+        <li>
+          <p>
+	    Add {majority, boolean()} per-table option.</p>
+          <p>
+	    With {majority, true} set for a table, write transactions
+	    will abort if they cannot commit to a majority of the
+	    nodes that have a copy of the table. Currently, the
+	    implementation hooks into the prepare_commit, and forces
+	    an asymmetric transaction if the commit set affects any
+	    table with the majority flag set. In the commit itself,
+	    the transaction will abort if it cannot satisfy the
+	    majority requirement for all tables involved in the
+	    transaction.(Thanks to Ulf Wiger)</p>
+          <p>
+	    Own Id: OTP-9304</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.18-idm45180012163312').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.18-idm45180012163312').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.18-idm45180012163312" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1137" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.18" href="#mnesia-4.4.18">1.41 
+          Mnesia 4.4.18</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012162432').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012162432').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012162432" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1139" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Call chmod without the "-f" flag</p>
+          <p>
+	    "-f" is a non-standard chmod option which at least SGI
+	    IRIX and HP UX do not support. As the only effect of the
+	    "-f" flag is to suppress warning messages, it can be
+	    safely omitted. (Thanks to Holger Weiß)</p>
+          <p>
+	    Own Id: OTP-9170</p>
+        </li>
+        <li>
+          <p>
+	    Mnesia sometimes failed to update meta-information in
+	    large systems, which could cause table content to be
+	    inconsistent between nodes.</p>
+          <p>
+	    Own Id: OTP-9186 Aux Id: seq11728 </p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.17-idm45180012156976').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.17-idm45180012156976').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.17-idm45180012156976" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1165" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.17" href="#mnesia-4.4.17">1.42 
+          Mnesia 4.4.17</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012156096').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012156096').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012156096" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1167" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Calling mnesia:first/1 on empty fragmented table works.
+	    Thanks Magnus Henoch.</p>
+          <p>
+	    Own Id: OTP-9108</p>
+        </li>
+        <li>
+          <p>
+	    If Mnesia detects that the network is not fully connected
+	    during start, Mnesia will not start until all nodes are
+	    reachable.</p>
+          <p>
+	    Own Id: OTP-9115 Aux Id: seq-11728 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012151392').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012151392').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012151392" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1188" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Fix issues reported by dialyzer.</p>
+          <p>
+	    Own Id: OTP-9107</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.16-idm45180012148096').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.16-idm45180012148096').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.16-idm45180012148096" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1201" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.16" href="#mnesia-4.4.16">1.43 
+          Mnesia 4.4.16</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012147216').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012147216').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012147216" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1203" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Sometimes a 'log_header' record was added to tables when
+	    invoking mnesia:restore/2 with the option
+	    'recreate_tables'. Thanks Vance Shipley.</p>
+          <p>
+	    Own Id: OTP-8960</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012143952').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012143952').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012143952" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1217" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Compiler warnings were eliminated.</p>
+          <p>
+	    Own Id: OTP-8855</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.15-idm45180012140640').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.15-idm45180012140640').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.15-idm45180012140640" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1230" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.15" href="#mnesia-4.4.15">1.44 
+          Mnesia 4.4.15</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012139760').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012139760').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012139760" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1232" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    Eliminated warnings for auto-imported BIF clashes.</p>
+          <p>
+	    Own Id: OTP-8840</p>
+        </li>
+      </ul>
+    
+
+
+
+<h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.14-idm45180012136432').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.14-idm45180012136432').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.14-idm45180012136432" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1245" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.14" href="#mnesia-4.4.14">1.45 
+          Mnesia 4.4.14</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012135552').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012135552').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012135552" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1247" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Added mnesia:subscribe(activity) contributed by Bernard
+            Duggan.</p>
+          <p>
+            Own Id: OTP-8519</p>
+        </li>
+      </ul>
+    
+
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.13-idm45180012132176').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.13-idm45180012132176').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.13-idm45180012132176" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1261" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.13" href="#mnesia-4.4.13">1.46 
+          Mnesia 4.4.13</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012131296').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012131296').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012131296" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1263" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Transactions could be left hanging if a node went down
+            when invoking mnesia:sync_transaction/[1,2]. Thanks Igor
+            Ribeiro Sucupira.</p>
+          <p>
+            Own Id: OTP-8402</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012128016').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012128016').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012128016" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1277" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Igor Ribeiro Sucupira added the option to compress data
+            when copying tables between Mnesia nodes.</p>
+          <p>
+            Own Id: OTP-8406</p>
+        </li>
+      </ul>
+    
+
+  
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.12-idm45180012124608').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.12-idm45180012124608').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.12-idm45180012124608" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1290" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.12" href="#mnesia-4.4.12">1.47 
+          Mnesia 4.4.12</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012123728').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012123728').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012123728" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1292" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            The documentation is now built with open source tools
+            (xsltproc and fop) that exists on most platforms. One
+            visible change is that the frames are removed.</p>
+          <p>
+            Own Id: OTP-8250</p>
+        </li>
+      </ul>
+    
+
+  
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.11-idm45180012120256').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.11-idm45180012120256').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.11-idm45180012120256" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1306" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.11" href="#mnesia-4.4.11">1.48 
+          Mnesia 4.4.11</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012119376').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012119376').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012119376" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1308" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Fixed duplicate results with mnesia:index_read() on
+            ordered_set tables. Reported by Sam Bobroff. </p>
+	  <p>
+	    Fixed locking in mnesia:index_read() which now grabs a read
+            table lock to ensure correctness, this may slow down the
+            operation or block other processes trying to reach the
+            same table. </p>
+	  <p>
+	    Calling mnesia:dump_log() could crash mnesia,
+            Reported by Igor Ribeiro Sucupira.</p>
+          <p> Own Id: OTP-8074</p>
+        </li>
+      </ul>
+    
+
+  
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.10-idm45180012114800').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.10-idm45180012114800').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.10-idm45180012114800" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1328" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.10" href="#mnesia-4.4.10">1.49 
+          Mnesia 4.4.10</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012113920').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012113920').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012113920" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1330" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Mnesia crashed if a qlc query was running inside a
+            transaction when mnesia stopped at another node. Thanks
+            Teemu Antti-Poika.</p>
+          <p>
+            Own Id: OTP-7968</p>
+        </li>
+        <li>
+          <p>
+            Mnesia could crash when loading local_content tables.</p>
+          <p>
+            Own Id: OTP-8002 Aux Id: seq11277 </p>
+        </li>
+      </ul>
+    
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012109216').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012109216').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012109216" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1349" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Minor (smp) optimizations.</p>
+          <p>
+            Own Id: OTP-7928</p>
+        </li>
+      </ul>
+    
+
+  
+
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.9-idm45180012105904').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.9-idm45180012105904').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.9-idm45180012105904" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1363" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.9" href="#mnesia-4.4.9">1.50 
+          Mnesia 4.4.9</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012105024').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012105024').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012105024" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1365" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            mnesia:clear_table/1 crashed instead of returning
+            <span class="code">{aborted,..}</span> if it was called inside a
+            transaction.</p>
+          <p>
+            Own Id: OTP-7911</p>
+        </li>
+      </ul>
+    
+
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.8-idm45180012101184').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.8-idm45180012101184').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.8-idm45180012101184" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1380" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.8" href="#mnesia-4.4.8">1.51 
+          Mnesia 4.4.8</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012100304').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012100304').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012100304" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1382" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            With bad timing several api functions could return or
+            exit with a bad error message when mnesia was shutting
+            down.</p>
+          <p>
+            Own Id: OTP-7753 Aux Id: seq11179 </p>
+        </li>
+        <li>
+          <p>
+            <span class="code">mnesia:clear_table/1</span> cleared all nodes table
+            content even if the table was <span class="code">local_content</span> only
+            type.</p>
+          <p>
+            Own Id: OTP-7835</p>
+        </li>
+      </ul>
+    
+
+  
+
+ <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.7-idm45180012094560').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.7-idm45180012094560').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.7-idm45180012094560" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1405" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.7" href="#mnesia-4.4.7">1.52 
+          Mnesia 4.4.7</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012093680').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012093680').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012093680" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1407" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Disallowed match patterns ('_', and '$n') as argument to
+            <span class="code">mnesia:delete_object/1</span> and friends.</p>
+          <p>
+            Own Id: OTP-7524</p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012090032').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012090032').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012090032" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1420" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Introduced a few new functions in Mnesia: <span class="code">mnesia:read/2</span>,
+            <span class="code">mnesia:first/3</span>, <span class="code">mnesia:last/3</span>, <span class="code">mnesia:prev/4</span>,
+            <span class="code">mnesia:next/4</span>, <span class="code">mnesia_frag:first/1</span>, <span class="code">mnesia_frag:last/1</span>,
+            <span class="code">mnesia_frag:prev/2</span>, <span class="code">mnesia_frag:next/2</span>.</p>
+          <p>
+            Own Id: OTP-7625</p>
+        </li>
+      </ul>
+    
+
+
+
+ <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.6-idm45180012082672').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.6-idm45180012082672').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.6-idm45180012082672" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1436" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.6" href="#mnesia-4.4.6">1.53 
+          Mnesia 4.4.6</a></span></h3>
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012081792').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012081792').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012081792" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1437" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            <span class="code">mnesia:restore/2</span> aborted if a <span class="code">EXIT</span> message
+            appeared in the client message queue.</p>
+          <p>
+            Own Id: OTP-7585 Aux Id: seq11046 </p>
+        </li>
+      </ul>
+    
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.5-idm45180012077536').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.5-idm45180012077536').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.5-idm45180012077536" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1450" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.5" href="#mnesia-4.4.5">1.54 
+          Mnesia 4.4.5</a></span></h3>
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012076656').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012076656').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012076656" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1451" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+	    mnesia:clear_table/1 does not require that all
+            replicas of the table are available anymore.</p>
+          <p>
+            Own Id: OTP-7466 Aux Id: seq11015</p>
+        </li>
+      </ul>
+    
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.4-idm45180012073248').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.4-idm45180012073248').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.4-idm45180012073248" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1464" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.4" href="#mnesia-4.4.4">1.55 
+          Mnesia 4.4.4</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012072368').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012072368').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012072368" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1466" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Mnesia did not garbage collect transaction decisions on
+            disk based nodes if no transactions where made on the
+            local node.</p>
+          <p>
+            Own Id: OTP-7419</p>
+        </li>
+      </ul>
+    
+
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.3-idm45180012068928').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.3-idm45180012068928').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.3-idm45180012068928" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1481" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.3" href="#mnesia-4.4.3">1.56 
+          Mnesia 4.4.3</a></span></h3>
+
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012068048').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012068048').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012068048" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1483" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Table referred to by foreign key did not have node_pool
+            properly cleaned up when a node was removed from the
+            schema. Thanks Paul Mineiro.</p>
+          <p>
+            Own Id: OTP-7340</p>
+        </li>
+        <li>
+          <p>
+            Mnesia crashed and generated a core dump if a
+            schema_transaction was running when mnesia stopped.</p>
+          <p>
+            Own Id: OTP-7378 Aux Id: seq10964 </p>
+        </li>
+      </ul>
+    
+
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012063264').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012063264').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012063264" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1504" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            It is now possible to delete a db node even when other
+            disk resident nodes are down. Thanks Paul Mineiro.</p>
+          <p>
+            Own Id: OTP-7383</p>
+        </li>
+      </ul>
+    
+
+
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.2-idm45180012059856').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.2-idm45180012059856').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.2-idm45180012059856" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1518" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.2" href="#mnesia-4.4.2">1.57 
+          Mnesia 4.4.2</a></span></h3>
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012058976').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012058976').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012058976" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1519" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Sticky locks could lead to hanging transactions.</p>
+          <p>
+            Own Id: OTP-7205 Aux Id: seq10793 </p>
+        </li>
+        <li>
+          <p>
+            <span class="code">mnesia:snmp_get_next_index/2</span> didn't work with
+            partial index keys. Argument checking is now done
+            according to documentation, in functions
+            <span class="code">mnesia:snmp_get_row/2</span>,
+            <span class="code">mnesia:snmp_get_mnesia_key/2</span> and
+            <span class="code">mnesia:snmp_get_next_index/2</span>. These functions now
+            require that <span class="code">RowIndex</span> is a list.</p>
+          <p>
+            *** POTENTIAL INCOMPATIBILITY ***</p>
+          <p>
+            Own Id: OTP-7208</p>
+        </li>
+      </ul>
+    
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4.1-idm45180012051328').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4.1-idm45180012051328').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4.1-idm45180012051328" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1545" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4.1" href="#mnesia-4.4.1">1.58 
+          Mnesia 4.4.1</a></span></h3>
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012050448').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012050448').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012050448" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1546" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Snmp index tables was not initialized correctly in
+            <span class="code">mnesia-4.4</span>.</p>
+          <p>
+            Own Id: OTP-7170 Aux Id: seq10870 </p>
+        </li>
+      </ul>
+    
+    <h4><span onMouseOver="document.getElementById('ghlink-known-bugs-and-problems-idm45180012046784').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-known-bugs-and-problems-idm45180012046784').style.visibility = 'hidden';"><span id="ghlink-known-bugs-and-problems-idm45180012046784" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1557" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="known-bugs-and-problems" href="#known-bugs-and-problems">Known Bugs and Problems</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Rearranging fragmented tables is an O(N^2) operation.</p>
+          <p>
+            Own Id: OTP-6300</p>
+        </li>
+      </ul>
+    
+  
+
+  <h3><span onMouseOver="document.getElementById('ghlink-mnesia-4.4-idm45180012043456').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-mnesia-4.4-idm45180012043456').style.visibility = 'hidden';"><span id="ghlink-mnesia-4.4-idm45180012043456" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1569" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="mnesia-4.4" href="#mnesia-4.4">1.59 
+          Mnesia 4.4</a></span></h3>
+    <h4><span onMouseOver="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012042576').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-fixed-bugs-and-malfunctions-idm45180012042576').style.visibility = 'hidden';"><span id="ghlink-fixed-bugs-and-malfunctions-idm45180012042576" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1570" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="fixed-bugs-and-malfunctions" href="#fixed-bugs-and-malfunctions">Fixed Bugs and Malfunctions</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Mnesia ignored the module argument to
+            <span class="code">mnesia:restore/2</span>. Thanks Paul Minerio.</p>
+          <p>
+            Own Id: OTP-6981</p>
+        </li>
+      </ul>
+    
+
+    <h4><span onMouseOver="document.getElementById('ghlink-improvements-and-new-features-idm45180012038944').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-improvements-and-new-features-idm45180012038944').style.visibility = 'hidden';"><span id="ghlink-improvements-and-new-features-idm45180012038944" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1582" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="improvements-and-new-features" href="#improvements-and-new-features">Improvements and New Features</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Mnesia's snmp operations <span class="code">snmp_get_row/2</span>,
+            <span class="code">snmp_get_next_index/2</span> and
+            <span class="code">snmp_get_mnesia_key/2</span> have been made context
+            aware, i.e. inside a transaction they will compensate for
+            table updates made in earlier in the same transaction.
+            This might cause a performance drop if a lot of updates
+            have been made before the invocation of these functions.</p>
+          <p>
+            *** POTENTIAL INCOMPATIBILITY ***</p>
+          <p>
+            Own Id: OTP-6856 Aux Id: seq10671 </p>
+        </li>
+        <li>
+          <p>
+            Introduced erlang:phash/2 as new default for fragmented
+            tables. Already existing tables will continue to use
+            whatever hash function they where using.</p>
+          <p>
+            Own Id: OTP-6923</p>
+        </li>
+        <li>
+          <p>
+            Introduced <span class="code">mnesia:is_transaction/0</span>.</p>
+          <p>
+            Own Id: OTP-6995 Aux Id: seq10812 </p>
+        </li>
+      </ul>
+    
+
+    <h4><span onMouseOver="document.getElementById('ghlink-known-bugs-and-problems-idm45180012030288').style.visibility = 'visible';" onMouseOut="document.getElementById('ghlink-known-bugs-and-problems-idm45180012030288').style.visibility = 'hidden';"><span id="ghlink-known-bugs-and-problems-idm45180012030288" class="ghlink"><a href="https://github.com/erlang/otp/edit/maint/lib/mnesia/doc/src/notes.xml#L1615" title="Found an issue with the documentation? Fix it by clicking here!"><span class="pencil"></span></a></span><a class="title_link" name="known-bugs-and-problems" href="#known-bugs-and-problems">Known Bugs and Problems</a></span></h4>
+      <ul>
+        <li>
+          <p>
+            Rearranging fragmented tables is an O(N^2) operation.</p>
+          <p>
+            Own Id: OTP-6300</p>
+        </li>
+      </ul>
+    
+  
+
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 1997-2020 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div>
+<script type="text/javascript">window.__otpTopDocDir = '../../../../doc/js/';</script><script type="text/javascript" src="../../../../doc/js/highlight.js"></script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+.TH wxRadioBox 3 "wx 1.9.1" "" "Erlang Module Definition"
+.SH NAME
+wxRadioBox \- See external documentation: wxRadioBox.
+.SH DESCRIPTION
+.LP
+See external documentation: wxRadioBox\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+wxControl 
+.br
+wxWindow 
+.br
+wxEvtHandler 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxRadioBox():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new(Parent, Id, Title, Pos, Size, Choices) -> wxRadioBox()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+Title = unicode:chardata()
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+Size = {W::integer(), H::integer()}
+.br
+Choices = [unicode:chardata()]
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to new(Parent, Id, Title, Pos, Size, Choices, [])\&.
+.RE
+.LP
+.B
+new(Parent, Id, Title, Pos, Size, Choices, Options::[Option]) -> wxRadioBox()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+Title = unicode:chardata()
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+Size = {W::integer(), H::integer()}
+.br
+Choices = [unicode:chardata()]
+.br
+Option = {majorDim, integer()} | {style, integer()} | {val, wx:wx_object()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Title, Pos, Size, Choices) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+Title = unicode:chardata()
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+Size = {W::integer(), H::integer()}
+.br
+Choices = [unicode:chardata()]
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to create(This, Parent, Id, Title, Pos, Size, Choices, [])\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Title, Pos, Size, Choices, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+Title = unicode:chardata()
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+Size = {W::integer(), H::integer()}
+.br
+Choices = [unicode:chardata()]
+.br
+Option = {majorDim, integer()} | {style, integer()} | {val, wx:wx_object()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+enable(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to enable(This, [])\&.
+.RE
+.LP
+.B
+enable(This, N) -> boolean()
+.br
+.B
+enable(This, N::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+This = wxRadioBox()
+.br
+Option = {enable, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+enable(This, [Option]) -> boolean() when
+.br
+This::wxRadioBox(),
+.br
+Option :: {\&'enable\&', boolean()}\&.
+.br
+
+.RE
+.LP
+.B
+enable(This, N, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+Option = {enable, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSelection(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getString(This, N) -> unicode:charlist()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSelection(This, N) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+show(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to show(This, [])\&.
+.RE
+.LP
+.B
+show(This, N) -> boolean()
+.br
+.B
+show(This, N::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+This = wxRadioBox()
+.br
+Option = {show, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+show(This, [Option]) -> boolean() when
+.br
+This::wxRadioBox(),
+.br
+Option :: {\&'show\&', boolean()}\&.
+.br
+
+.RE
+.LP
+.B
+show(This, N, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+Option = {show, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getColumnCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemHelpText(This, N) -> unicode:charlist()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemToolTip(This, Item) -> wxToolTip:wxToolTip()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemFromPoint(This, Pt) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getRowCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+isItemEnabled(This, N) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+isItemShown(This, N) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemHelpText(This, N, HelpText) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+N = integer()
+.br
+HelpText = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemToolTip(This, Item, Text) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxRadioBox()
+.br
+Item = integer()
+.br
+Text = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::wxRadioBox()) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

@@ -1,0 +1,14 @@
+---
+layout: default
+---
+
+<div class="posts">
+  <h1>Latest documentation</h1>
+  <ul>
+    {% for doc in site.docs %}
+    <li>
+      <a href="{{ site.baseurl }}/docs/{{ doc.title }}/doc/">{{ doc.title }}</a> - <a href="http://github.com/erlang/otp/tree/{{ doc.sha }}">{{ doc.sha }}</a> - Generated at {{ doc.generated | date: "%Y-%m-%d %H:%M:%S" }}
+    </li>
+    {% endfor %}
+  </ul>
+</div>

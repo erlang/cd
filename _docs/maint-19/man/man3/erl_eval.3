@@ -1,0 +1,507 @@
+.TH erl_eval 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_eval \- The Erlang meta interpreter.
+.SH DESCRIPTION
+.LP
+This module provides an interpreter for Erlang expressions\&. The expressions are in the abstract syntax as returned by \fB\fIerl_parse\fR\&\fR\&, the Erlang parser, or \fB\fIio\fR\&\fR\&\&.
+.SH DATA TYPES
+.nf
+
+\fBbindings()\fR\& = [{\fBname()\fR\&, \fBvalue()\fR\&}]
+.br
+.fi
+.nf
+
+\fBbinding_struct()\fR\& = \fBorddict:orddict()\fR\&
+.br
+.fi
+.RS
+.LP
+A binding structure\&.
+.RE
+.nf
+
+\fBexpression()\fR\& = \fBerl_parse:abstract_expr()\fR\&
+.br
+.fi
+.nf
+
+\fBexpressions()\fR\& = [\fBerl_parse:abstract_expr()\fR\&]
+.br
+.fi
+.RS
+.LP
+As returned by \fB\fIerl_parse:parse_exprs/1\fR\&\fR\& or \fB\fIio:parse_erl_exprs/2\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBexpression_list()\fR\& = [\fBexpression()\fR\&]
+.br
+.fi
+.nf
+
+\fBfunc_spec()\fR\& = 
+.br
+    {Module :: module(), Function :: atom()} | function()
+.br
+.fi
+.nf
+
+\fBlfun_eval_handler()\fR\& = 
+.br
+    fun((Name :: atom(),
+.br
+         Arguments :: \fBexpression_list()\fR\&,
+.br
+         Bindings :: \fBbinding_struct()\fR\&) ->
+.br
+            {value,
+.br
+             Value :: \fBvalue()\fR\&,
+.br
+             NewBindings :: \fBbinding_struct()\fR\&})
+.br
+.fi
+.nf
+
+\fBlfun_value_handler()\fR\& = 
+.br
+    fun((Name :: atom(), Arguments :: [term()]) ->
+.br
+            Value :: \fBvalue()\fR\&)
+.br
+.fi
+.nf
+
+\fBlocal_function_handler()\fR\& = 
+.br
+    {value, \fBlfun_value_handler()\fR\&} |
+.br
+    {eval, \fBlfun_eval_handler()\fR\&} |
+.br
+    none
+.br
+.fi
+.RS
+.LP
+Further described in section \fB Local Function Handler\fR\& in this module
+.RE
+.nf
+
+\fBname()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBnlfun_handler()\fR\& = 
+.br
+    fun((FuncSpec :: \fBfunc_spec()\fR\&, Arguments :: [term()]) -> term())
+.br
+.fi
+.nf
+
+\fBnon_local_function_handler()\fR\& = {value, \fBnlfun_handler()\fR\&} | none
+.br
+.fi
+.RS
+.LP
+Further described in section \fB Non-Local Function Handler\fR\& in this module\&.
+.RE
+.nf
+
+\fBvalue()\fR\& = term()
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+add_binding(Name, Value, BindingStruct) -> binding_struct()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+Value = \fBvalue()\fR\&
+.br
+BindingStruct = \fBbinding_struct()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Adds binding \fIName=Value\fR\& to \fIBindingStruct\fR\&\&. Returns an updated binding structure\&.
+.RE
+.LP
+.nf
+
+.B
+binding(Name, BindingStruct) -> {value, value()} | unbound
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+BindingStruct = \fBbinding_struct()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the binding of \fIName\fR\& in \fIBindingStruct\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+bindings(BindingStruct :: binding_struct()) -> bindings()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the list of bindings contained in the binding structure\&.
+.RE
+.LP
+.nf
+
+.B
+del_binding(Name, BindingStruct) -> binding_struct()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+BindingStruct = \fBbinding_struct()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Removes the binding of \fIName\fR\& in \fIBindingStruct\fR\&\&. Returns an updated binding structure\&.
+.RE
+.LP
+.nf
+
+.B
+expr(Expression, Bindings) -> {value, Value, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+expr(Expression, Bindings, LocalFunctionHandler) ->
+.B
+        {value, Value, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+expr(Expression,
+.B
+     Bindings,
+.B
+     LocalFunctionHandler,
+.B
+     NonLocalFunctionHandler) ->
+.B
+        {value, Value, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+expr(Expression,
+.B
+     Bindings,
+.B
+     LocalFunctionHandler,
+.B
+     NonLocalFunctionHandler,
+.B
+     ReturnFormat) ->
+.B
+        {value, Value, NewBindings} | Value
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Expression = \fBexpression()\fR\&
+.br
+Bindings = \fBbinding_struct()\fR\&
+.br
+LocalFunctionHandler = \fBlocal_function_handler()\fR\&
+.br
+NonLocalFunctionHandler = \fBnon_local_function_handler()\fR\&
+.br
+ReturnFormat = none | value
+.br
+Value = \fBvalue()\fR\&
+.br
+NewBindings = \fBbinding_struct()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates \fIExpression\fR\& with the set of bindings \fIBindings\fR\&\&. \fIExpression\fR\& is an expression in abstract syntax\&. For an explanation of when and how to use arguments \fILocalFunctionHandler\fR\& and \fINonLocalFunctionHandler\fR\&, see sections \fB Local Function Handler\fR\& and \fB Non-Local Function Handler\fR\& in this module\&.
+.LP
+Returns \fI{value, Value, NewBindings}\fR\& by default\&. If \fIReturnFormat\fR\& is \fIvalue\fR\&, only \fIValue\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+expr_list(ExpressionList, Bindings) -> {ValueList, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+expr_list(ExpressionList, Bindings, LocalFunctionHandler) ->
+.B
+             {ValueList, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+expr_list(ExpressionList,
+.B
+          Bindings,
+.B
+          LocalFunctionHandler,
+.B
+          NonLocalFunctionHandler) ->
+.B
+             {ValueList, NewBindings}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ExpressionList = \fBexpression_list()\fR\&
+.br
+Bindings = \fBbinding_struct()\fR\&
+.br
+LocalFunctionHandler = \fBlocal_function_handler()\fR\&
+.br
+NonLocalFunctionHandler = \fBnon_local_function_handler()\fR\&
+.br
+ValueList = [\fBvalue()\fR\&]
+.br
+NewBindings = \fBbinding_struct()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates a list of expressions in parallel, using the same initial bindings for each expression\&. Attempts are made to merge the bindings returned from each evaluation\&. This function is useful in \fILocalFunctionHandler\fR\&, see section \fB Local Function Handler\fR\& in this module\&.
+.LP
+Returns \fI{ValueList, NewBindings}\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+exprs(Expressions, Bindings) -> {value, Value, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+exprs(Expressions, Bindings, LocalFunctionHandler) ->
+.B
+         {value, Value, NewBindings}
+.br
+.fi
+.br
+.nf
+
+.B
+exprs(Expressions,
+.B
+      Bindings,
+.B
+      LocalFunctionHandler,
+.B
+      NonLocalFunctionHandler) ->
+.B
+         {value, Value, NewBindings}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Expressions = \fBexpressions()\fR\&
+.br
+Bindings = \fBbinding_struct()\fR\&
+.br
+LocalFunctionHandler = \fBlocal_function_handler()\fR\&
+.br
+NonLocalFunctionHandler = \fBnon_local_function_handler()\fR\&
+.br
+Value = \fBvalue()\fR\&
+.br
+NewBindings = \fBbinding_struct()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates \fIExpressions\fR\& with the set of bindings \fIBindings\fR\&, where \fIExpressions\fR\& is a sequence of expressions (in abstract syntax) of a type that can be returned by \fB\fIio:parse_erl_exprs/2\fR\&\fR\&\&. For an explanation of when and how to use arguments \fILocalFunctionHandler\fR\& and \fINonLocalFunctionHandler\fR\&, see sections \fB Local Function Handler\fR\& and \fB Non-Local Function Handler\fR\& in this module\&.
+.LP
+Returns \fI{value, Value, NewBindings}\fR\& 
+.RE
+.LP
+.nf
+
+.B
+new_bindings() -> binding_struct()
+.br
+.fi
+.br
+.RS
+.LP
+Returns an empty binding structure\&.
+.RE
+.SH "LOCAL FUNCTION HANDLER"
+
+.LP
+During evaluation of a function, no calls can be made to local functions\&. An undefined function error would be generated\&. However, the optional argument \fILocalFunctionHandler\fR\& can be used to define a function that is called when there is a call to a local function\&. The argument can have the following formats:
+.RS 2
+.TP 2
+.B
+\fI{value,Func}\fR\&:
+This defines a local function handler that is called with:
+.LP
+.nf
+
+Func(Name, Arguments)
+.fi
+.RS 2
+.LP
+\fIName\fR\& is the name of the local function (an atom) and \fIArguments\fR\& is a list of the \fIevaluated\fR\& arguments\&. The function handler returns the value of the local function\&. In this case, the current bindings cannot be accessed\&. To signal an error, the function handler calls \fIexit/1\fR\& with a suitable exit value\&.
+.RE
+.TP 2
+.B
+\fI{eval,Func}\fR\&:
+This defines a local function handler that is called with:
+.LP
+.nf
+
+Func(Name, Arguments, Bindings)
+.fi
+.RS 2
+.LP
+\fIName\fR\& is the name of the local function (an atom), \fIArguments\fR\& is a list of the \fIunevaluated\fR\& arguments, and \fIBindings\fR\& are the current variable bindings\&. The function handler returns:
+.RE
+.LP
+.nf
+
+{value,Value,NewBindings}
+.fi
+.RS 2
+.LP
+\fIValue\fR\& is the value of the local function and \fINewBindings\fR\& are the updated variable bindings\&. In this case, the function handler must itself evaluate all the function arguments and manage the bindings\&. To signal an error, the function handler calls \fIexit/1\fR\& with a suitable exit value\&.
+.RE
+.TP 2
+.B
+\fInone\fR\&:
+There is no local function handler\&.
+.RE
+.SH "NON-LOCAL FUNCTION HANDLER"
+
+.LP
+The optional argument \fINonLocalFunctionHandler\fR\& can be used to define a function that is called in the following cases:
+.RS 2
+.TP 2
+*
+A functional object (fun) is called\&.
+.LP
+.TP 2
+*
+A built-in function is called\&.
+.LP
+.TP 2
+*
+A function is called using the \fIM:F\fR\& syntax, where \fIM\fR\& and \fIF\fR\& are atoms or expressions\&.
+.LP
+.TP 2
+*
+An operator \fIOp/A\fR\& is called (this is handled as a call to function \fIerlang:Op/A\fR\&)\&.
+.LP
+.RE
+
+.LP
+Exceptions are calls to \fIerlang:apply/2,3\fR\&; neither of the function handlers are called for such calls\&. The argument can have the following formats:
+.RS 2
+.TP 2
+.B
+\fI{value,Func}\fR\&:
+This defines a non-local function handler that is called with:
+.LP
+.nf
+
+Func(FuncSpec, Arguments)
+.fi
+.RS 2
+.LP
+\fIFuncSpec\fR\& is the name of the function on the form \fI{Module,Function}\fR\& or a fun, and \fIArguments\fR\& is a list of the \fIevaluated\fR\& arguments\&. The function handler returns the value of the function\&. To signal an error, the function handler calls \fIexit/1\fR\& with a suitable exit value\&.
+.RE
+.TP 2
+.B
+\fInone\fR\&:
+There is no non-local function handler\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+For calls such as \fIerlang:apply(Fun, Args)\fR\& or \fIerlang:apply(Module, Function, Args)\fR\&, the call of the non-local function handler corresponding to the call to \fIerlang:apply/2,3\fR\& itself (\fIFunc({erlang, apply}, [Fun, Args])\fR\& or \fIFunc({erlang, apply}, [Module, Function, Args])\fR\&) never takes place\&.
+.LP
+The non-local function handler \fIis\fR\& however called with the evaluated arguments of the call to \fIerlang:apply/2,3\fR\&: \fIFunc(Fun, Args)\fR\& or \fIFunc({Module, Function}, Args)\fR\& (assuming that \fI{Module, Function}\fR\& is not \fI{erlang, apply}\fR\&)\&.
+.LP
+Calls to functions defined by evaluating fun expressions \fI"fun \&.\&.\&. end"\fR\& are also hidden from non-local function handlers\&.
+
+.LP
+The non-local function handler argument is probably not used as frequently as the local function handler argument\&. A possible use is to call \fIexit/1\fR\& on calls to functions that for some reason are not allowed to be called\&.
+.SH "KNOWN LIMITATION"
+
+.LP
+Undocumented functions in this module are not to be used\&.

@@ -1,0 +1,1869 @@
+.TH wxDC 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxDC \- See external documentation: wxDC.
+.SH DESCRIPTION
+.LP
+See external documentation: wxDC\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxDC():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+blit(This, DestPt, Sz, Source, SrcPt) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+DestPt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+Source = \fBwxDC()\fR\&
+.br
+SrcPt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBblit(This, DestPt, Sz, Source, SrcPt, [])\fR\&\&.
+.RE
+.LP
+.B
+blit(This, DestPt, Sz, Source, SrcPt, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+DestPt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+Source = \fBwxDC()\fR\&
+.br
+SrcPt = {X::integer(), Y::integer()}
+.br
+Option = {rop, \fBwx:wx_enum()\fR\&} | {useMask, boolean()} | {srcPtMask, {X::integer(), Y::integer()}}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Rop = integer
+.RE
+.LP
+.B
+calcBoundingBox(This, X, Y) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = integer()
+.br
+Y = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+clear(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+computeScaleAndOrigin(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+\fIThis function is deprecated: \fR\&deprecated function not available in wxWidgets-2\&.9 and later
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+crossHair(This, Pt) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroyClippingRegion(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deviceToLogicalX(This, X) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deviceToLogicalXRel(This, X) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deviceToLogicalY(This, Y) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Y = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deviceToLogicalYRel(This, Y) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Y = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawArc(This, Pt1, Pt2, Centre) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt1 = {X::integer(), Y::integer()}
+.br
+Pt2 = {X::integer(), Y::integer()}
+.br
+Centre = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawBitmap(This, Bmp, Pt) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Bmp = \fBwxBitmap:wxBitmap()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBdrawBitmap(This, Bmp, Pt, [])\fR\&\&.
+.RE
+.LP
+.B
+drawBitmap(This, Bmp, Pt, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Bmp = \fBwxBitmap:wxBitmap()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Option = {useMask, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawCheckMark(This, Rect) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawCircle(This, Pt, Radius) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Radius = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawEllipse(This, Rect) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawEllipse(This, Pt, Sz) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawEllipticArc(This, Pt, Sz, Sa, Ea) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+Sa = number()
+.br
+Ea = number()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawIcon(This, Icon, Pt) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Icon = \fBwxIcon:wxIcon()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawLabel(This, Text, Rect) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBdrawLabel(This, Text, Rect, [])\fR\&\&.
+.RE
+.LP
+.B
+drawLabel(This, Text, Rect, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+Option = {alignment, integer()} | {indexAccel, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawLine(This, Pt1, Pt2) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt1 = {X::integer(), Y::integer()}
+.br
+Pt2 = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawLines(This, Points) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Points = [{X::integer(), Y::integer()}]
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBdrawLines(This, Points, [])\fR\&\&.
+.RE
+.LP
+.B
+drawLines(This, Points, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Points = [{X::integer(), Y::integer()}]
+.br
+Option = {xoffset, integer()} | {yoffset, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawPolygon(This, Points) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Points = [{X::integer(), Y::integer()}]
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBdrawPolygon(This, Points, [])\fR\&\&.
+.RE
+.LP
+.B
+drawPolygon(This, Points, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Points = [{X::integer(), Y::integer()}]
+.br
+Option = {xoffset, integer()} | {yoffset, integer()} | {fillStyle, \fBwx:wx_enum()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+FillStyle = integer
+.RE
+.LP
+.B
+drawPoint(This, Pt) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawRectangle(This, Rect) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawRectangle(This, Pt, Sz) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawRotatedText(This, Text, Pt, Angle) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Angle = number()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawRoundedRectangle(This, R, Radius) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+R = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+Radius = number()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawRoundedRectangle(This, Pt, Sz, Radius) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+Radius = number()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+drawText(This, Text, Pt) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+endDoc(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+endPage(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+floodFill(This, Pt, Col) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Col = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBfloodFill(This, Pt, Col, [])\fR\&\&.
+.RE
+.LP
+.B
+floodFill(This, Pt, Col, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Col = \fBwx:wx_colour()\fR\&
+.br
+Option = {style, \fBwx:wx_enum()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Style = integer
+.RE
+.LP
+.B
+getBackground(This) -> \fBwxBrush:wxBrush()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getBackgroundMode(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getBrush(This) -> \fBwxBrush:wxBrush()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getCharHeight(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getCharWidth(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getClippingBox(This) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getFont(This) -> \fBwxFont:wxFont()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getLayoutDirection(This) -> \fBwx:wx_enum()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Res = ?wxLayout_Default | ?wxLayout_LeftToRight | ?wxLayout_RightToLeft
+.RE
+.LP
+.B
+getLogicalFunction(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getMapMode(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getMultiLineTextExtent(This, String) -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+String = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getMultiLineTextExtent(This, String, Options::[Option]) -> {Width::integer(), Height::integer(), HeightLine::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+String = \fBunicode:chardata()\fR\&
+.br
+Option = {font, \fBwxFont:wxFont()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPartialTextExtents(This, Text) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::boolean(), Widths::[integer()]}
+.br
+This = \fBwxDC()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPen(This) -> \fBwxPen:wxPen()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPixel(This, Pt) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::boolean(), Col::\fBwx:wx_colour4()\fR\&}
+.br
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPPI(This) -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSize(This) -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSizeMM(This) -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTextBackground(This) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTextExtent(This, String) -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+String = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTextExtent(This, String, Options::[Option]) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {X::integer(), Y::integer(), Descent::integer(), ExternalLeading::integer()}
+.br
+This = \fBwxDC()\fR\&
+.br
+String = \fBunicode:chardata()\fR\&
+.br
+Option = {theFont, \fBwxFont:wxFont()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTextForeground(This) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getUserScale(This) -> {X::number(), Y::number()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+gradientFillConcentric(This, Rect, InitialColour, DestColour) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+InitialColour = \fBwx:wx_colour()\fR\&
+.br
+DestColour = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+gradientFillConcentric(This, Rect, InitialColour, DestColour, CircleCenter) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+InitialColour = \fBwx:wx_colour()\fR\&
+.br
+DestColour = \fBwx:wx_colour()\fR\&
+.br
+CircleCenter = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+gradientFillLinear(This, Rect, InitialColour, DestColour) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+InitialColour = \fBwx:wx_colour()\fR\&
+.br
+DestColour = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBgradientFillLinear(This, Rect, InitialColour, DestColour, [])\fR\&\&.
+.RE
+.LP
+.B
+gradientFillLinear(This, Rect, InitialColour, DestColour, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Rect = {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+InitialColour = \fBwx:wx_colour()\fR\&
+.br
+DestColour = \fBwx:wx_colour()\fR\&
+.br
+Option = {nDirection, \fBwx:wx_enum()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+NDirection = ?wxLEFT | ?wxRIGHT | ?wxUP | ?wxDOWN | ?wxTOP | ?wxBOTTOM | ?wxNORTH | ?wxSOUTH | ?wxWEST | ?wxEAST | ?wxALL
+.RE
+.LP
+.B
+logicalToDeviceX(This, X) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+logicalToDeviceXRel(This, X) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+logicalToDeviceY(This, Y) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Y = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+logicalToDeviceYRel(This, Y) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Y = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+maxX(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+maxY(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+minX(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+minY(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+isOk(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+resetBoundingBox(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setAxisOrientation(This, XLeftRight, YBottomUp) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+XLeftRight = boolean()
+.br
+YBottomUp = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setBackground(This, Brush) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Brush = \fBwxBrush:wxBrush()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setBackgroundMode(This, Mode) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Mode = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setBrush(This, Brush) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Brush = \fBwxBrush:wxBrush()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setClippingRegion(This, Region) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Region = \fBwxRegion:wxRegion()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+setClippingRegion(This, Rect) -> \&'ok\&' when
+.br
+This::wxDC(), Rect::{X::integer(), Y::integer(), W::integer(), H::integer()}\&.
+.br
+
+.RE
+.LP
+.B
+setClippingRegion(This, Pt, Sz) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+Sz = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setDeviceOrigin(This, X, Y) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = integer()
+.br
+Y = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setFont(This, Font) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Font = \fBwxFont:wxFont()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setLayoutDirection(This, Dir) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Dir = \fBwx:wx_enum()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Dir = ?wxLayout_Default | ?wxLayout_LeftToRight | ?wxLayout_RightToLeft
+.RE
+.LP
+.B
+setLogicalFunction(This, Function) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Function = \fBwx:wx_enum()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Function = integer
+.RE
+.LP
+.B
+setMapMode(This, Mode) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Mode = \fBwx:wx_enum()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Mode = integer
+.RE
+.LP
+.B
+setPalette(This, Palette) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Palette = \fBwxPalette:wxPalette()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPen(This, Pen) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Pen = \fBwxPen:wxPen()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setTextBackground(This, Colour) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Colour = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setTextForeground(This, Colour) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Colour = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setUserScale(This, X, Y) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+X = number()
+.br
+Y = number()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+startDoc(This, Message) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+Message = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+startPage(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxDC()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

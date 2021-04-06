@@ -1,0 +1,164 @@
+.TH wxAcceleratorEntry 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxAcceleratorEntry \- See external documentation: wxAcceleratorEntry.
+.SH DESCRIPTION
+.LP
+See external documentation: wxAcceleratorEntry\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxAcceleratorEntry():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxAcceleratorEntry()\fR\&
+.br
+.RS
+.LP
+Equivalent to \fBnew([])\fR\&\&.
+.RE
+.LP
+.B
+new(Options::[Option]) -> \fBwxAcceleratorEntry()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Option = {flags, integer()} | {keyCode, integer()} | {cmd, integer()} | {item, \fBwxMenuItem:wxMenuItem()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+new(Entry) -> wxAcceleratorEntry() when
+.br
+Entry::wxAcceleratorEntry()\&.
+.br
+
+.RE
+.LP
+.B
+getCommand(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAcceleratorEntry()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getFlags(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAcceleratorEntry()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getKeyCode(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAcceleratorEntry()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+set(This, Flags, KeyCode, Cmd) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAcceleratorEntry()\fR\&
+.br
+Flags = integer()
+.br
+KeyCode = integer()
+.br
+Cmd = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBset(This, Flags, KeyCode, Cmd, [])\fR\&\&.
+.RE
+.LP
+.B
+set(This, Flags, KeyCode, Cmd, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAcceleratorEntry()\fR\&
+.br
+Flags = integer()
+.br
+KeyCode = integer()
+.br
+Cmd = integer()
+.br
+Option = {item, \fBwxMenuItem:wxMenuItem()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxAcceleratorEntry()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

@@ -1,0 +1,323 @@
+.TH logger_formatter 3 "kernel 6.5.2.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+logger_formatter \- Default formatter for Logger.
+.SH DESCRIPTION
+.LP
+Each Logger handler has a configured formatter specified as a module and a configuration term\&. The purpose of the formatter is to translate the log events to a final printable string (\fB\fIunicode:chardata()\fR\&\fR\&) which can be written to the output device of the handler\&. See sections \fBHandlers\fR\& and \fBFormatters\fR\& in the Kernel User\&'s Guide for more information\&.
+.LP
+\fIlogger_formatter\fR\& is the default formatter used by Logger\&.
+.SH DATA TYPES
+.nf
+
+\fBconfig()\fR\& = 
+.br
+    #{chars_limit => integer() >= 1 | unlimited,
+.br
+      depth => integer() >= 1 | unlimited,
+.br
+      legacy_header => boolean(),
+.br
+      max_size => integer() >= 1 | unlimited,
+.br
+      report_cb => \fBlogger:report_cb()\fR\&,
+.br
+      single_line => boolean(),
+.br
+      template => \fBtemplate()\fR\&,
+.br
+      time_designator => byte(),
+.br
+      time_offset => integer() | [byte()]}
+.br
+.fi
+.RS
+.LP
+The configuration term for \fIlogger_formatter\fR\& is a \fBmap\fR\&, and the following keys can be set as configuration parameters:
+.RS 2
+.TP 2
+.B
+\fIchars_limit = integer() > 0 | unlimited\fR\&:
+A positive integer representing the value of the option with the same name to be used when calling \fB\fIio_lib:format/3\fR\&\fR\&\&. This value limits the total number of characters printed for each log event\&. Notice that this is a soft limit\&. For a hard truncation limit, see option \fImax_size\fR\&\&.
+.RS 2
+.LP
+Defaults to \fIunlimited\fR\&\&.
+.RE
+.TP 2
+.B
+\fIdepth = integer() > 0 | unlimited\fR\&:
+A positive integer representing the maximum depth to which terms shall be printed by this formatter\&. Format strings passed to this formatter are rewritten\&. The format controls ~p and ~w are replaced with ~P and ~W, respectively, and the value is used as the depth parameter\&. For details, see \fB\fIio:format/2,3\fR\&\fR\& in STDLIB\&.
+.RS 2
+.LP
+Defaults to \fIunlimited\fR\&\&.
+.RE
+.TP 2
+.B
+\fIlegacy_header = boolean()\fR\&:
+If set to \fItrue\fR\& a header field is added to logger_formatter\&'s part of \fIMetadata\fR\&\&. The value of this field is a string similar to the header created by the old \fB\fIerror_logger\fR\&\fR\& event handlers\&. It can be included in the log event by adding the list \fI[logger_formatter,header]\fR\& to the template\&. See the description of the \fB\fItemplate()\fR\&\fR\& type for more information\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fImax_size = integer() > 0 | unlimited\fR\&:
+A positive integer representing the absolute maximum size a string returned from this formatter can have\&. If the formatted string is longer, after possibly being limited by \fIchars_limit\fR\& or \fIdepth\fR\&, it is truncated\&.
+.RS 2
+.LP
+Defaults to \fIunlimited\fR\&\&.
+.RE
+.TP 2
+.B
+\fIreport_cb = \fR\&\fB\fIlogger:report_cb()\fR\&\fR\&:
+A report callback is used by the formatter to transform log messages on report form to a format string and arguments\&. The report callback can be specified in the metadata for the log event\&. If no report callback exists in metadata, \fIlogger_formatter\fR\& will use \fB\fIlogger:format_report/1\fR\&\fR\& as default callback\&.
+.RS 2
+.LP
+If this configuration parameter is set, it replaces both the default report callback, and any report callback found in metadata\&. That is, all reports are converted by this configured function\&.
+.RE
+.TP 2
+.B
+\fIsingle_line = boolean()\fR\&:
+If set to \fItrue\fR\&, each log event is printed as a single line\&. To achieve this, \fIlogger_formatter\fR\& sets the field width to \fI0\fR\& for all \fI~p\fR\& and \fI~P\fR\& control sequences in the format a string (see \fB\fIio:format/2\fR\&\fR\&), and replaces all newlines in the message with \fI", "\fR\&\&. White spaces following directly after newlines are removed\&. Notice that newlines added by the \fItemplate\fR\& parameter are not replaced\&.
+.RS 2
+.LP
+Defaults to \fItrue\fR\&\&.
+.RE
+.TP 2
+.B
+\fItemplate = \fR\&\fB\fItemplate()\fR\&\fR\&:
+The template describes how the formatted string is composed by combining different data values from the log event\&. See the description of the \fB\fItemplate()\fR\&\fR\& type for more information about this\&.
+.TP 2
+.B
+\fItime_designator = byte()\fR\&:
+Timestamps are formatted according to RFC3339, and the time designator is the character used as date and time separator\&.
+.RS 2
+.LP
+Defaults to \fI$T\fR\&\&.
+.RE
+.RS 2
+.LP
+The value of this parameter is used as the \fItime_designator\fR\& option to \fB\fIcalendar:system_time_to_rcf3339/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fItime_offset = integer() | [byte()]\fR\&:
+The time offset, either a string or an integer, to be used when formatting the timestamp\&.
+.RS 2
+.LP
+An empty string is interpreted as local time\&. The values \fI"Z"\fR\&, \fI"z"\fR\& or \fI0\fR\& are interpreted as Universal Coordinated Time (UTC)\&.
+.RE
+.RS 2
+.LP
+Strings, other than \fI"Z"\fR\&, \fI"z"\fR\&, or \fI""\fR\&, must be on the form \fI±[hh]:[mm]\fR\&, for example \fI"-02:00"\fR\& or \fI"+00:00"\fR\&\&.
+.RE
+.RS 2
+.LP
+Integers must be in microseconds, meaning that the offset \fI7200000000\fR\& is equivalent to \fI"+02:00"\fR\&\&.
+.RE
+.RS 2
+.LP
+Defaults to an empty string, meaning that timestamps are displayed in local time\&. However, for backwards compatibility, if the SASL configuration parameter \fB\fIutc_log\fR\&\fR\&\fI=true\fR\&, the default is changed to \fI"Z"\fR\&, meaning that timestamps are displayed in UTC\&.
+.RE
+.RS 2
+.LP
+The value of this parameter is used as the \fIoffset\fR\& option to \fB\fIcalendar:system_time_to_rcf3339/2\fR\&\fR\&\&.
+.RE
+.RE
+.RE
+.nf
+
+\fBmetakey()\fR\& = atom() | [atom()]
+.br
+.fi
+.RS
+.LP
+
+.RE
+.nf
+
+\fBtemplate()\fR\& = 
+.br
+    [\fBmetakey()\fR\& | {\fBmetakey()\fR\&, \fBtemplate()\fR\&, \fBtemplate()\fR\&} | string()]
+.br
+.fi
+.RS
+.LP
+The template is a list of atoms, atom lists, tuples and strings\&. The atoms \fIlevel\fR\& or \fImsg\fR\&, are treated as placeholders for the severity level and the log message, respectively\&. Other atoms or atom lists are interpreted as placeholders for metadata, where atoms are expected to match top level keys, and atom lists represent paths to sub keys when the metadata is a nested map\&. For example the list \fI[key1,key2]\fR\& is replaced by the value of the \fIkey2\fR\& field in the nested map below\&. The atom \fIkey1\fR\& on its own is replaced by the complete value of the \fIkey1\fR\& field\&. The values are converted to strings\&.
+.LP
+.nf
+
+#{key1 => #{key2 => my_value,
+            ...}
+  ...}
+.fi
+.LP
+Tuples in the template express if-exist tests for metadata keys\&. For example, the following tuple says that if \fIkey1\fR\& exists in the metadata map, print \fI"key1=Value"\fR\&, where \fIValue\fR\& is the value that \fIkey1\fR\& is associated with in the metadata map\&. If \fIkey1\fR\& does not exist, print nothing\&.
+.LP
+.nf
+
+{key1, ["key1=",key1], []}
+.fi
+.LP
+Strings in the template are printed literally\&.
+.LP
+The default value for the \fItemplate\fR\& configuration parameter depends on the value of the \fIsingle_line\fR\& and \fIlegacy_header\fR\& configuration parameters as follows\&.
+.LP
+The log event used in the examples is:
+.LP
+.nf
+
+?LOG_ERROR("name: ~p~nexit_reason: ~p", [my_name, "It crashed"])
+.fi
+.RS 2
+.TP 2
+.B
+\fIlegacy_header = true, single_line = false\fR\&:
+Default template: \fI[[logger_formatter,header],"\\n",msg,"\\n"]\fR\&
+.RS 2
+.LP
+Example log entry:
+.RE
+.LP
+.nf
+
+=ERROR REPORT==== 17-May-2018::18:30:19.453447 ===
+name: my_name
+exit_reason: "It crashed"
+.fi
+.RS 2
+.LP
+Notice that all eight levels can occur in the heading, not only \fIERROR\fR\&, \fIWARNING\fR\& or \fIINFO\fR\& as \fB\fIerror_logger\fR\&\fR\& produces\&. And microseconds are added at the end of the timestamp\&.
+.RE
+.TP 2
+.B
+\fIlegacy_header = true, single_line = true\fR\&:
+Default template: \fI[[logger_formatter,header],"\\n",msg,"\\n"]\fR\&
+.RS 2
+.LP
+Notice that the template is here the same as for \fIsingle_line=false\fR\&, but the resulting log entry differs in that there is only one line after the heading:
+.RE
+.LP
+.nf
+
+=ERROR REPORT==== 17-May-2018::18:31:06.952665 ===
+name: my_name, exit_reason: "It crashed"
+.fi
+.TP 2
+.B
+\fIlegacy_header = false, single_line = true\fR\&:
+Default template: \fI[time," ",level,": ",msg,"\\n"]\fR\&
+.RS 2
+.LP
+Example log entry:
+.RE
+.LP
+.nf
+
+2018-05-17T18:31:31.152864+02:00 error: name: my_name, exit_reason: "It crashed"
+.fi
+.TP 2
+.B
+\fIlegacy_header = false, single_line = false\fR\&:
+Default template: \fI[time," ",level,":\\n",msg,"\\n"]\fR\&
+.RS 2
+.LP
+Example log entry:
+.RE
+.LP
+.nf
+
+2018-05-17T18:32:20.105422+02:00 error:
+name: my_name
+exit_reason: "It crashed"
+.fi
+.RE
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+check_config(Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBconfig()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+The function is called by Logger when the formatter configuration for a handler is set or modified\&. It returns \fIok\fR\& if the configuration is valid, and \fI{error,term()}\fR\& if it is faulty\&.
+.LP
+The following Logger API functions can trigger this callback:
+.RS 2
+.TP 2
+*
+\fB\fIlogger:add_handler/3\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIlogger:set_handler_config/2,3\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIlogger:update_handler_config/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIlogger:update_formatter_config/2\fR\&\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+format(LogEvent, Config) -> unicode:chardata()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+LogEvent = \fBlogger:log_event()\fR\&
+.br
+Config = \fBconfig()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+This the formatter callback function to be called from handlers\&. The log event is processed as follows:
+.RS 2
+.TP 2
+*
+If the message is on report form, it is converted to \fI{Format,Args}\fR\& by calling the report callback\&. See section \fBLog Message\fR\& in the Kernel User\&'s Guide for more information about report callbacks and valid forms of log messages\&.
+.LP
+.TP 2
+*
+The message size is limited according to the values of configuration parameters \fB\fIchars_limit\fR\&\fR\& and \fB\fIdepth\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+The full log entry is composed according to the \fB\fItemplate\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+If the final string is too long, it is truncated according to the value of configuration parameter \fB\fImax_size\fR\&\fR\&\&.
+.LP
+.RE
+
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIcalendar(3)\fR\&\fR\&, \fB\fIerror_logger(3)\fR\&\fR\&, \fB\fIio(3)\fR\&\fR\&, \fB\fIio_lib(3)\fR\&\fR\&, \fB\fIlogger(3)\fR\&\fR\&, \fB\fImaps(3)\fR\&\fR\&, \fB\fIsasl(6)\fR\&\fR\&, \fB\fIunicode(3)\fR\&\fR\& 

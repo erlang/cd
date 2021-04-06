@@ -1,0 +1,270 @@
+.TH slave 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+slave \- Functions for starting and controlling slave nodes.
+  
+.SH DESCRIPTION
+.LP
+This module provides functions for starting Erlang slave nodes\&. All slave nodes that are started by a master terminate automatically when the master terminates\&. All terminal output produced at the slave is sent back to the master node\&. File I/O is done through the master\&.
+.LP
+Slave nodes on other hosts than the current one are started with the \fIrsh\fR\& program\&. The user must be allowed to \fIrsh\fR\& to the remote hosts without being prompted for a password\&. This can be arranged in a number of ways (for details, see the \fIrsh\fR\& documentation)\&. A slave node started on the same host as the master inherits certain environment values from the master, such as the current directory and the environment variables\&. For what can be assumed about the environment when a slave is started on another host, see the documentation for the \fIrsh\fR\& program\&.
+.LP
+An alternative to the \fIrsh\fR\& program can be specified on the command line to \fB\fIerl(1)\fR\&\fR\& as follows:
+.LP
+.nf
+
+-rsh Program
+.fi
+.LP
+The slave node is to use the same file system at the master\&. At least, Erlang/OTP is to be installed in the same place on both computers and the same version of Erlang is to be used\&.
+.LP
+A node running on Windows can only start slave nodes on the host on which it is running\&.
+.LP
+The master node must be alive\&.
+.SH EXPORTS
+.LP
+.B
+pseudo([Master | ServerList]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Master = node()
+.br
+ServerList = [atom()]
+.br
+.RE
+.RE
+.RS
+.LP
+Calls \fIpseudo(Master, ServerList)\fR\&\&. If you want to start a node from the command line and set up a number of pseudo servers, an Erlang runtime system can be started as follows:
+.LP
+.nf
+
+% erl -name abc -s slave pseudo klacke@super x --
+.fi
+.RE
+.LP
+.nf
+
+.B
+pseudo(Master, ServerList) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Master = node()
+.br
+ServerList = [atom()]
+.br
+.RE
+.RE
+.RS
+.LP
+Starts a number of pseudo servers\&. A pseudo server is a server with a registered name that does nothing but pass on all message to the real server that executes at a master node\&. A pseudo server is an intermediary that only has the same registered name as the real server\&.
+.LP
+For example, if you have started a slave node \fIN\fR\& and want to execute \fIpxw\fR\& graphics code on this node, you can start server \fIpxw_server\fR\& as a pseudo server at the slave node\&. This is illustrated as follows:
+.LP
+.nf
+
+rpc:call(N, slave, pseudo, [node(), [pxw_server]]).
+.fi
+.RE
+.LP
+.nf
+
+.B
+relay(Pid) -> no_return()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Pid = pid()
+.br
+.RE
+.RE
+.RS
+.LP
+Runs a pseudo server\&. This function never returns any value and the process that executes the function receives messages\&. All messages received are simply passed on to \fIPid\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+start(Host) -> {ok, Node} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+start(Host, Name) -> {ok, Node} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+start(Host, Name, Args) -> {ok, Node} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = \fBinet:hostname()\fR\&
+.br
+Name = atom() | string()
+.br
+Args = string()
+.br
+Node = node()
+.br
+Reason = timeout | no_rsh | {already_running, Node}
+.br
+.RE
+.RE
+.RS
+.LP
+Starts a slave node on host \fIHost\fR\&\&. Host names need not necessarily be specified as fully qualified names; short names can also be used\&. This is the same condition that applies to names of distributed Erlang nodes\&.
+.LP
+The name of the started node becomes \fIName@Host\fR\&\&. If no name is provided, the name becomes the same as the node that executes the call (except the host name part of the node name)\&.
+.LP
+The slave node resets its \fIuser\fR\& process so that all terminal I/O that is produced at the slave is automatically relayed to the master\&. Also, the file process is relayed to the master\&.
+.LP
+Argument \fIArgs\fR\& is used to set \fIerl\fR\& command-line arguments\&. If provided, it is passed to the new node and can be used for a variety of purposes; see \fB\fIerl(1)\fR\&\fR\&\&.
+.LP
+As an example, suppose that you want to start a slave node at host \fIH\fR\& with node name \fIName@H\fR\& and want the slave node to have the following properties:
+.RS 2
+.TP 2
+*
+Directory \fIDir\fR\& is to be added to the code path\&.
+.LP
+.TP 2
+*
+The Mnesia directory is to be set to \fIM\fR\&\&.
+.LP
+.TP 2
+*
+The Unix \fIDISPLAY\fR\& environment variable is to be set to the display of the master node\&.
+.LP
+.RE
+
+.LP
+The following code is executed to achieve this:
+.LP
+.nf
+
+E = " -env DISPLAY " ++ net_adm:localhost() ++ ":0 ",
+Arg = "-mnesia_dir " ++ M ++ " -pa " ++ Dir ++ E,
+slave:start(H, Name, Arg).
+.fi
+.LP
+The function returns \fI{ok, Node}\fR\&, where \fINode\fR\& is the name of the new node, otherwise \fI{error, Reason}\fR\&, where \fIReason\fR\& can be one of:
+.RS 2
+.TP 2
+.B
+\fItimeout\fR\&:
+The master node failed to get in contact with the slave node\&. This can occur in a number of circumstances:
+.RS 2
+.TP 2
+*
+Erlang/OTP is not installed on the remote host\&.
+.LP
+.TP 2
+*
+The file system on the other host has a different structure to the the master\&.
+.LP
+.TP 2
+*
+The Erlang nodes have different cookies\&.
+.LP
+.RE
+
+.TP 2
+.B
+\fIno_rsh\fR\&:
+There is no \fIrsh\fR\& program on the computer\&.
+.TP 2
+.B
+\fI{already_running, Node}\fR\&:
+A node with name \fIName@Host\fR\& already exists\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+start_link(Host) -> {ok, Node} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+start_link(Host, Name) -> {ok, Node} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+start_link(Host, Name, Args) -> {ok, Node} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = \fBinet:hostname()\fR\&
+.br
+Name = atom() | string()
+.br
+Args = string()
+.br
+Node = node()
+.br
+Reason = timeout | no_rsh | {already_running, Node}
+.br
+.RE
+.RE
+.RS
+.LP
+Starts a slave node in the same way as \fIstart/1,2,3\fR\&, except that the slave node is linked to the currently executing process\&. If that process terminates, the slave node also terminates\&.
+.LP
+For a description of arguments and return values, see \fB\fIstart/1,2,3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+stop(Node) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+.RE
+.RE
+.RS
+.LP
+Stops (kills) a node\&.
+.RE

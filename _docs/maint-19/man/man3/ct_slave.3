@@ -1,0 +1,224 @@
+.TH ct_slave 3 "common_test 1.14" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ct_slave \- Common Test framework functions for starting and stopping
+    nodes for Large-Scale Testing.
+.SH DESCRIPTION
+.LP
+\fICommon Test\fR\& framework functions for starting and stopping nodes for Large-Scale Testing\&.
+.LP
+This module exports functions used by the \fICommon Test\fR\& Master to start and stop "slave" nodes\&. It is the default callback module for the \fI{init, node_start}\fR\& term in the Test Specification\&.
+.SH EXPORTS
+.LP
+.B
+start(Node) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = atom()
+.br
+Result = {ok, NodeName} | {error, Reason, NodeName}
+.br
+Reason = already_started | started_not_connected | boot_timeout | init_timeout | startup_timeout | not_alive
+.br
+NodeName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts an Erlang node with name \fINode\fR\& on the local host\&.
+.LP
+See also \fB\fIct_slave:start/3\fR\&\fR\&\&.
+.RE
+.LP
+.B
+start(HostOrNode, NodeOrOpts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HostOrNode = atom()
+.br
+NodeOrOpts = atom() | list()
+.br
+Result = {ok, NodeName} | {error, Reason, NodeName}
+.br
+Reason = already_started | started_not_connected | boot_timeout | init_timeout | startup_timeout | not_alive
+.br
+NodeName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts an Erlang node with default options on a specified host, or on the local host with specified options\&. That is, the call is interpreted as \fIstart(Host, Node)\fR\& when the second argument is atom-valued and \fIstart(Node, Opts)\fR\& when it is list-valued\&.
+.LP
+See also \fB\fIct_slave:start/3\fR\&\fR\&\&.
+.RE
+.LP
+.B
+start(Host, Node, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = atom()
+.br
+Host = atom()
+.br
+Opts = [OptTuples]
+.br
+OptTuples = {username, Username} | {password, Password} | {boot_timeout, BootTimeout} | {init_timeout, InitTimeout} | {startup_timeout, StartupTimeout} | {startup_functions, StartupFunctions} | {monitor_master, Monitor} | {kill_if_fail, KillIfFail} | {erl_flags, ErlangFlags} | {env, [{EnvVar, Value}]}
+.br
+Username = string()
+.br
+Password = string()
+.br
+BootTimeout = integer()
+.br
+InitTimeout = integer()
+.br
+StartupTimeout = integer()
+.br
+StartupFunctions = [StartupFunctionSpec]
+.br
+StartupFunctionSpec = {Module, Function, Arguments}
+.br
+Module = atom()
+.br
+Function = atom()
+.br
+Arguments = [term]
+.br
+Monitor = bool()
+.br
+KillIfFail = bool()
+.br
+ErlangFlags = string()
+.br
+EnvVar = string()
+.br
+Value = string()
+.br
+Result = {ok, NodeName} | {error, Reason, NodeName}
+.br
+Reason = already_started | started_not_connected | boot_timeout | init_timeout | startup_timeout | not_alive
+.br
+NodeName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts an Erlang node with name \fINode\fR\& on host \fIHost\fR\& as specified by the combination of options in \fIOpts\fR\&\&.
+.LP
+Options \fIUsername\fR\& and \fIPassword\fR\& are used to log on to the remote host \fIHost\fR\&\&. \fIUsername\fR\&, if omitted, defaults to the current username\&. \fIPassword\fR\& is empty by default\&.
+.LP
+A list of functions specified in option \fIStartup\fR\& are executed after startup of the node\&. Notice that all used modules are to be present in the code path on \fIHost\fR\&\&.
+.LP
+The time-outs are applied as follows:
+.RS 2
+.TP 2
+.B
+\fIBootTimeout\fR\&:
+The time to start the Erlang node, in seconds\&. Defaults to 3 seconds\&. If the node is not pingable within this time, the result \fI{error, boot_timeout, NodeName}\fR\& is returned\&.
+.TP 2
+.B
+\fIInitTimeout\fR\&:
+The time to wait for the node until it calls the internal callback function informing master about a successful startup\&. Defaults to 1 second\&. In case of a timed out message, the result \fI{error, init_timeout, NodeName}\fR\& is returned\&.
+.TP 2
+.B
+\fIStartupTimeout\fR\&:
+The time to wait until the node stops to run \fIStartupFunctions\fR\&\&. Defaults to 1 second\&. If this time-out occurs, the result \fI{error, startup_timeout, NodeName}\fR\& is returned\&.
+.RE
+.LP
+\fIOptions:\fR\&
+.RS 2
+.TP 2
+.B
+\fImonitor_master\fR\&:
+Specifies if the slave node is to be stopped if the master node stops\&. Defaults to \fIfalse\fR\&\&.
+.TP 2
+.B
+\fIkill_if_fail\fR\&:
+Specifies if the slave node is to be killed if a time-out occurs during initialization or startup\&. Defaults to \fItrue\fR\&\&. Notice that the node can also be still alive it the boot time-out occurred, but it is not killed in this case\&.
+.TP 2
+.B
+\fIerlang_flags\fR\&:
+Specifies which flags are added to the parameters of the executable \fIerl\fR\&\&.
+.TP 2
+.B
+\fIenv\fR\&:
+Specifies a list of environment variables that will extend the environment\&.
+.RE
+.LP
+\fISpecial return values:\fR\&
+.RS 2
+.TP 2
+*
+\fI{error, already_started, NodeName}\fR\& if the node with the specified name is already started on a specified host\&.
+.LP
+.TP 2
+*
+\fI{error, started_not_connected, NodeName}\fR\& if the node is started, but not connected to the master node\&.
+.LP
+.TP 2
+*
+\fI{error, not_alive, NodeName}\fR\& if the node on which \fB\fIct_slave:start/3\fR\&\fR\& is called, is not alive\&. Notice that \fINodeName\fR\& is the name of the current node in this case\&.
+.LP
+.RE
+
+.RE
+.LP
+.B
+stop(Node) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = atom()
+.br
+Result = {ok, NodeName} | {error, Reason, NodeName}
+.br
+Reason = not_started | not_connected | stop_timeout
+.br
+.RE
+.RE
+.RS
+.LP
+Stops the running Erlang node with name \fINode\fR\& on the local host\&.
+.RE
+.LP
+.B
+stop(Host, Node) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = atom()
+.br
+Node = atom()
+.br
+Result = {ok, NodeName} | {error, Reason, NodeName}
+.br
+Reason = not_started | not_connected | stop_timeout
+.br
+NodeName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Stops the running Erlang node with name \fINode\fR\& on host \fIHost\fR\&\&.
+.RE

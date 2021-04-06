@@ -1,0 +1,489 @@
+.TH erl_scan 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_scan \- The Erlang token scanner.
+.SH DESCRIPTION
+.LP
+This module contains functions for tokenizing (scanning) characters into Erlang tokens\&.
+.SH DATA TYPES
+.nf
+
+\fBcategory()\fR\& = atom()
+.br
+.fi
+.nf
+
+\fBerror_description()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBerror_info()\fR\& = 
+.br
+    {\fBerl_anno:location()\fR\&, module(), \fBerror_description()\fR\&}
+.br
+.fi
+.nf
+
+\fBoption()\fR\& = 
+.br
+    return |
+.br
+    return_white_spaces |
+.br
+    return_comments |
+.br
+    text |
+.br
+    {reserved_word_fun, \fBresword_fun()\fR\&}
+.br
+.fi
+.nf
+
+\fBoptions()\fR\& = \fBoption()\fR\& | [\fBoption()\fR\&]
+.br
+.fi
+.nf
+
+\fBsymbol()\fR\& = atom() | float() | integer() | string()
+.br
+.fi
+.nf
+
+\fBresword_fun()\fR\& = fun((atom()) -> boolean())
+.br
+.fi
+.nf
+
+\fBtoken()\fR\& = 
+.br
+    {\fBcategory()\fR\&, Anno :: \fBerl_anno:anno()\fR\&, \fBsymbol()\fR\&} |
+.br
+    {\fBcategory()\fR\&, Anno :: \fBerl_anno:anno()\fR\&}
+.br
+.fi
+.nf
+
+\fBtokens()\fR\& = [\fBtoken()\fR\&]
+.br
+.fi
+.nf
+
+\fBtokens_result()\fR\& = 
+.br
+    {ok, Tokens :: \fBtokens()\fR\&, EndLocation :: \fBerl_anno:location()\fR\&} |
+.br
+    {eof, EndLocation :: \fBerl_anno:location()\fR\&} |
+.br
+    {error,
+.br
+     ErrorInfo :: \fBerror_info()\fR\&,
+.br
+     EndLocation :: \fBerl_anno:location()\fR\&}
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+category(Token) -> category()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the category of \fIToken\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+column(Token) -> erl_anno:column() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the column of \fIToken\fR\&\&'s collection of annotations\&.
+.RE
+.LP
+.nf
+
+.B
+end_location(Token) -> erl_anno:location() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the end location of the text of \fIToken\fR\&\&'s collection of annotations\&. If there is no text, \fIundefined\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+format_error(ErrorDescriptor) -> string()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ErrorDescriptor = \fBerror_description()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Uses an \fIErrorDescriptor\fR\& and returns a string that describes the error or warning\&. This function is usually called implicitly when an \fIErrorInfo\fR\& structure is processed (see section \fBError Information\fR\&)\&.
+.RE
+.LP
+.nf
+
+.B
+line(Token) -> erl_anno:line()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the line of \fIToken\fR\&\&'s collection of annotations\&.
+.RE
+.LP
+.nf
+
+.B
+location(Token) -> erl_anno:location()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the location of \fIToken\fR\&\&'s collection of annotations\&.
+.RE
+.LP
+.nf
+
+.B
+reserved_word(Atom :: atom()) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIAtom\fR\& is an Erlang reserved word, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+string(String) -> Return
+.br
+.fi
+.br
+.nf
+
+.B
+string(String, StartLocation) -> Return
+.br
+.fi
+.br
+.nf
+
+.B
+string(String, StartLocation, Options) -> Return
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+String = string()
+.br
+Options = \fBoptions()\fR\&
+.br
+Return = 
+.br
+    {ok, Tokens :: \fBtokens()\fR\&, EndLocation} |
+.br
+    {error, ErrorInfo :: \fBerror_info()\fR\&, ErrorLocation}
+.br
+StartLocation = EndLocation = ErrorLocation = \fBerl_anno:location()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Takes the list of characters \fIString\fR\& and tries to scan (tokenize) them\&. Returns one of the following:
+.RS 2
+.TP 2
+.B
+\fI{ok, Tokens, EndLocation}\fR\&:
+\fITokens\fR\& are the Erlang tokens from \fIString\fR\&\&. \fIEndLocation\fR\& is the first location after the last token\&.
+.TP 2
+.B
+\fI{error, ErrorInfo, ErrorLocation}\fR\&:
+An error occurred\&. \fIErrorLocation\fR\& is the first location after the erroneous token\&.
+.RE
+.LP
+\fIstring(String)\fR\& is equivalent to \fIstring(String, 1)\fR\&, and \fIstring(String, StartLocation)\fR\& is equivalent to \fIstring(String, StartLocation, [])\fR\&\&.
+.LP
+\fIStartLocation\fR\& indicates the initial location when scanning starts\&. If \fIStartLocation\fR\& is a line, \fIAnno\fR\&, \fIEndLocation\fR\&, and \fIErrorLocation\fR\& are lines\&. If \fIStartLocation\fR\& is a pair of a line and a column, \fIAnno\fR\& takes the form of an opaque compound data type, and \fIEndLocation\fR\& and \fIErrorLocation\fR\& are pairs of a line and a column\&. The \fItoken annotations\fR\& contain information about the column and the line where the token begins, as well as the text of the token (if option \fItext\fR\& is specified), all of which can be accessed by calling \fB\fIcolumn/1\fR\&\fR\&, \fB\fIline/1\fR\&\fR\&, \fB\fIlocation/1\fR\&\fR\&, and \fB\fItext/1\fR\&\fR\&\&.
+.LP
+A \fItoken\fR\& is a tuple containing information about syntactic category, the token annotations, and the terminal symbol\&. For punctuation characters (such as \fI;\fR\& and \fI|\fR\&) and reserved words, the category and the symbol coincide, and the token is represented by a two-tuple\&. Three-tuples have one of the following forms:
+.RS 2
+.TP 2
+*
+\fI{atom, Anno, atom()}\fR\&
+.LP
+.TP 2
+*
+\fI{char, Anno, char()}\fR\&
+.LP
+.TP 2
+*
+\fI{comment, Anno, string()}\fR\&
+.LP
+.TP 2
+*
+\fI{float, Anno, float()}\fR\&
+.LP
+.TP 2
+*
+\fI{integer, Anno, integer()}\fR\&
+.LP
+.TP 2
+*
+\fI{var, Anno, atom()}\fR\&
+.LP
+.TP 2
+*
+\fI{white_space, Anno, string()}\fR\&
+.LP
+.RE
+
+.LP
+Valid options:
+.RS 2
+.TP 2
+.B
+\fI{reserved_word_fun, reserved_word_fun()}\fR\&:
+A callback function that is called when the scanner has found an unquoted atom\&. If the function returns \fItrue\fR\&, the unquoted atom itself becomes the category of the token\&. If the function returns \fIfalse\fR\&, \fIatom\fR\& becomes the category of the unquoted atom\&.
+.TP 2
+.B
+\fIreturn_comments\fR\&:
+Return comment tokens\&.
+.TP 2
+.B
+\fIreturn_white_spaces\fR\&:
+Return white space tokens\&. By convention, a newline character, if present, is always the first character of the text (there cannot be more than one newline in a white space token)\&.
+.TP 2
+.B
+\fIreturn\fR\&:
+Short for \fI[return_comments, return_white_spaces]\fR\&\&.
+.TP 2
+.B
+\fItext\fR\&:
+Include the token text in the token annotation\&. The text is the part of the input corresponding to the token\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+symbol(Token) -> symbol()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the symbol of \fIToken\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+text(Token) -> erl_anno:text() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Token = \fBtoken()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the text of \fIToken\fR\&\&'s collection of annotations\&. If there is no text, \fIundefined\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+tokens(Continuation, CharSpec, StartLocation) -> Return
+.br
+.fi
+.br
+.nf
+
+.B
+tokens(Continuation, CharSpec, StartLocation, Options) -> Return
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = \fBreturn_cont()\fR\& | []
+.br
+CharSpec = \fBchar_spec()\fR\&
+.br
+StartLocation = \fBerl_anno:location()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Return = 
+.br
+    {done,
+.br
+     Result :: \fBtokens_result()\fR\&,
+.br
+     LeftOverChars :: \fBchar_spec()\fR\&} |
+.br
+    {more, Continuation1 :: \fBreturn_cont()\fR\&}
+.br
+.nf
+\fBchar_spec()\fR\& = string() | eof
+.fi
+.br
+.nf
+\fBreturn_cont()\fR\&
+.fi
+.br
+.RS 2
+An opaque continuation\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+This is the re-entrant scanner, which scans characters until either a \fIdot\fR\& (\&'\&.\&' followed by a white space) or \fIeof\fR\& is reached\&. It returns:
+.RS 2
+.TP 2
+.B
+\fI{done, Result, LeftOverChars}\fR\&:
+Indicates that there is sufficient input data to get a result\&. \fIResult\fR\& is:
+.RS 2
+.TP 2
+.B
+\fI{ok, Tokens, EndLocation}\fR\&:
+The scanning was successful\&. \fITokens\fR\& is the list of tokens including \fIdot\fR\&\&.
+.TP 2
+.B
+\fI{eof, EndLocation}\fR\&:
+End of file was encountered before any more tokens\&.
+.TP 2
+.B
+\fI{error, ErrorInfo, EndLocation}\fR\&:
+An error occurred\&. \fILeftOverChars\fR\& is the remaining characters of the input data, starting from \fIEndLocation\fR\&\&.
+.RE
+.TP 2
+.B
+\fI{more, Continuation1}\fR\&:
+More data is required for building a term\&. \fIContinuation1\fR\& must be passed in a new call to \fItokens/3,4\fR\& when more data is available\&.
+.RE
+.LP
+The \fICharSpec\fR\& \fIeof\fR\& signals end of file\&. \fILeftOverChars\fR\& then takes the value \fIeof\fR\& as well\&.
+.LP
+\fItokens(Continuation, CharSpec, StartLocation)\fR\& is equivalent to \fItokens(Continuation, CharSpec, StartLocation, [])\fR\&\&.
+.LP
+For a description of the options, see \fB\fIstring/3\fR\&\fR\&\&.
+.RE
+.SH "ERROR INFORMATION"
+
+.LP
+\fIErrorInfo\fR\& is the standard \fIErrorInfo\fR\& structure that is returned from all I/O modules\&. The format is as follows:
+.LP
+.nf
+
+{ErrorLocation, Module, ErrorDescriptor}
+.fi
+.LP
+A string describing the error is obtained with the following call:
+.LP
+.nf
+
+Module:format_error(ErrorDescriptor)
+.fi
+.SH "NOTES"
+
+.LP
+The continuation of the first call to the re-entrant input functions must be \fI[]\fR\&\&. For a complete description of how the re-entrant input scheme works, see Armstrong, Virding and Williams: \&'Concurrent Programming in Erlang\&', Chapter 13\&.
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerl_anno(3)\fR\&\fR\&, \fB\fIerl_parse(3)\fR\&\fR\&, \fB\fIio(3)\fR\&\fR\&

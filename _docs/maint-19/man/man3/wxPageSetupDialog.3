@@ -1,0 +1,102 @@
+.TH wxPageSetupDialog 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxPageSetupDialog \- See external documentation: wxPageSetupDialog.
+.SH DESCRIPTION
+.LP
+See external documentation: wxPageSetupDialog\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxPageSetupDialog():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new(Parent) -> \fBwxPageSetupDialog()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxPageSetupDialog()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {data, \fBwxPageSetupDialogData:wxPageSetupDialogData()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageSetupData(This) -> \fBwxPageSetupDialogData:wxPageSetupDialogData()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPageSetupDialog()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+showModal(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPageSetupDialog()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxPageSetupDialog()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

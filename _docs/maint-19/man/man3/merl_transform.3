@@ -1,0 +1,20 @@
+.TH merl_transform 3 "syntax_tools 2.1.1" "" "Erlang Module Definition"
+.SH NAME
+merl_transform \- Parse transform for merl.
+.SH DESCRIPTION
+.LP
+Parse transform for merl\&. Enables the use of automatic metavariables and using quasi-quotes in matches and case switches\&. Also optimizes calls to functions in \fImerl\fR\& by partially evaluating them, turning strings to templates, etc\&., at compile-time\&.
+.LP
+Using \fI-include_lib("syntax_tools/include/merl\&.hrl")\&.\fR\& enables this transform, unless the macro \fIMERL_NO_TRANSFORM\fR\& is defined first\&.
+.SH EXPORTS
+.LP
+.B
+parse_transform(Forms, Options) -> term() 
+.br
+.RS
+.RE
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

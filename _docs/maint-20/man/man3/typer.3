@@ -1,0 +1,97 @@
+.TH typer 3 "dialyzer 3.2.4" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+typer \- Typer, a Type annotator for ERlang programs.
+  
+.SH DESCRIPTION
+.LP
+TypEr shows type information for Erlang modules to the user\&. Additionally, it can annotate the code of files with such type information\&.
+.SH "USING TYPER FROM THE COMMAND LINE"
+
+.LP
+TypEr is used from the command-line\&. This section provides a brief description of the options\&. The same information can be obtained by writing the following in a shell:
+.LP
+.nf
+
+typer --help
+.fi
+.LP
+\fIUsage:\fR\&
+.LP
+.nf
+
+typer [--help] [--version] [--plt PLT] [--edoc]
+      [--show | --show-exported | --annotate | --annotate-inc-files]
+      [-Ddefine]* [-I include_dir]* [-pa dir]* [-pz dir]*
+      [-T application]* [-r] file*
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+* denotes that multiple occurrences of the option are possible\&.
+
+.LP
+\fIOptions:\fR\&
+.RS 2
+.TP 2
+.B
+\fI--r\fR\&:
+Search directories recursively for \&.erl files below them\&.
+.TP 2
+.B
+\fI--show\fR\&:
+Print type specifications for all functions on stdout\&. (This is the default behaviour; this option is not really needed\&.)
+.TP 2
+.B
+\fI--show-exported\fR\& (or \fIshow_exported\fR\&):
+Same as \fI--show\fR\&, but print specifications for exported functions only\&. Specs are displayed sorted alphabetically on the function\&'s name\&.
+.TP 2
+.B
+\fI--annotate\fR\&:
+Annotate the specified files with type specifications\&.
+.TP 2
+.B
+\fI--annotate-inc-files\fR\&:
+Same as \fI--annotate\fR\& but annotates all \fI-include()\fR\& files as well as all \&.erl files\&. (Use this option with caution - it has not been tested much)\&.
+.TP 2
+.B
+\fI--edoc\fR\&:
+Print type information as Edoc \fI@spec\fR\& comments, not as type specs\&.
+.TP 2
+.B
+\fI--plt\fR\&:
+Use the specified dialyzer PLT file rather than the default one\&.
+.TP 2
+.B
+\fI-T file*\fR\&:
+The specified file(s) already contain type specifications and these are to be trusted in order to print specs for the rest of the files\&. (Multiple files or dirs, separated by spaces, can be specified\&.)
+.TP 2
+.B
+\fI-Dname\fR\& (or \fI-Dname=value\fR\&):
+Pass the defined name(s) to TypEr\&. (**)
+.TP 2
+.B
+\fI-I\fR\&:
+Pass the include_dir to TypEr\&. (**)
+.TP 2
+.B
+\fI-pa dir\fR\&:
+Include \fIdir\fR\& in the path for Erlang\&. This is useful when analyzing files that have \fI-include_lib()\fR\& directives or use parse transforms\&.
+.TP 2
+.B
+\fI-pz dir\fR\&:
+Include \fIdir\fR\& in the path for Erlang\&. This is useful when analyzing files that have \fI-include_lib()\fR\& directives or use parse transforms\&.
+.TP 2
+.B
+\fI--version\fR\& (or \fI-v\fR\&):
+Print the TypEr version and some more information and exit\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+** options \fI-D\fR\& and \fI-I\fR\& work both from the command line and in the TypEr GUI; the syntax of defines and includes is the same as that used by \fBerlc(1)\fR\&\&.

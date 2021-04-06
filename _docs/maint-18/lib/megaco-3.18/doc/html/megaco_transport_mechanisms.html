@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- Transport mechanisms</title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/megaco-3.18.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>Megaco/H.248</strong><br><strong>User's Guide</strong><br><small>Version 3.18</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu">
+<li id="no" title="Introduction" expanded="false">Introduction<ul>
+<li><a href="megaco_intro.html">
+              Top of chapter
+            </a></li>
+<li title="Scope and Purpose"><a href="megaco_intro.html#idp24809904">Scope and Purpose</a></li>
+<li title="Prerequisites"><a href="megaco_intro.html#idp24808528">Prerequisites</a></li>
+<li title="About This Manual"><a href="megaco_intro.html#idp24804016">About This Manual</a></li>
+<li title="Where to Find More Information"><a href="megaco_intro.html#idm3425712">Where to Find More Information</a></li>
+</ul>
+</li>
+<li id="no" title="Architecture" expanded="false">Architecture<ul>
+<li><a href="megaco_architecture.html">
+              Top of chapter
+            </a></li>
+<li title="Network view"><a href="megaco_architecture.html#idp24397600">Network view</a></li>
+<li title="General"><a href="megaco_architecture.html#idm3474352">General</a></li>
+<li title="Single node config"><a href="megaco_architecture.html#idp24357120">Single node config</a></li>
+<li title="Distributed config"><a href="megaco_architecture.html#idp24384208">Distributed config</a></li>
+<li title="Message round-trip call flow"><a href="megaco_architecture.html#idp24622640">Message round-trip call flow</a></li>
+</ul>
+</li>
+<li id="no" title="Running the stack" expanded="false">Running the stack<ul>
+<li><a href="megaco_run.html">
+              Top of chapter
+            </a></li>
+<li title="Starting"><a href="megaco_run.html#idp24465248">Starting</a></li>
+<li title="MGC startup call flow"><a href="megaco_run.html#idm3476368">MGC startup call flow</a></li>
+<li title="MG startup call flow"><a href="megaco_run.html#idp24418992">MG startup call flow</a></li>
+<li title="Configuring the Megaco stack"><a href="megaco_run.html#idm3623760">Configuring the Megaco stack</a></li>
+<li title="Initial configuration"><a href="megaco_run.html#idp24381536">Initial configuration</a></li>
+<li title="Changing the configuration"><a href="megaco_run.html#idp24746688">Changing the configuration</a></li>
+<li title="The transaction sender"><a href="megaco_run.html#idp24684800">The transaction sender</a></li>
+<li title="Segmentation of transaction replies"><a href="megaco_run.html#idp24708192">Segmentation of transaction replies</a></li>
+</ul>
+</li>
+<li id="no" title="Internal form and its encodings" expanded="false">Internal form and its encodings<ul>
+<li><a href="megaco_encode.html">
+              Top of chapter
+            </a></li>
+<li title="Internal form of messages"><a href="megaco_encode.html#idp24732448">Internal form of messages</a></li>
+<li title="The different encodings"><a href="megaco_encode.html#idp24878688">The different encodings</a></li>
+<li title="Configuration of Erlang distribution encoding module"><a href="megaco_encode.html#idp24893680">Configuration of Erlang distribution encoding module</a></li>
+<li title="Configuration of text encoding module(s)"><a href="megaco_encode.html#idp24903104">Configuration of text encoding module(s)</a></li>
+<li title="Configuration of binary encoding module(s)"><a href="megaco_encode.html#idp24929056">Configuration of binary encoding module(s)</a></li>
+<li title="Handling megaco versions"><a href="megaco_encode.html#idp24936976">Handling megaco versions</a></li>
+<li title="Encoder callback functions"><a href="megaco_encode.html#idp24966768">Encoder callback functions</a></li>
+</ul>
+</li>
+<li id="loadscrollpos" title="Transport mechanisms" expanded="true">Transport mechanisms<ul>
+<li><a href="megaco_transport_mechanisms.html">
+              Top of chapter
+            </a></li>
+<li title="Callback interface"><a href="megaco_transport_mechanisms.html#idp24977152">Callback interface</a></li>
+<li title="Examples"><a href="megaco_transport_mechanisms.html#idp24985472">Examples</a></li>
+</ul>
+</li>
+<li id="no" title="Implementation examples" expanded="false">Implementation examples<ul>
+<li><a href="megaco_examples.html">
+              Top of chapter
+            </a></li>
+<li title="A simple Media Gateway Controller"><a href="megaco_examples.html#idp24996208">A simple Media Gateway Controller</a></li>
+<li title="A simple Media Gateway"><a href="megaco_examples.html#idp25001968">A simple Media Gateway</a></li>
+</ul>
+</li>
+<li id="no" title="Megaco mib" expanded="false">Megaco mib<ul>
+<li><a href="megaco_mib.html">
+              Top of chapter
+            </a></li>
+<li title="Intro"><a href="megaco_mib.html#idp25016160">Intro</a></li>
+<li title="Statistics counters"><a href="megaco_mib.html#idp25019184">Statistics counters</a></li>
+<li title="Distribution"><a href="megaco_mib.html#idp25023504">Distribution</a></li>
+</ul>
+</li>
+<li id="no" title="Performance comparison" expanded="false">Performance comparison<ul>
+<li><a href="megaco_performance.html">
+              Top of chapter
+            </a></li>
+<li title="Comparison of encoder/decoders"><a href="megaco_performance.html#idp25032896">Comparison of encoder/decoders</a></li>
+<li title="System performance characteristics"><a href="megaco_performance.html#idp25132672">System performance characteristics</a></li>
+<li title="Description of encoders/decoders"><a href="megaco_performance.html#idp25137120">Description of encoders/decoders</a></li>
+<li title="Setup"><a href="megaco_performance.html#idp25150288">Setup</a></li>
+<li title="Summary"><a href="megaco_performance.html#idp25151888">Summary</a></li>
+</ul>
+</li>
+<li id="no" title="Testing and tools" expanded="false">Testing and tools<ul>
+<li><a href="megaco_debug.html">
+              Top of chapter
+            </a></li>
+<li title="Tracing"><a href="megaco_debug.html#idp25167376">Tracing</a></li>
+<li title="Measurement and transformation"><a href="megaco_debug.html#idp25172752">Measurement and transformation</a></li>
+</ul>
+</li>
+</ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<h1>5 Transport mechanisms</h1>
+  
+
+  <h3><a name="idp24977152">5.1 
+        Callback interface</a></h3>
+    
+    <p>The callback interface of the transport module contains several
+      functions. Some of which are mandatory while others are only
+      optional: </p>
+    <ul>
+      <li>
+        <p><span class="code">send_message</span> - Send a message. <strong>Mandatory</strong></p>
+      </li>
+      <li>
+        <p><span class="code">block</span> - Block the transport. <strong>Optional</strong></p>
+        <p>This function is usefull for flow control.</p>
+      </li>
+      <li>
+        <p><span class="code">unblock</span> - Unblock the transport. <strong>Optional</strong></p>
+      </li>
+    </ul>
+    <p>For more detail, see the 
+      <span class="bold_code"><a href="megaco_transport.html">megaco_transport</a></span>
+      behaviour definition.</p>
+  
+
+  <h3><a name="idp24985472">5.2 
+        Examples</a></h3>
+    
+    <p>The Megaco/H.248 application contains implementations
+      for the two protocols specified by the Megaco/H.248 standard;
+      UDP, see <span class="bold_code"><a href="megaco_udp.html">megaco_udp</a></span>, 
+      and TCP/TPKT, see <span class="bold_code"><a href="megaco_tcp.html">megaco_tcp</a></span>. </p>
+  
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 2000-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

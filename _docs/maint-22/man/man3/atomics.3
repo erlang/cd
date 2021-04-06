@@ -1,0 +1,316 @@
+.TH atomics 3 "erts 10.7.2.9" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+atomics \- Atomic Functions
+.SH DESCRIPTION
+.LP
+This module provides a set of functions to do atomic operations towards mutable atomic variables\&. The implementation utilizes only atomic hardware instructions without any software level locking, which makes it very efficient for concurrent access\&. The atomics are organized into arrays with the following semantics:
+.RS 2
+.TP 2
+*
+Atomics are 64 bit integers\&.
+.LP
+.TP 2
+*
+Atomics can be represented as either signed or unsigned\&.
+.LP
+.TP 2
+*
+Atomics wrap around at overflow and underflow operations\&.
+.LP
+.TP 2
+*
+All operations guarantee atomicity\&. No intermediate results can be seen\&. The result of one mutation can only be the input to one following mutation\&.
+.LP
+.TP 2
+*
+All atomic operations are mutually ordered\&. If atomic B is updated \fIafter\fR\& atomic A, then that is how it will appear to any concurrent readers\&. No one can read the new value of B and then read the old value of A\&.
+.LP
+.TP 2
+*
+Indexes into atomic arrays are one-based\&. An atomic array of arity N contains N atomics with index from 1 to N\&.
+.LP
+.RE
+
+.SH DATA TYPES
+.nf
+
+\fBatomics_ref()\fR\&
+.br
+.fi
+.RS
+.LP
+Identifies an atomic array returned from \fB\fInew/2\fR\&\fR\&\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+new(Arity, Opts) -> atomics_ref()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Arity = integer() >= 1
+.br
+Opts = [Opt]
+.br
+Opt = {signed, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+Create a new atomic array of \fIArity\fR\& atomics\&.
+.LP
+Argument \fIOpts\fR\& is a list of the following possible options:
+.RS 2
+.TP 2
+.B
+\fI{signed, boolean()}\fR\&:
+Indicate if the elements of the array will be treated as signed or unsigned integers\&. Default is \fItrue\fR\& (signed)\&.
+.RS 2
+.LP
+The integer interval for signed atomics are from \fI-(1 bsl 63)\fR\& to \fI(1 bsl 63)-1\fR\& and for unsigned atomics from \fI0\fR\& to \fI(1 bsl 64)-1\fR\&\&.
+.RE
+.RE
+.LP
+Atomics are not tied to the current process and are automatically garbage collected when they are no longer referenced\&.
+.RE
+.LP
+.nf
+
+.B
+put(Ref, Ix, Value) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Value = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Set atomic to \fIValue\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+get(Ref, Ix) -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Read atomic value\&.
+.RE
+.LP
+.nf
+
+.B
+add(Ref, Ix, Incr) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Incr = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Add \fIIncr\fR\& to atomic\&.
+.RE
+.LP
+.nf
+
+.B
+add_get(Ref, Ix, Incr) -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Incr = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Atomic addition and return of the result\&.
+.RE
+.LP
+.nf
+
+.B
+sub(Ref, Ix, Decr) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Decr = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Subtract \fIDecr\fR\& from atomic\&.
+.RE
+.LP
+.nf
+
+.B
+sub_get(Ref, Ix, Decr) -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Decr = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Atomic subtraction and return of the result\&.
+.RE
+.LP
+.nf
+
+.B
+exchange(Ref, Ix, Desired) -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Desired = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Atomically replaces the value of the atomic with \fIDesired\fR\& and returns the value it held previously\&.
+.RE
+.LP
+.nf
+
+.B
+compare_exchange(Ref, Ix, Expected, Desired) -> ok | integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Ix = Expected = Desired = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Atomically compares the atomic with \fIExpected\fR\&, and if those are equal, set atomic to \fIDesired\fR\&\&. Returns \fIok\fR\& if \fIDesired\fR\& was written\&. Returns the actual atomic value if not equal to \fIExpected\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+info(Ref) -> Info
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Ref = \fBatomics_ref()\fR\&
+.br
+Info = 
+.br
+    #{size := Size, max := Max, min := Min, memory := Memory}
+.br
+Size = integer() >= 0
+.br
+Max = Min = integer()
+.br
+Memory = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Return information about an atomic array in a map\&. The map has the following keys:
+.RS 2
+.TP 2
+.B
+\fIsize\fR\&:
+The number of atomics in the array\&.
+.TP 2
+.B
+\fImax\fR\&:
+The highest possible value an atomic in this array can hold\&.
+.TP 2
+.B
+\fImin\fR\&:
+The lowest possible value an atomic in this array can hold\&.
+.TP 2
+.B
+\fImemory\fR\&:
+Approximate memory consumption for the array in bytes\&.
+.RE
+.RE

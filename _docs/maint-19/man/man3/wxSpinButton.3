@@ -1,0 +1,215 @@
+.TH wxSpinButton 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxSpinButton \- See external documentation: wxSpinButton.
+.SH DESCRIPTION
+.LP
+See external documentation: wxSpinButton\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxControl\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxSpinButton():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxSpinButton()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent) -> \fBwxSpinButton()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxSpinButton()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getMax(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getMin(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getValue(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setRange(This, MinVal, MaxVal) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+MinVal = integer()
+.br
+MaxVal = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setValue(This, Value) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSpinButton()\fR\&
+.br
+Value = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxSpinButton()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

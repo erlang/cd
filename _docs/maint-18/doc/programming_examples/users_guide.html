@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../otp_doc.css" type="text/css">
+<title>Erlang -- Programming Examples</title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="../pdf/otp-system-documentation-7.3.1.4.pdf">PDF</a><br><a href="../index.html">Top</a></small><p><strong>Programming Examples</strong><br><strong>User's Guide</strong><br><small>Version 7.3.1.4</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../js/flipmenu">
+<li id="no" title="Records" expanded="false">Records<ul>
+<li><a href="records.html">
+              Top of chapter
+            </a></li>
+<li title="Records and Tuples"><a href="records.html#idp24318848">Records and Tuples</a></li>
+<li title="Defining a Record"><a href="records.html#idp24306944">Defining a Record</a></li>
+<li title="Creating a Record"><a href="records.html#idp24374576">Creating a Record</a></li>
+<li title="Accessing a Record Field"><a href="records.html#idp24364016">Accessing a Record Field</a></li>
+<li title="Updating a Record"><a href="records.html#idm3560896">Updating a Record</a></li>
+<li title="Type Testing"><a href="records.html#idm3562912">Type Testing</a></li>
+<li title="Pattern Matching"><a href="records.html#idm3565152">Pattern Matching</a></li>
+<li title="Nested Records"><a href="records.html#idm3571232">Nested Records</a></li>
+<li title="A Longer Example"><a href="records.html#idm3572864">A Longer Example</a></li>
+</ul>
+</li>
+<li id="no" title="Funs" expanded="false">Funs<ul>
+<li><a href="funs.html">
+              Top of chapter
+            </a></li>
+<li title="map"><a href="funs.html#idm3516400">map</a></li>
+<li title="foreach"><a href="funs.html#idp24395952">foreach</a></li>
+<li title="Syntax of Funs"><a href="funs.html#idp24574048">Syntax of Funs</a></li>
+<li title="Variable Bindings Within a Fun"><a href="funs.html#idp24344896">Variable Bindings Within a Fun</a></li>
+<li title="Funs and Module Lists"><a href="funs.html#idm3544896">Funs and Module Lists</a></li>
+<li title="Funs Returning Funs"><a href="funs.html#idp24243824">Funs Returning Funs</a></li>
+</ul>
+</li>
+<li id="no" title="List Comprehensions" expanded="false">List Comprehensions<ul>
+<li><a href="list_comprehensions.html">
+              Top of chapter
+            </a></li>
+<li title="Simple Examples"><a href="list_comprehensions.html#idp24592240">Simple Examples</a></li>
+<li title="Quick Sort"><a href="list_comprehensions.html#idp24673488">Quick Sort</a></li>
+<li title="Permutations"><a href="list_comprehensions.html#idp24682016">Permutations</a></li>
+<li title="Pythagorean Triplets"><a href="list_comprehensions.html#idp24688336">Pythagorean Triplets</a></li>
+<li title="Simplifications With List Comprehensions"><a href="list_comprehensions.html#idp24697536">Simplifications With List Comprehensions</a></li>
+<li title="Variable Bindings in List Comprehensions"><a href="list_comprehensions.html#idp24700256">Variable Bindings in List Comprehensions</a></li>
+</ul>
+</li>
+<li id="no" title="Bit Syntax" expanded="false">Bit Syntax<ul>
+<li><a href="bit_syntax.html">
+              Top of chapter
+            </a></li>
+<li title="Introduction"><a href="bit_syntax.html#idp24724336">Introduction</a></li>
+<li title="Lexical Note"><a href="bit_syntax.html#idp24762416">Lexical Note</a></li>
+<li title="Segments"><a href="bit_syntax.html#idp24765184">Segments</a></li>
+<li title="Defaults"><a href="bit_syntax.html#idp24789936">Defaults</a></li>
+<li title="Constructing Binaries and Bitstrings"><a href="bit_syntax.html#idp24797104">Constructing Binaries and Bitstrings</a></li>
+<li title="Matching Binaries"><a href="bit_syntax.html#idp24819808">Matching Binaries</a></li>
+<li title="Appending to a Binary"><a href="bit_syntax.html#idp24835088">Appending to a Binary</a></li>
+</ul>
+</li>
+</ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Programming Examples User's Guide</h1></center>
+<center><h4>Version 7.3.1.4</h4></center>
+<center><h4>June 15, 2018</h4></center>
+<div class="extrafrontpageinfo"><center></center></div>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 2003-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

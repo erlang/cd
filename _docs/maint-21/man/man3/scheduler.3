@@ -1,0 +1,149 @@
+.TH scheduler 3 "runtime_tools 1.13.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+scheduler \- Measure scheduler utilization
+.SH DESCRIPTION
+.LP
+This module contains utility functions for easier measurement and calculation of scheduler utilization, otherwise obtained from calling the more primitive \fB\fIstatistics(scheduler_wall_time)\fR\&\fR\&\&.
+.LP
+The simplest usage is to call \fB\fIscheduler:utilization(Seconds)\fR\&\fR\&\&.
+.SH DATA TYPES
+.nf
+
+\fBsched_sample()\fR\&
+.br
+.fi
+.nf
+
+\fBsched_type()\fR\& = normal | cpu | io
+.br
+.fi
+.nf
+
+\fBsched_id()\fR\& = integer()
+.br
+.fi
+.nf
+
+\fBsched_util_result()\fR\& = 
+.br
+    [{\fBsched_type()\fR\&, \fBsched_id()\fR\&, float(), string()} |
+.br
+     {total, float(), string()} |
+.br
+     {weighted, float(), string()}]
+.br
+.fi
+.RS
+.LP
+A list of tuples containing results for individual schedulers as well as aggregated averages\&. \fIUtil\fR\& is the scheduler utilization as a floating point value between 0\&.0 and 1\&.0\&. \fIPercent\fR\& is the same utilization as a more human readable string expressed in percent\&.
+.RS 2
+.TP 2
+.B
+\fI{normal, SchedulerId, Util, Percent}\fR\&:
+Scheduler utilization of a normal scheduler with number \fISchedulerId\fR\&\&.
+.TP 2
+.B
+\fI{cpu, SchedulerId, Util, Percent}\fR\&:
+Scheduler utilization of a dirty-cpu scheduler with number \fISchedulerId\fR\&\&.
+.TP 2
+.B
+\fI{io, SchedulerId, Util, Percent}\fR\&:
+Scheduler utilization of a dirty-io scheduler with number \fISchedulerId\fR\&\&. This tuple will only exist if both samples were taken with \fB\fIsample_all/0\fR\&\fR\&\&.
+.TP 2
+.B
+\fI{total, Util, Percent}\fR\&:
+Total utilization of all normal and dirty-cpu schedulers\&.
+.TP 2
+.B
+\fI{weighted, Util, Percent}\fR\&:
+Total utilization of all normal and dirty-cpu schedulers, weighted against maximum amount of available CPU time\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+sample() -> sched_sample()
+.br
+.fi
+.br
+.RS
+.LP
+Return a scheduler utilization sample for normal and dirty-cpu schedulers\&.
+.RE
+.LP
+.nf
+
+.B
+sample_all() -> sched_sample()
+.br
+.fi
+.br
+.RS
+.LP
+Return a scheduler utilization sample for all schedulers, including dirty-io schedulers\&.
+.RE
+.LP
+.nf
+
+.B
+utilization(Seconds) -> sched_util_result()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Seconds = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+Measure utilization for normal and dirty-cpu schedulers during \fISeconds\fR\& seconds, and then return the result\&.
+.RE
+.LP
+.nf
+
+.B
+utilization(Sample) -> sched_util_result()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Sample = \fBsched_sample()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Calculate scheduler utilizations for the time interval from when \fISample\fR\& was taken and "now"\&. The same as calling \fIscheduler:utilization(Sample, scheduler:sample_all())\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+utilization(Sample1, Sample2) -> sched_util_result()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Sample1 = Sample2 = \fBsched_sample()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Calculates scheduler utilizations for the time interval between the two samples obtained from calling \fB\fIsample/0\fR\&\fR\& or \fB\fIsample_all/0\fR\&\fR\&\&.
+.RE

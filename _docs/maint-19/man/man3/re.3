@@ -1,0 +1,4196 @@
+.TH re 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+re \- Perl-like regular expressions for Erlang.
+.SH DESCRIPTION
+.LP
+This module contains regular expression matching functions for strings and binaries\&.
+.LP
+The \fBregular expression\fR\& syntax and semantics resemble that of Perl\&.
+.LP
+The matching algorithms of the library are based on the PCRE library, but not all of the PCRE library is interfaced and some parts of the library go beyond what PCRE offers\&. The sections of the PCRE documentation that are relevant to this module are included here\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The Erlang literal syntax for strings uses the "\\" (backslash) character as an escape code\&. You need to escape backslashes in literal strings, both in your code and in the shell, with an extra backslash, that is, "\\\\"\&.
+
+.SH DATA TYPES
+.nf
+
+\fBmp()\fR\& = {re_pattern, term(), term(), term(), term()}
+.br
+.fi
+.RS
+.LP
+Opaque data type containing a compiled regular expression\&. \fImp()\fR\& is guaranteed to be a tuple() having the atom \fIre_pattern\fR\& as its first element, to allow for matching in guards\&. The arity of the tuple or the content of the other fields can change in future Erlang/OTP releases\&.
+.RE
+.nf
+
+\fBnl_spec()\fR\& = cr | crlf | lf | anycrlf | any
+.br
+.fi
+.nf
+
+\fBcompile_option()\fR\& = 
+.br
+    unicode |
+.br
+    anchored |
+.br
+    caseless |
+.br
+    dollar_endonly |
+.br
+    dotall |
+.br
+    extended |
+.br
+    firstline |
+.br
+    multiline |
+.br
+    no_auto_capture |
+.br
+    dupnames |
+.br
+    ungreedy |
+.br
+    {newline, \fBnl_spec()\fR\&} |
+.br
+    bsr_anycrlf |
+.br
+    bsr_unicode |
+.br
+    no_start_optimize |
+.br
+    ucp |
+.br
+    never_utf
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+compile(Regexp) -> {ok, MP} | {error, ErrSpec}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Regexp = iodata()
+.br
+MP = \fBmp()\fR\&
+.br
+ErrSpec = 
+.br
+    {ErrString :: string(), Position :: integer() >= 0}
+.br
+.RE
+.RE
+.RS
+.LP
+The same as \fIcompile(Regexp,[])\fR\&
+.RE
+.LP
+.nf
+
+.B
+compile(Regexp, Options) -> {ok, MP} | {error, ErrSpec}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Regexp = iodata() | \fBunicode:charlist()\fR\&
+.br
+Options = [Option]
+.br
+Option = \fBcompile_option()\fR\&
+.br
+MP = \fBmp()\fR\&
+.br
+ErrSpec = 
+.br
+    {ErrString :: string(), Position :: integer() >= 0}
+.br
+.RE
+.RE
+.RS
+.LP
+Compiles a regular expression, with the syntax described below, into an internal format to be used later as a parameter to \fB\fIrun/2\fR\&\fR\& and \fB\fIrun/3\fR\&\fR\&\&.
+.LP
+Compiling the regular expression before matching is useful if the same expression is to be used in matching against multiple subjects during the lifetime of the program\&. Compiling once and executing many times is far more efficient than compiling each time one wants to match\&.
+.LP
+When option \fIunicode\fR\& is specified, the regular expression is to be specified as a valid Unicode \fIcharlist()\fR\&, otherwise as any valid \fIiodata()\fR\&\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fIunicode\fR\&:
+The regular expression is specified as a Unicode \fIcharlist()\fR\& and the resulting regular expression code is to be run against a valid Unicode \fIcharlist()\fR\& subject\&. Also consider option \fIucp\fR\& when using Unicode characters\&.
+.TP 2
+.B
+\fIanchored\fR\&:
+The pattern is forced to be "anchored", that is, it is constrained to match only at the first matching point in the string that is searched (the "subject string")\&. This effect can also be achieved by appropriate constructs in the pattern itself\&.
+.TP 2
+.B
+\fIcaseless\fR\&:
+Letters in the pattern match both uppercase and lowercase letters\&. It is equivalent to Perl option \fI/i\fR\& and can be changed within a pattern by a \fI(?i)\fR\& option setting\&. Uppercase and lowercase letters are defined as in the ISO 8859-1 character set\&.
+.TP 2
+.B
+\fIdollar_endonly\fR\&:
+A dollar metacharacter in the pattern matches only at the end of the subject string\&. Without this option, a dollar also matches immediately before a newline at the end of the string (but not before any other newlines)\&. This option is ignored if option \fImultiline\fR\& is specified\&. There is no equivalent option in Perl, and it cannot be set within a pattern\&.
+.TP 2
+.B
+\fIdotall\fR\&:
+A dot in the pattern matches all characters, including those indicating newline\&. Without it, a dot does not match when the current position is at a newline\&. This option is equivalent to Perl option \fI/s\fR\& and it can be changed within a pattern by a \fI(?s)\fR\& option setting\&. A negative class, such as \fI[^a]\fR\&, always matches newline characters, independent of the setting of this option\&.
+.TP 2
+.B
+\fIextended\fR\&:
+Whitespace data characters in the pattern are ignored except when escaped or inside a character class\&. Whitespace does not include character \&'vt\&' (ASCII 11)\&. Characters between an unescaped \fI#\fR\& outside a character class and the next newline, inclusive, are also ignored\&. This is equivalent to Perl option \fI/x\fR\& and can be changed within a pattern by a \fI(?x)\fR\& option setting\&.
+.RS 2
+.LP
+With this option, comments inside complicated patterns can be included\&. However, notice that this applies only to data characters\&. Whitespace characters can never appear within special character sequences in a pattern, for example within sequence \fI(?(\fR\& that introduces a conditional subpattern\&.
+.RE
+.TP 2
+.B
+\fIfirstline\fR\&:
+An unanchored pattern is required to match before or at the first newline in the subject string, although the matched text can continue over the newline\&.
+.TP 2
+.B
+\fImultiline\fR\&:
+By default, PCRE treats the subject string as consisting of a single line of characters (even if it contains newlines)\&. The "start of line" metacharacter (\fI^\fR\&) matches only at the start of the string, while the "end of line" metacharacter (\fI$\fR\&) matches only at the end of the string, or before a terminating newline (unless option \fIdollar_endonly\fR\& is specified)\&. This is the same as in Perl\&.
+.RS 2
+.LP
+When this option is specified, the "start of line" and "end of line" constructs match immediately following or immediately before internal newlines in the subject string, respectively, as well as at the very start and end\&. This is equivalent to Perl option \fI/m\fR\& and can be changed within a pattern by a \fI(?m)\fR\& option setting\&. If there are no newlines in a subject string, or no occurrences of \fI^\fR\& or \fI$\fR\& in a pattern, setting \fImultiline\fR\& has no effect\&.
+.RE
+.TP 2
+.B
+\fIno_auto_capture\fR\&:
+Disables the use of numbered capturing parentheses in the pattern\&. Any opening parenthesis that is not followed by \fI?\fR\& behaves as if it is followed by \fI?:\fR\&\&. Named parentheses can still be used for capturing (and they acquire numbers in the usual way)\&. There is no equivalent option in Perl\&.
+.TP 2
+.B
+\fIdupnames\fR\&:
+Names used to identify capturing subpatterns need not be unique\&. This can be helpful for certain types of pattern when it is known that only one instance of the named subpattern can ever be matched\&. More details of named subpatterns are provided below\&.
+.TP 2
+.B
+\fIungreedy\fR\&:
+Inverts the "greediness" of the quantifiers so that they are not greedy by default, but become greedy if followed by "?"\&. It is not compatible with Perl\&. It can also be set by a \fI(?U)\fR\& option setting within the pattern\&.
+.TP 2
+.B
+\fI{newline, NLSpec}\fR\&:
+Overrides the default definition of a newline in the subject string, which is LF (ASCII 10) in Erlang\&.
+.RS 2
+.TP 2
+.B
+\fIcr\fR\&:
+Newline is indicated by a single character \fIcr\fR\& (ASCII 13)\&.
+.TP 2
+.B
+\fIlf\fR\&:
+Newline is indicated by a single character LF (ASCII 10), the default\&.
+.TP 2
+.B
+\fIcrlf\fR\&:
+Newline is indicated by the two-character CRLF (ASCII 13 followed by ASCII 10) sequence\&.
+.TP 2
+.B
+\fIanycrlf\fR\&:
+Any of the three preceding sequences is to be recognized\&.
+.TP 2
+.B
+\fIany\fR\&:
+Any of the newline sequences above, and the Unicode sequences VT (vertical tab, U+000B), FF (formfeed, U+000C), NEL (next line, U+0085), LS (line separator, U+2028), and PS (paragraph separator, U+2029)\&.
+.RE
+.TP 2
+.B
+\fIbsr_anycrlf\fR\&:
+Specifies specifically that \\R is to match only the CR, LF, or CRLF sequences, not the Unicode-specific newline characters\&.
+.TP 2
+.B
+\fIbsr_unicode\fR\&:
+Specifies specifically that \\R is to match all the Unicode newline characters (including CRLF, and so on, the default)\&.
+.TP 2
+.B
+\fIno_start_optimize\fR\&:
+Disables optimization that can malfunction if "Special start-of-pattern items" are present in the regular expression\&. A typical example would be when matching "DEFABC" against "(*COMMIT)ABC", where the start optimization of PCRE would skip the subject up to "A" and never realize that the (*COMMIT) instruction is to have made the matching fail\&. This option is only relevant if you use "start-of-pattern items", as discussed in section \fBPCRE Regular Expression Details\fR\&\&.
+.TP 2
+.B
+\fIucp\fR\&:
+Specifies that Unicode character properties are to be used when resolving \\B, \\b, \\D, \\d, \\S, \\s, \\W and \\w\&. Without this flag, only ISO Latin-1 properties are used\&. Using Unicode properties hurts performance, but is semantically correct when working with Unicode characters beyond the ISO Latin-1 range\&.
+.TP 2
+.B
+\fInever_utf\fR\&:
+Specifies that the (*UTF) and/or (*UTF8) "start-of-pattern items" are forbidden\&. This flag cannot be combined with option \fIunicode\fR\&\&. Useful if ISO Latin-1 patterns from an external source are to be compiled\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+inspect(MP, Item) -> {namelist, [binary()]}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+MP = \fBmp()\fR\&
+.br
+Item = namelist
+.br
+.RE
+.RE
+.RS
+.LP
+Takes a compiled regular expression and an item, and returns the relevant data from the regular expression\&. The only supported item is \fInamelist\fR\&, which returns the tuple \fI{namelist, [binary()]}\fR\&, containing the names of all (unique) named subpatterns in the regular expression\&. For example:
+.LP
+.nf
+
+1> {ok,MP} = re:compile("(?<A>A)|(?<B>B)|(?<C>C)").
+{ok,{re_pattern,3,0,0,
+                <<69,82,67,80,119,0,0,0,0,0,0,0,1,0,0,0,255,255,255,255,
+                  255,255,...>>}}
+2> re:inspect(MP,namelist).
+{namelist,[<<"A">>,<<"B">>,<<"C">>]}
+3> {ok,MPD} = re:compile("(?<C>A)|(?<B>B)|(?<C>C)",[dupnames]).
+{ok,{re_pattern,3,0,0,
+                <<69,82,67,80,119,0,0,0,0,0,8,0,1,0,0,0,255,255,255,255,
+                  255,255,...>>}}
+4> re:inspect(MPD,namelist).                                   
+{namelist,[<<"B">>,<<"C">>]}
+.fi
+.LP
+Notice in the second example that the duplicate name only occurs once in the returned list, and that the list is in alphabetical order regardless of where the names are positioned in the regular expression\&. The order of the names is the same as the order of captured subexpressions if \fI{capture, all_names}\fR\& is specified as an option to \fB\fIrun/3\fR\&\fR\&\&. You can therefore create a name-to-value mapping from the result of \fIrun/3\fR\& like this:
+.LP
+.nf
+
+1> {ok,MP} = re:compile("(?<A>A)|(?<B>B)|(?<C>C)").
+{ok,{re_pattern,3,0,0,
+                <<69,82,67,80,119,0,0,0,0,0,0,0,1,0,0,0,255,255,255,255,
+                  255,255,...>>}}
+2> {namelist, N} = re:inspect(MP,namelist).
+{namelist,[<<"A">>,<<"B">>,<<"C">>]}
+3> {match,L} = re:run("AA",MP,[{capture,all_names,binary}]).
+{match,[<<"A">>,<<>>,<<>>]}
+4> NameMap = lists:zip(N,L).
+[{<<"A">>,<<"A">>},{<<"B">>,<<>>},{<<"C">>,<<>>}]
+.fi
+.RE
+.LP
+.nf
+
+.B
+replace(Subject, RE, Replacement) -> iodata() | unicode:charlist()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Subject = iodata() | \fBunicode:charlist()\fR\&
+.br
+RE = \fBmp()\fR\& | iodata()
+.br
+Replacement = iodata() | \fBunicode:charlist()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIreplace(Subject, RE, Replacement, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+replace(Subject, RE, Replacement, Options) ->
+.B
+           iodata() | unicode:charlist()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Subject = iodata() | \fBunicode:charlist()\fR\&
+.br
+RE = \fBmp()\fR\& | iodata() | \fBunicode:charlist()\fR\&
+.br
+Replacement = iodata() | \fBunicode:charlist()\fR\&
+.br
+Options = [Option]
+.br
+Option = 
+.br
+    anchored |
+.br
+    global |
+.br
+    notbol |
+.br
+    noteol |
+.br
+    notempty |
+.br
+    notempty_atstart |
+.br
+    {offset, integer() >= 0} |
+.br
+    {newline, NLSpec} |
+.br
+    bsr_anycrlf |
+.br
+    {match_limit, integer() >= 0} |
+.br
+    {match_limit_recursion, integer() >= 0} |
+.br
+    bsr_unicode |
+.br
+    {return, ReturnType} |
+.br
+    CompileOpt
+.br
+ReturnType = iodata | list | binary
+.br
+CompileOpt = \fBcompile_option()\fR\&
+.br
+NLSpec = cr | crlf | lf | anycrlf | any
+.br
+.RE
+.RE
+.RS
+.LP
+Replaces the matched part of the \fISubject\fR\& string with the contents of \fIReplacement\fR\&\&.
+.LP
+The permissible options are the same as for \fB\fIrun/3\fR\&\fR\&, except that option\fI capture\fR\& is not allowed\&. Instead a \fI{return, ReturnType}\fR\& is present\&. The default return type is \fIiodata\fR\&, constructed in a way to minimize copying\&. The \fIiodata\fR\& result can be used directly in many I/O operations\&. If a flat \fIlist()\fR\& is desired, specify \fI{return, list}\fR\&\&. If a binary is desired, specify \fI{return, binary}\fR\&\&.
+.LP
+As in function \fIrun/3\fR\&, an \fImp()\fR\& compiled with option \fIunicode\fR\& requires \fISubject\fR\& to be a Unicode \fIcharlist()\fR\&\&. If compilation is done implicitly and the \fIunicode\fR\& compilation option is specified to this function, both the regular expression and \fISubject\fR\& are to specified as valid Unicode \fIcharlist()\fR\&s\&.
+.LP
+The replacement string can contain the special character \fI&\fR\&, which inserts the whole matching expression in the result, and the special sequence \fI\\\fR\&N (where N is an integer > 0), \fI\\g\fR\&N, or \fI\\g{\fR\&N\fI}\fR\&, resulting in the subexpression number N, is inserted in the result\&. If no subexpression with that number is generated by the regular expression, nothing is inserted\&.
+.LP
+To insert an & or a \\ in the result, precede it with a \\\&. Notice that Erlang already gives a special meaning to \\ in literal strings, so a single \\ must be written as \fI"\\\\"\fR\& and therefore a double \\ as \fI"\\\\\\\\"\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+re:replace("abcd","c","[&]",[{return,list}]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+"ab[c]d"
+.fi
+.LP
+while
+.LP
+.nf
+
+re:replace("abcd","c","[\\\\&]",[{return,list}]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+"ab[&]d"
+.fi
+.LP
+As with \fIrun/3\fR\&, compilation errors raise the \fIbadarg\fR\& exception\&. \fB\fIcompile/2\fR\&\fR\& can be used to get more information about the error\&.
+.RE
+.LP
+.nf
+
+.B
+run(Subject, RE) -> {match, Captured} | nomatch
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Subject = iodata() | \fBunicode:charlist()\fR\&
+.br
+RE = \fBmp()\fR\& | iodata()
+.br
+Captured = [CaptureData]
+.br
+CaptureData = {integer(), integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIrun(Subject,RE,[])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+run(Subject, RE, Options) ->
+.B
+       {match, Captured} | match | nomatch | {error, ErrType}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Subject = iodata() | \fBunicode:charlist()\fR\&
+.br
+RE = \fBmp()\fR\& | iodata() | \fBunicode:charlist()\fR\&
+.br
+Options = [Option]
+.br
+Option = 
+.br
+    anchored |
+.br
+    global |
+.br
+    notbol |
+.br
+    noteol |
+.br
+    notempty |
+.br
+    notempty_atstart |
+.br
+    report_errors |
+.br
+    {offset, integer() >= 0} |
+.br
+    {match_limit, integer() >= 0} |
+.br
+    {match_limit_recursion, integer() >= 0} |
+.br
+    {newline, NLSpec :: \fBnl_spec()\fR\&} |
+.br
+    bsr_anycrlf |
+.br
+    bsr_unicode |
+.br
+    {capture, ValueSpec} |
+.br
+    {capture, ValueSpec, Type} |
+.br
+    CompileOpt
+.br
+Type = index | list | binary
+.br
+ValueSpec = 
+.br
+    all | all_but_first | all_names | first | none | ValueList
+.br
+ValueList = [ValueID]
+.br
+ValueID = integer() | string() | atom()
+.br
+CompileOpt = \fBcompile_option()\fR\&
+.br
+.RS 2
+See \fB\fIcompile/2\fR\&\fR\&\&.
+.RE
+Captured = [CaptureData] | [[CaptureData]]
+.br
+CaptureData = 
+.br
+    {integer(), integer()} | ListConversionData | binary()
+.br
+ListConversionData = 
+.br
+    string() |
+.br
+    {error, string(), binary()} |
+.br
+    {incomplete, string(), binary()}
+.br
+ErrType = 
+.br
+    match_limit | match_limit_recursion | {compile, CompileErr}
+.br
+CompileErr = 
+.br
+    {ErrString :: string(), Position :: integer() >= 0}
+.br
+.RE
+.RE
+.RS
+.LP
+Executes a regular expression matching, and returns \fImatch/{match, Captured}\fR\& or \fInomatch\fR\&\&. The regular expression can be specified either as \fIiodata()\fR\& in which case it is automatically compiled (as by \fIcompile/2\fR\&) and executed, or as a precompiled \fImp()\fR\& in which case it is executed against the subject directly\&.
+.LP
+When compilation is involved, exception \fIbadarg\fR\& is thrown if a compilation error occurs\&. Call \fIcompile/2\fR\& to get information about the location of the error in the regular expression\&.
+.LP
+If the regular expression is previously compiled, the option list can only contain the following options:
+.RS 2
+.TP 2
+*
+\fIanchored\fR\&
+.LP
+.TP 2
+*
+\fI{capture, ValueSpec}/{capture, ValueSpec, Type}\fR\&
+.LP
+.TP 2
+*
+\fIglobal\fR\&
+.LP
+.TP 2
+*
+\fI{match_limit, integer() >= 0}\fR\&
+.LP
+.TP 2
+*
+\fI{match_limit_recursion, integer() >= 0}\fR\&
+.LP
+.TP 2
+*
+\fI{newline, NLSpec}\fR\&
+.LP
+.TP 2
+*
+\fInotbol\fR\&
+.LP
+.TP 2
+*
+\fInotempty\fR\&
+.LP
+.TP 2
+*
+\fInotempty_atstart\fR\&
+.LP
+.TP 2
+*
+\fInoteol\fR\&
+.LP
+.TP 2
+*
+\fI{offset, integer() >= 0}\fR\&
+.LP
+.TP 2
+*
+\fIreport_errors\fR\&
+.LP
+.RE
+
+.LP
+Otherwise all options valid for function \fIcompile/2\fR\& are also allowed\&. Options allowed both for compilation and execution of a match, namely \fIanchored\fR\& and \fI{newline, NLSpec}\fR\&, affect both the compilation and execution if present together with a non-precompiled regular expression\&.
+.LP
+If the regular expression was previously compiled with option \fIunicode\fR\&, \fISubject\fR\& is to be provided as a valid Unicode \fIcharlist()\fR\&, otherwise any \fIiodata()\fR\& will do\&. If compilation is involved and option \fIunicode\fR\& is specified, both \fISubject\fR\& and the regular expression are to be specified as valid Unicode \fIcharlists()\fR\&\&.
+.LP
+\fI{capture, ValueSpec}/{capture, ValueSpec, Type}\fR\& defines what to return from the function upon successful matching\&. The \fIcapture\fR\& tuple can contain both a value specification, telling which of the captured substrings are to be returned, and a type specification, telling how captured substrings are to be returned (as index tuples, lists, or binaries)\&. The options are described in detail below\&.
+.LP
+If the capture options describe that no substring capturing is to be done (\fI{capture, none}\fR\&), the function returns the single atom \fImatch\fR\& upon successful matching, otherwise the tuple \fI{match, ValueList}\fR\&\&. Disabling capturing can be done either by specifying \fInone\fR\& or an empty list as \fIValueSpec\fR\&\&.
+.LP
+Option \fIreport_errors\fR\& adds the possibility that an error tuple is returned\&. The tuple either indicates a matching error (\fImatch_limit\fR\& or \fImatch_limit_recursion\fR\&), or a compilation error, where the error tuple has the format \fI{error, {compile, CompileErr}}\fR\&\&. Notice that if option \fIreport_errors\fR\& is not specified, the function never returns error tuples, but reports compilation errors as a \fIbadarg\fR\& exception and failed matches because of exceeded match limits simply as \fInomatch\fR\&\&.
+.LP
+The following options are relevant for execution:
+.RS 2
+.TP 2
+.B
+\fIanchored\fR\&:
+Limits \fIrun/3\fR\& to matching at the first matching position\&. If a pattern was compiled with \fIanchored\fR\&, or turned out to be anchored by virtue of its contents, it cannot be made unanchored at matching time, hence there is no \fIunanchored\fR\& option\&.
+.TP 2
+.B
+\fIglobal\fR\&:
+Implements global (repetitive) search (flag \fIg\fR\& in Perl)\&. Each match is returned as a separate \fIlist()\fR\& containing the specific match and any matching subexpressions (or as specified by option \fIcapture\fR\&\&. The \fICaptured\fR\& part of the return value is hence a \fIlist()\fR\& of \fIlist()\fR\&s when this option is specified\&.
+.RS 2
+.LP
+The interaction of option \fIglobal\fR\& with a regular expression that matches an empty string surprises some users\&. When option \fIglobal\fR\& is specified, \fIrun/3\fR\& handles empty matches in the same way as Perl: a zero-length match at any point is also retried with options \fI[anchored, notempty_atstart]\fR\&\&. If that search gives a result of length > 0, the result is included\&. Example:
+.RE
+.LP
+.nf
+
+re:run("cat","(|at)",[global]).
+.fi
+.RS 2
+.LP
+The following matchings are performed:
+.RE
+.RS 2
+.TP 2
+.B
+At offset \fI0\fR\&:
+The regular expression \fI(|at)\fR\& first match at the initial position of string \fIcat\fR\&, giving the result set \fI[{0,0},{0,0}]\fR\& (the second \fI{0,0}\fR\& is because of the subexpression marked by the parentheses)\&. As the length of the match is 0, we do not advance to the next position yet\&.
+.TP 2
+.B
+At offset \fI0\fR\& with \fI[anchored, notempty_atstart]\fR\&:
+The search is retried with options \fI[anchored, notempty_atstart]\fR\& at the same position, which does not give any interesting result of longer length, so the search position is advanced to the next character (\fIa\fR\&)\&.
+.TP 2
+.B
+At offset \fI1\fR\&:
+The search results in \fI[{1,0},{1,0}]\fR\&, so this search is also repeated with the extra options\&.
+.TP 2
+.B
+At offset \fI1\fR\& with \fI[anchored, notempty_atstart]\fR\&:
+Alternative \fIab\fR\& is found and the result is [{1,2},{1,2}]\&. The result is added to the list of results and the position in the search string is advanced two steps\&.
+.TP 2
+.B
+At offset \fI3\fR\&:
+The search once again matches the empty string, giving \fI[{3,0},{3,0}]\fR\&\&.
+.TP 2
+.B
+At offset \fI1\fR\& with \fI[anchored, notempty_atstart]\fR\&:
+This gives no result of length > 0 and we are at the last position, so the global search is complete\&.
+.RE
+.RS 2
+.LP
+The result of the call is:
+.RE
+.LP
+.nf
+
+{match,[[{0,0},{0,0}],[{1,0},{1,0}],[{1,2},{1,2}],[{3,0},{3,0}]]}
+.fi
+.TP 2
+.B
+\fInotempty\fR\&:
+An empty string is not considered to be a valid match if this option is specified\&. If alternatives in the pattern exist, they are tried\&. If all the alternatives match the empty string, the entire match fails\&.
+.RS 2
+.LP
+\fIExample:\fR\&
+.RE
+.RS 2
+.LP
+If the following pattern is applied to a string not beginning with "a" or "b", it would normally match the empty string at the start of the subject:
+.RE
+.LP
+.nf
+
+a?b?
+.fi
+.RS 2
+.LP
+With option \fInotempty\fR\&, this match is invalid, so \fIrun/3\fR\& searches further into the string for occurrences of "a" or "b"\&.
+.RE
+.TP 2
+.B
+\fInotempty_atstart\fR\&:
+Like \fInotempty\fR\&, except that an empty string match that is not at the start of the subject is permitted\&. If the pattern is anchored, such a match can occur only if the pattern contains \\K\&.
+.RS 2
+.LP
+Perl has no direct equivalent of \fInotempty\fR\& or \fInotempty_atstart\fR\&, but it does make a special case of a pattern match of the empty string within its split() function, and when using modifier \fI/g\fR\&\&. The Perl behavior can be emulated after matching a null string by first trying the match again at the same offset with \fInotempty_atstart\fR\& and \fIanchored\fR\&, and then, if that fails, by advancing the starting offset (see below) and trying an ordinary match again\&.
+.RE
+.TP 2
+.B
+\fInotbol\fR\&:
+Specifies that the first character of the subject string is not the beginning of a line, so the circumflex metacharacter is not to match before it\&. Setting this without \fImultiline\fR\& (at compile time) causes circumflex never to match\&. This option only affects the behavior of the circumflex metacharacter\&. It does not affect \\A\&.
+.TP 2
+.B
+\fInoteol\fR\&:
+Specifies that the end of the subject string is not the end of a line, so the dollar metacharacter is not to match it nor (except in multiline mode) a newline immediately before it\&. Setting this without \fImultiline\fR\& (at compile time) causes dollar never to match\&. This option affects only the behavior of the dollar metacharacter\&. It does not affect \\Z or \\z\&.
+.TP 2
+.B
+\fIreport_errors\fR\&:
+Gives better control of the error handling in \fIrun/3\fR\&\&. When specified, compilation errors (if the regular expression is not already compiled) and runtime errors are explicitly returned as an error tuple\&.
+.RS 2
+.LP
+The following are the possible runtime errors:
+.RE
+.RS 2
+.TP 2
+.B
+\fImatch_limit\fR\&:
+The PCRE library sets a limit on how many times the internal match function can be called\&. Defaults to 10,000,000 in the library compiled for Erlang\&. If \fI{error, match_limit}\fR\& is returned, the execution of the regular expression has reached this limit\&. This is normally to be regarded as a \fInomatch\fR\&, which is the default return value when this occurs, but by specifying \fIreport_errors\fR\&, you are informed when the match fails because of too many internal calls\&.
+.TP 2
+.B
+\fImatch_limit_recursion\fR\&:
+This error is very similar to \fImatch_limit\fR\&, but occurs when the internal match function of PCRE is "recursively" called more times than the \fImatch_limit_recursion\fR\& limit, which defaults to 10,000,000 as well\&. Notice that as long as the \fImatch_limit\fR\& and \fImatch_limit_default\fR\& values are kept at the default values, the \fImatch_limit_recursion\fR\& error cannot occur, as the \fImatch_limit\fR\& error occurs before that (each recursive call is also a call, but not conversely)\&. Both limits can however be changed, either by setting limits directly in the regular expression string (see section \fBPCRE Regular Eexpression Details\fR\&) or by specifying options to \fIrun/3\fR\&\&.
+.RE
+.RS 2
+.LP
+It is important to understand that what is referred to as "recursion" when limiting matches is not recursion on the C stack of the Erlang machine or on the Erlang process stack\&. The PCRE version compiled into the Erlang VM uses machine "heap" memory to store values that must be kept over recursion in regular expression matches\&.
+.RE
+.TP 2
+.B
+\fI{match_limit, integer() >= 0}\fR\&:
+Limits the execution time of a match in an implementation-specific way\&. It is described as follows by the PCRE documentation:
+.LP
+.nf
+
+The match_limit field provides a means of preventing PCRE from using
+up a vast amount of resources when running patterns that are not going
+to match, but which have a very large number of possibilities in their
+search trees. The classic example is a pattern that uses nested
+unlimited repeats.
+
+Internally, pcre_exec() uses a function called match(), which it calls
+repeatedly (sometimes recursively). The limit set by match_limit is
+imposed on the number of times this function is called during a match,
+which has the effect of limiting the amount of backtracking that can
+take place. For patterns that are not anchored, the count restarts
+from zero for each position in the subject string.
+.fi
+.RS 2
+.LP
+This means that runaway regular expression matches can fail faster if the limit is lowered using this option\&. The default value 10,000,000 is compiled into the Erlang VM\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This option does in no way affect the execution of the Erlang VM in terms of "long running BIFs"\&. \fIrun/3\fR\& always gives control back to the scheduler of Erlang processes at intervals that ensures the real-time properties of the Erlang system\&.
+
+.TP 2
+.B
+\fI{match_limit_recursion, integer() >= 0}\fR\&:
+Limits the execution time and memory consumption of a match in an implementation-specific way, very similar to \fImatch_limit\fR\&\&. It is described as follows by the PCRE documentation:
+.LP
+.nf
+
+The match_limit_recursion field is similar to match_limit, but instead
+of limiting the total number of times that match() is called, it
+limits the depth of recursion. The recursion depth is a smaller number
+than the total number of calls, because not all calls to match() are
+recursive. This limit is of use only if it is set smaller than
+match_limit.
+
+Limiting the recursion depth limits the amount of machine stack that
+can be used, or, when PCRE has been compiled to use memory on the heap
+instead of the stack, the amount of heap memory that can be used.
+.fi
+.RS 2
+.LP
+The Erlang VM uses a PCRE library where heap memory is used when regular expression match recursion occurs\&. This therefore limits the use of machine heap, not C stack\&.
+.RE
+.RS 2
+.LP
+Specifying a lower value can result in matches with deep recursion failing, when they should have matched:
+.RE
+.LP
+.nf
+
+1> re:run("aaaaaaaaaaaaaz","(a+)*z").
+{match,[{0,14},{0,13}]}
+2> re:run("aaaaaaaaaaaaaz","(a+)*z",[{match_limit_recursion,5}]).
+nomatch
+3> re:run("aaaaaaaaaaaaaz","(a+)*z",[{match_limit_recursion,5},report_errors]).
+{error,match_limit_recursion}
+.fi
+.RS 2
+.LP
+This option and option \fImatch_limit\fR\& are only to be used in rare cases\&. Understanding of the PCRE library internals is recommended before tampering with these limits\&.
+.RE
+.TP 2
+.B
+\fI{offset, integer() >= 0}\fR\&:
+Start matching at the offset (position) specified in the subject string\&. The offset is zero-based, so that the default is \fI{offset,0}\fR\& (all of the subject string)\&.
+.TP 2
+.B
+\fI{newline, NLSpec}\fR\&:
+Overrides the default definition of a newline in the subject string, which is LF (ASCII 10) in Erlang\&.
+.RS 2
+.TP 2
+.B
+\fIcr\fR\&:
+Newline is indicated by a single character CR (ASCII 13)\&.
+.TP 2
+.B
+\fIlf\fR\&:
+Newline is indicated by a single character LF (ASCII 10), the default\&.
+.TP 2
+.B
+\fIcrlf\fR\&:
+Newline is indicated by the two-character CRLF (ASCII 13 followed by ASCII 10) sequence\&.
+.TP 2
+.B
+\fIanycrlf\fR\&:
+Any of the three preceding sequences is be recognized\&.
+.TP 2
+.B
+\fIany\fR\&:
+Any of the newline sequences above, and the Unicode sequences VT (vertical tab, U+000B), FF (formfeed, U+000C), NEL (next line, U+0085), LS (line separator, U+2028), and PS (paragraph separator, U+2029)\&.
+.RE
+.TP 2
+.B
+\fIbsr_anycrlf\fR\&:
+Specifies specifically that \\R is to match only the CR LF, or CRLF sequences, not the Unicode-specific newline characters\&. (Overrides the compilation option\&.)
+.TP 2
+.B
+\fIbsr_unicode\fR\&:
+Specifies specifically that \\R is to match all the Unicode newline characters (including CRLF, and so on, the default)\&. (Overrides the compilation option\&.)
+.TP 2
+.B
+\fI{capture, ValueSpec}\fR\&/\fI{capture, ValueSpec, Type}\fR\&:
+Specifies which captured substrings are returned and in what format\&. By default, \fIrun/3\fR\& captures all of the matching part of the substring and all capturing subpatterns (all of the pattern is automatically captured)\&. The default return type is (zero-based) indexes of the captured parts of the string, specified as \fI{Offset,Length}\fR\& pairs (the \fIindex\fR\& \fIType\fR\& of capturing)\&.
+.RS 2
+.LP
+As an example of the default behavior, the following call returns, as first and only captured string, the matching part of the subject ("abcd" in the middle) as an index pair \fI{3,4}\fR\&, where character positions are zero-based, just as in offsets:
+.RE
+.LP
+.nf
+
+re:run("ABCabcdABC","abcd",[]).
+.fi
+.RS 2
+.LP
+The return value of this call is:
+.RE
+.LP
+.nf
+
+{match,[{3,4}]}
+.fi
+.RS 2
+.LP
+Another (and quite common) case is where the regular expression matches all of the subject:
+.RE
+.LP
+.nf
+
+re:run("ABCabcdABC",".*abcd.*",[]).
+.fi
+.RS 2
+.LP
+Here the return value correspondingly points out all of the string, beginning at index 0, and it is 10 characters long:
+.RE
+.LP
+.nf
+
+{match,[{0,10}]}
+.fi
+.RS 2
+.LP
+If the regular expression contains capturing subpatterns, like in:
+.RE
+.LP
+.nf
+
+re:run("ABCabcdABC",".*(abcd).*",[]).
+.fi
+.RS 2
+.LP
+all of the matched subject is captured, as well as the captured substrings:
+.RE
+.LP
+.nf
+
+{match,[{0,10},{3,4}]}
+.fi
+.RS 2
+.LP
+The complete matching pattern always gives the first return value in the list and the remaining subpatterns are added in the order they occurred in the regular expression\&.
+.RE
+.RS 2
+.LP
+The capture tuple is built up as follows:
+.RE
+.RS 2
+.TP 2
+.B
+\fIValueSpec\fR\&:
+Specifies which captured (sub)patterns are to be returned\&. \fIValueSpec\fR\& can either be an atom describing a predefined set of return values, or a list containing the indexes or the names of specific subpatterns to return\&.
+.RS 2
+.LP
+The following are the predefined sets of subpatterns:
+.RE
+.RS 2
+.TP 2
+.B
+\fIall\fR\&:
+All captured subpatterns including the complete matching string\&. This is the default\&.
+.TP 2
+.B
+\fIall_names\fR\&:
+All \fInamed\fR\& subpatterns in the regular expression, as if a \fIlist()\fR\& of all the names \fIin alphabetical order\fR\& was specified\&. The list of all names can also be retrieved with \fB\fIinspect/2\fR\&\fR\&\&.
+.TP 2
+.B
+\fIfirst\fR\&:
+Only the first captured subpattern, which is always the complete matching part of the subject\&. All explicitly captured subpatterns are discarded\&.
+.TP 2
+.B
+\fIall_but_first\fR\&:
+All but the first matching subpattern, that is, all explicitly captured subpatterns, but not the complete matching part of the subject string\&. This is useful if the regular expression as a whole matches a large part of the subject, but the part you are interested in is in an explicitly captured subpattern\&. If the return type is \fIlist\fR\& or \fIbinary\fR\&, not returning subpatterns you are not interested in is a good way to optimize\&.
+.TP 2
+.B
+\fInone\fR\&:
+Returns no matching subpatterns, gives the single atom \fImatch\fR\& as the return value of the function when matching successfully instead of the \fI{match, list()}\fR\& return\&. Specifying an empty list gives the same behavior\&.
+.RE
+.RS 2
+.LP
+The value list is a list of indexes for the subpatterns to return, where index 0 is for all of the pattern, and 1 is for the first explicit capturing subpattern in the regular expression, and so on\&. When using named captured subpatterns (see below) in the regular expression, one can use \fIatom()\fR\&s or \fIstring()\fR\&s to specify the subpatterns to be returned\&. For example, consider the regular expression:
+.RE
+.LP
+.nf
+
+".*(abcd).*"
+.fi
+.RS 2
+.LP
+matched against string "ABCabcdABC", capturing only the "abcd" part (the first explicit subpattern):
+.RE
+.LP
+.nf
+
+re:run("ABCabcdABC",".*(abcd).*",[{capture,[1]}]).
+.fi
+.RS 2
+.LP
+The call gives the following result, as the first explicitly captured subpattern is "(abcd)", matching "abcd" in the subject, at (zero-based) position 3, of length 4:
+.RE
+.LP
+.nf
+
+{match,[{3,4}]}
+.fi
+.RS 2
+.LP
+Consider the same regular expression, but with the subpattern explicitly named \&'FOO\&':
+.RE
+.LP
+.nf
+
+".*(?<FOO>abcd).*"
+.fi
+.RS 2
+.LP
+With this expression, we could still give the index of the subpattern with the following call:
+.RE
+.LP
+.nf
+
+re:run("ABCabcdABC",".*(?<FOO>abcd).*",[{capture,[1]}]).
+.fi
+.RS 2
+.LP
+giving the same result as before\&. But, as the subpattern is named, we can also specify its name in the value list:
+.RE
+.LP
+.nf
+
+re:run("ABCabcdABC",".*(?<FOO>abcd).*",[{capture,['FOO']}]).
+.fi
+.RS 2
+.LP
+This would give the same result as the earlier examples, namely:
+.RE
+.LP
+.nf
+
+{match,[{3,4}]}
+.fi
+.RS 2
+.LP
+The values list can specify indexes or names not present in the regular expression, in which case the return values vary depending on the type\&. If the type is \fIindex\fR\&, the tuple \fI{-1,0}\fR\& is returned for values with no corresponding subpattern in the regular expression, but for the other types (\fIbinary\fR\& and \fIlist\fR\&), the values are the empty binary or list, respectively\&.
+.RE
+.TP 2
+.B
+\fIType\fR\&:
+Optionally specifies how captured substrings are to be returned\&. If omitted, the default of \fIindex\fR\& is used\&.
+.RS 2
+.LP
+\fIType\fR\& can be one of the following:
+.RE
+.RS 2
+.TP 2
+.B
+\fIindex\fR\&:
+Returns captured substrings as pairs of byte indexes into the subject string and length of the matching string in the subject (as if the subject string was flattened with \fB\fIerlang:iolist_to_binary/1\fR\&\fR\& or \fB\fIunicode:characters_to_binary/2\fR\&\fR\& before matching)\&. Notice that option \fIunicode\fR\& results in \fIbyte-oriented\fR\& indexes in a (possibly virtual) \fIUTF-8 encoded\fR\& binary\&. A byte index tuple \fI{0,2}\fR\& can therefore represent one or two characters when \fIunicode\fR\& is in effect\&. This can seem counter-intuitive, but has been deemed the most effective and useful way to do it\&. To return lists instead can result in simpler code if that is desired\&. This return type is the default\&.
+.TP 2
+.B
+\fIlist\fR\&:
+Returns matching substrings as lists of characters (Erlang \fIstring()\fR\&s)\&. It option \fIunicode\fR\& is used in combination with the \\C sequence in the regular expression, a captured subpattern can contain bytes that are not valid UTF-8 (\\C matches bytes regardless of character encoding)\&. In that case the \fIlist\fR\& capturing can result in the same types of tuples that \fB\fIunicode:characters_to_list/2\fR\&\fR\& can return, namely three-tuples with tag \fIincomplete\fR\& or \fIerror\fR\&, the successfully converted characters and the invalid UTF-8 tail of the conversion as a binary\&. The best strategy is to avoid using the \\C sequence when capturing lists\&.
+.TP 2
+.B
+\fIbinary\fR\&:
+Returns matching substrings as binaries\&. If option \fIunicode\fR\& is used, these binaries are in UTF-8\&. If the \\C sequence is used together with \fIunicode\fR\&, the binaries can be invalid UTF-8\&.
+.RE
+.RE
+.RS 2
+.LP
+In general, subpatterns that were not assigned a value in the match are returned as the tuple \fI{-1,0}\fR\& when \fItype\fR\& is \fIindex\fR\&\&. Unassigned subpatterns are returned as the empty binary or list, respectively, for other return types\&. Consider the following regular expression:
+.RE
+.LP
+.nf
+
+".*((?<FOO>abdd)|a(..d)).*"
+.fi
+.RS 2
+.LP
+There are three explicitly capturing subpatterns, where the opening parenthesis position determines the order in the result, hence \fI((?<FOO>abdd)|a(\&.\&.d))\fR\& is subpattern index 1, \fI(?<FOO>abdd)\fR\& is subpattern index 2, and \fI(\&.\&.d)\fR\& is subpattern index 3\&. When matched against the following string:
+.RE
+.LP
+.nf
+
+"ABCabcdABC"
+.fi
+.RS 2
+.LP
+the subpattern at index 2 does not match, as "abdd" is not present in the string, but the complete pattern matches (because of the alternative \fIa(\&.\&.d)\fR\&)\&. The subpattern at index 2 is therefore unassigned and the default return value is:
+.RE
+.LP
+.nf
+
+{match,[{0,10},{3,4},{-1,0},{4,3}]}
+.fi
+.RS 2
+.LP
+Setting the capture \fIType\fR\& to \fIbinary\fR\& gives:
+.RE
+.LP
+.nf
+
+{match,[<<"ABCabcdABC">>,<<"abcd">>,<<>>,<<"bcd">>]}
+.fi
+.RS 2
+.LP
+Here the empty binary (\fI<<>>\fR\&) represents the unassigned subpattern\&. In the \fIbinary\fR\& case, some information about the matching is therefore lost, as \fI<<>>\fR\& can also be an empty string captured\&.
+.RE
+.RS 2
+.LP
+If differentiation between empty matches and non-existing subpatterns is necessary, use the \fItype\fR\& \fIindex\fR\& and do the conversion to the final type in Erlang code\&.
+.RE
+.RS 2
+.LP
+When option \fIglobal\fR\& is speciified, the \fIcapture\fR\& specification affects each match separately, so that:
+.RE
+.LP
+.nf
+
+re:run("cacb","c(a|b)",[global,{capture,[1],list}]).
+.fi
+.RS 2
+.LP
+gives
+.RE
+.LP
+.nf
+
+{match,[["a"],["b"]]}
+.fi
+.RE
+.LP
+For a descriptions of options only affecting the compilation step, see \fB\fIcompile/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+split(Subject, RE) -> SplitList
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Subject = iodata() | \fBunicode:charlist()\fR\&
+.br
+RE = \fBmp()\fR\& | iodata()
+.br
+SplitList = [iodata() | \fBunicode:charlist()\fR\&]
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIsplit(Subject, RE, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+split(Subject, RE, Options) -> SplitList
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Subject = iodata() | \fBunicode:charlist()\fR\&
+.br
+RE = \fBmp()\fR\& | iodata() | \fBunicode:charlist()\fR\&
+.br
+Options = [Option]
+.br
+Option = 
+.br
+    anchored |
+.br
+    notbol |
+.br
+    noteol |
+.br
+    notempty |
+.br
+    notempty_atstart |
+.br
+    {offset, integer() >= 0} |
+.br
+    {newline, \fBnl_spec()\fR\&} |
+.br
+    {match_limit, integer() >= 0} |
+.br
+    {match_limit_recursion, integer() >= 0} |
+.br
+    bsr_anycrlf |
+.br
+    bsr_unicode |
+.br
+    {return, ReturnType} |
+.br
+    {parts, NumParts} |
+.br
+    group |
+.br
+    trim |
+.br
+    CompileOpt
+.br
+NumParts = integer() >= 0 | infinity
+.br
+ReturnType = iodata | list | binary
+.br
+CompileOpt = \fBcompile_option()\fR\&
+.br
+.RS 2
+See \fB\fIcompile/2\fR\&\fR\&\&.
+.RE
+SplitList = [RetData] | [GroupedRetData]
+.br
+GroupedRetData = [RetData]
+.br
+RetData = iodata() | \fBunicode:charlist()\fR\& | binary() | list()
+.br
+.RE
+.RE
+.RS
+.LP
+Splits the input into parts by finding tokens according to the regular expression supplied\&. The splitting is basically done by running a global regular expression match and dividing the initial string wherever a match occurs\&. The matching part of the string is removed from the output\&.
+.LP
+As in \fB\fIrun/3\fR\&\fR\&, an \fImp()\fR\& compiled with option \fIunicode\fR\& requires \fISubject\fR\& to be a Unicode \fIcharlist()\fR\&\&. If compilation is done implicitly and the \fIunicode\fR\& compilation option is specified to this function, both the regular expression and \fISubject\fR\& are to be specified as valid Unicode \fIcharlist()\fR\&s\&.
+.LP
+The result is given as a list of "strings", the preferred data type specified in option \fIreturn\fR\& (default \fIiodata\fR\&)\&.
+.LP
+If subexpressions are specified in the regular expression, the matching subexpressions are returned in the resulting list as well\&. For example:
+.LP
+.nf
+
+re:split("Erlang","[ln]",[{return,list}]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+["Er","a","g"]
+.fi
+.LP
+while
+.LP
+.nf
+
+re:split("Erlang","([ln])",[{return,list}]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+["Er","l","a","n","g"]
+.fi
+.LP
+The text matching the subexpression (marked by the parentheses in the regular expression) is inserted in the result list where it was found\&. This means that concatenating the result of a split where the whole regular expression is a single subexpression (as in the last example) always results in the original string\&.
+.LP
+As there is no matching subexpression for the last part in the example (the "g"), nothing is inserted after that\&. To make the group of strings and the parts matching the subexpressions more obvious, one can use option \fIgroup\fR\&, which groups together the part of the subject string with the parts matching the subexpressions when the string was split:
+.LP
+.nf
+
+re:split("Erlang","([ln])",[{return,list},group]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+[["Er","l"],["a","n"],["g"]]
+.fi
+.LP
+Here the regular expression first matched the "l", causing "Er" to be the first part in the result\&. When the regular expression matched, the (only) subexpression was bound to the "l", so the "l" is inserted in the group together with "Er"\&. The next match is of the "n", making "a" the next part to be returned\&. As the subexpression is bound to substring "n" in this case, the "n" is inserted into this group\&. The last group consists of the remaining string, as no more matches are found\&.
+.LP
+By default, all parts of the string, including the empty strings, are returned from the function, for example:
+.LP
+.nf
+
+re:split("Erlang","[lg]",[{return,list}]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+["Er","an",[]]
+.fi
+.LP
+as the matching of the "g" in the end of the string leaves an empty rest, which is also returned\&. This behavior differs from the default behavior of the split function in Perl, where empty strings at the end are by default removed\&. To get the "trimming" default behavior of Perl, specify \fItrim\fR\& as an option:
+.LP
+.nf
+
+re:split("Erlang","[lg]",[{return,list},trim]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+["Er","an"]
+.fi
+.LP
+The "trim" option says; "give me as many parts as possible except the empty ones", which sometimes can be useful\&. You can also specify how many parts you want, by specifying \fI{parts,\fR\&N\fI}\fR\&:
+.LP
+.nf
+
+re:split("Erlang","[lg]",[{return,list},{parts,2}]).
+.fi
+.LP
+gives
+.LP
+.nf
+
+["Er","ang"]
+.fi
+.LP
+Notice that the last part is "ang", not "an", as splitting was specified into two parts, and the splitting stops when enough parts are given, which is why the result differs from that of \fItrim\fR\&\&.
+.LP
+More than three parts are not possible with this indata, so
+.LP
+.nf
+
+re:split("Erlang","[lg]",[{return,list},{parts,4}]).
+.fi
+.LP
+gives the same result as the default, which is to be viewed as "an infinite number of parts"\&.
+.LP
+Specifying \fI0\fR\& as the number of parts gives the same effect as option \fItrim\fR\&\&. If subexpressions are captured, empty subexpressions matched at the end are also stripped from the result if \fItrim\fR\& or \fI{parts,0}\fR\& is specified\&.
+.LP
+The \fItrim\fR\& behavior corresponds exactly to the Perl default\&. \fI{parts,N}\fR\&, where N is a positive integer, corresponds exactly to the Perl behavior with a positive numerical third parameter\&. The default behavior of \fIsplit/3\fR\& corresponds to the Perl behavior when a negative integer is specified as the third parameter for the Perl routine\&.
+.LP
+Summary of options not previously described for function \fIrun/3\fR\&:
+.RS 2
+.TP 2
+.B
+\fI{return,ReturnType}\fR\&:
+Specifies how the parts of the original string are presented in the result list\&. Valid types:
+.RS 2
+.TP 2
+.B
+\fIiodata\fR\&:
+The variant of \fIiodata()\fR\& that gives the least copying of data with the current implementation (often a binary, but do not depend on it)\&.
+.TP 2
+.B
+\fIbinary\fR\&:
+All parts returned as binaries\&.
+.TP 2
+.B
+\fIlist\fR\&:
+All parts returned as lists of characters ("strings")\&.
+.RE
+.TP 2
+.B
+\fIgroup\fR\&:
+Groups together the part of the string with the parts of the string matching the subexpressions of the regular expression\&.
+.RS 2
+.LP
+The return value from the function is in this case a \fIlist()\fR\& of \fIlist()\fR\&s\&. Each sublist begins with the string picked out of the subject string, followed by the parts matching each of the subexpressions in order of occurrence in the regular expression\&.
+.RE
+.TP 2
+.B
+\fI{parts,N}\fR\&:
+Specifies the number of parts the subject string is to be split into\&.
+.RS 2
+.LP
+The number of parts is to be a positive integer for a specific maximum number of parts, and \fIinfinity\fR\& for the maximum number of parts possible (the default)\&. Specifying \fI{parts,0}\fR\& gives as many parts as possible disregarding empty parts at the end, the same as specifying \fItrim\fR\&\&.
+.RE
+.TP 2
+.B
+\fItrim\fR\&:
+Specifies that empty parts at the end of the result list are to be disregarded\&. The same as specifying \fI{parts,0}\fR\&\&. This corresponds to the default behavior of the \fIsplit\fR\& built-in function in Perl\&.
+.RE
+.RE
+.SH "PERL-LIKE REGULAR EXPRESSION SYNTAX"
+
+.LP
+The following sections contain reference material for the regular expressions used by this module\&. The information is based on the PCRE documentation, with changes where this module behaves differently to the PCRE library\&.
+.SH "PCRE REGULAR EXPRESSION DETAILS"
+
+.LP
+The syntax and semantics of the regular expressions supported by PCRE are described in detail in the following sections\&. Perl\&'s regular expressions are described in its own documentation, and regular expressions in general are covered in many books, some with copious examples\&. Jeffrey Friedl\&'s "Mastering Regular Expressions", published by O\&'Reilly, covers regular expressions in great detail\&. This description of the PCRE regular expressions is intended as reference material\&.
+.LP
+The reference material is divided into the following sections:
+.RS 2
+.TP 2
+*
+\fBSpecial Start-of-Pattern Items\fR\&
+.LP
+.TP 2
+*
+\fBCharacters and Metacharacters\fR\&
+.LP
+.TP 2
+*
+\fBBackslash\fR\&
+.LP
+.TP 2
+*
+\fBCircumflex and Dollar\fR\&
+.LP
+.TP 2
+*
+\fBFull Stop (Period, Dot) and \\N\fR\&
+.LP
+.TP 2
+*
+\fBMatching a Single Data Unit\fR\&
+.LP
+.TP 2
+*
+\fBSquare Brackets and Character Classes\fR\&
+.LP
+.TP 2
+*
+\fBPosix Character Classes\fR\&
+.LP
+.TP 2
+*
+\fBVertical Bar\fR\&
+.LP
+.TP 2
+*
+\fBInternal Option Setting\fR\&
+.LP
+.TP 2
+*
+\fBSubpatterns\fR\&
+.LP
+.TP 2
+*
+\fBDuplicate Subpattern Numbers\fR\&
+.LP
+.TP 2
+*
+\fBNamed Subpatterns\fR\&
+.LP
+.TP 2
+*
+\fBRepetition\fR\&
+.LP
+.TP 2
+*
+\fBAtomic Grouping and Possessive Quantifiers\fR\&
+.LP
+.TP 2
+*
+\fBBack References\fR\&
+.LP
+.TP 2
+*
+\fBAssertions\fR\&
+.LP
+.TP 2
+*
+\fBConditional Subpatterns\fR\&
+.LP
+.TP 2
+*
+\fBComments\fR\&
+.LP
+.TP 2
+*
+\fBRecursive Patterns\fR\&
+.LP
+.TP 2
+*
+\fBSubpatterns as Subroutines\fR\&
+.LP
+.TP 2
+*
+\fBOniguruma Subroutine Syntax\fR\&
+.LP
+.TP 2
+*
+\fBBacktracking Control\fR\&
+.LP
+.RE
+
+.SH "SPECIAL START-OF-PATTERN ITEMS"
+
+.LP
+Some options that can be passed to \fB\fIcompile/2\fR\&\fR\& can also be set by special items at the start of a pattern\&. These are not Perl-compatible, but are provided to make these options accessible to pattern writers who are not able to change the program that processes the pattern\&. Any number of these items can appear, but they must all be together right at the start of the pattern string, and the letters must be in upper case\&.
+.LP
+\fIUTF Support\fR\&
+.LP
+Unicode support is basically UTF-8 based\&. To use Unicode characters, you either call \fB\fIcompile/2\fR\&\fR\& or \fB\fIrun/3\fR\&\fR\& with option \fIunicode\fR\&, or the pattern must start with one of these special sequences:
+.LP
+.nf
+
+(*UTF8)
+(*UTF)
+.fi
+.LP
+Both options give the same effect, the input string is interpreted as UTF-8\&. Notice that with these instructions, the automatic conversion of lists to UTF-8 is not performed by the \fIre\fR\& functions\&. Therefore, using these sequences is not recommended\&. Add option \fIunicode\fR\& when running \fB\fIcompile/2\fR\&\fR\& instead\&.
+.LP
+Some applications that allow their users to supply patterns can wish to restrict them to non-UTF data for security reasons\&. If option \fInever_utf\fR\& is set at compile time, (*UTF), and so on, are not allowed, and their appearance causes an error\&.
+.LP
+\fIUnicode Property Support\fR\&
+.LP
+The following is another special sequence that can appear at the start of a pattern:
+.LP
+.nf
+
+(*UCP)
+.fi
+.LP
+This has the same effect as setting option \fIucp\fR\&: it causes sequences such as \\d and \\w to use Unicode properties to determine character types, instead of recognizing only characters with codes < 256 through a lookup table\&.
+.LP
+\fIDisabling Startup Optimizations\fR\&
+.LP
+If a pattern starts with \fI(*NO_START_OPT)\fR\&, it has the same effect as setting option \fIno_start_optimize\fR\& at compile time\&.
+.LP
+\fINewline Conventions\fR\&
+.LP
+PCRE supports five conventions for indicating line breaks in strings: a single CR (carriage return) character, a single LF (line feed) character, the two-character sequence CRLF, any of the three preceding, and any Unicode newline sequence\&.
+.LP
+A newline convention can also be specified by starting a pattern string with one of the following five sequences:
+.RS 2
+.TP 2
+.B
+(*CR):
+Carriage return
+.TP 2
+.B
+(*LF):
+Line feed
+.TP 2
+.B
+(*CRLF):
+>Carriage return followed by line feed
+.TP 2
+.B
+(*ANYCRLF):
+Any of the three above
+.TP 2
+.B
+(*ANY):
+All Unicode newline sequences
+.RE
+.LP
+These override the default and the options specified to \fB\fIcompile/2\fR\&\fR\&\&. For example, the following pattern changes the convention to CR:
+.LP
+.nf
+
+(*CR)a.b
+.fi
+.LP
+This pattern matches \fIa\\nb\fR\&, as LF is no longer a newline\&. If more than one of them is present, the last one is used\&.
+.LP
+The newline convention affects where the circumflex and dollar assertions are true\&. It also affects the interpretation of the dot metacharacter when \fIdotall\fR\& is not set, and the behavior of \\N\&. However, it does not affect what the \\R escape sequence matches\&. By default, this is any Unicode newline sequence, for Perl compatibility\&. However, this can be changed; see the description of \\R in section \fBNewline Sequences\fR\&\&. A change of the \\R setting can be combined with a change of the newline convention\&.
+.LP
+\fISetting Match and Recursion Limits\fR\&
+.LP
+The caller of \fB\fIrun/3\fR\&\fR\& can set a limit on the number of times the internal match() function is called and on the maximum depth of recursive calls\&. These facilities are provided to catch runaway matches that are provoked by patterns with huge matching trees (a typical example is a pattern with nested unlimited repeats) and to avoid running out of system stack by too much recursion\&. When one of these limits is reached, \fIpcre_exec()\fR\& gives an error return\&. The limits can also be set by items at the start of the pattern of the following forms:
+.LP
+.nf
+
+(*LIMIT_MATCH=d)
+(*LIMIT_RECURSION=d)
+.fi
+.LP
+Here d is any number of decimal digits\&. However, the value of the setting must be less than the value set by the caller of \fIrun/3\fR\& for it to have any effect\&. That is, the pattern writer can lower the limit set by the programmer, but not raise it\&. If there is more than one setting of one of these limits, the lower value is used\&.
+.LP
+The default value for both the limits is 10,000,000 in the Erlang VM\&. Notice that the recursion limit does not affect the stack depth of the VM, as PCRE for Erlang is compiled in such a way that the match function never does recursion on the C stack\&.
+.SH "CHARACTERS AND METACHARACTERS"
+
+.LP
+A regular expression is a pattern that is matched against a subject string from left to right\&. Most characters stand for themselves in a pattern and match the corresponding characters in the subject\&. As a trivial example, the following pattern matches a portion of a subject string that is identical to itself:
+.LP
+.nf
+
+The quick brown fox
+.fi
+.LP
+When caseless matching is specified (option \fIcaseless\fR\&), letters are matched independently of case\&.
+.LP
+The power of regular expressions comes from the ability to include alternatives and repetitions in the pattern\&. These are encoded in the pattern by the use of \fImetacharacters\fR\&, which do not stand for themselves but instead are interpreted in some special way\&.
+.LP
+Two sets of metacharacters exist: those that are recognized anywhere in the pattern except within square brackets, and those that are recognized within square brackets\&. Outside square brackets, the metacharacters are as follows:
+.RS 2
+.TP 2
+.B
+\\:
+General escape character with many uses
+.TP 2
+.B
+^:
+Assert start of string (or line, in multiline mode) 
+.TP 2
+.B
+$:
+Assert end of string (or line, in multiline mode)
+.TP 2
+.B
+\&.:
+Match any character except newline (by default)
+.TP 2
+.B
+[:
+Start character class definition
+.TP 2
+.B
+|:
+Start of alternative branch
+.TP 2
+.B
+(:
+Start subpattern
+.TP 2
+.B
+):
+End subpattern
+.TP 2
+.B
+?:
+Extends the meaning of (, also 0 or 1 quantifier, also quantifier minimizer
+.TP 2
+.B
+*:
+0 or more quantifiers
+.TP 2
+.B
++:
+1 or more quantifier, also "possessive quantifier" 
+.TP 2
+.B
+{:
+Start min/max quantifier
+.RE
+.LP
+Part of a pattern within square brackets is called a "character class"\&. The following are the only metacharacters in a character class:
+.RS 2
+.TP 2
+.B
+\\:
+General escape character
+.TP 2
+.B
+^:
+Negate the class, but only if the first character
+.TP 2
+.B
+-:
+Indicates character range
+.TP 2
+.B
+[:
+Posix character class (only if followed by Posix syntax) 
+.TP 2
+.B
+]:
+Terminates the character class
+.RE
+.LP
+The following sections describe the use of each metacharacter\&.
+.SH "BACKSLASH"
+
+.LP
+The backslash character has many uses\&. First, if it is followed by a character that is not a number or a letter, it takes away any special meaning that a character can have\&. This use of backslash as an escape character applies both inside and outside character classes\&.
+.LP
+For example, if you want to match a * character, you write \\* in the pattern\&. This escaping action applies if the following character would otherwise be interpreted as a metacharacter, so it is always safe to precede a non-alphanumeric with backslash to specify that it stands for itself\&. In particular, if you want to match a backslash, write \\\\\&.
+.LP
+In \fIunicode\fR\& mode, only ASCII numbers and letters have any special meaning after a backslash\&. All other characters (in particular, those whose code points are > 127) are treated as literals\&.
+.LP
+If a pattern is compiled with option \fIextended\fR\&, whitespace in the pattern (other than in a character class) and characters between a # outside a character class and the next newline are ignored\&. An escaping backslash can be used to include a whitespace or # character as part of the pattern\&.
+.LP
+To remove the special meaning from a sequence of characters, put them between \\Q and \\E\&. This is different from Perl in that $ and @ are handled as literals in \\Q\&.\&.\&.\\E sequences in PCRE, while $ and @ cause variable interpolation in Perl\&. Notice the following examples:
+.LP
+.nf
+
+Pattern            PCRE matches   Perl matches
+
+\\Qabc$xyz\\E        abc$xyz        abc followed by the contents of $xyz
+\\Qabc\\$xyz\\E       abc\\$xyz       abc\\$xyz
+\\Qabc\\E\\$\\Qxyz\\E   abc$xyz        abc$xyz
+.fi
+.LP
+The \\Q\&.\&.\&.\\E sequence is recognized both inside and outside character classes\&. An isolated \\E that is not preceded by \\Q is ignored\&. If \\Q is not followed by \\E later in the pattern, the literal interpretation continues to the end of the pattern (that is, \\E is assumed at the end)\&. If the isolated \\Q is inside a character class, this causes an error, as the character class is not terminated\&.
+.LP
+\fINon-Printing Characters\fR\&
+.LP
+A second use of backslash provides a way of encoding non-printing characters in patterns in a visible manner\&. There is no restriction on the appearance of non-printing characters, apart from the binary zero that terminates a pattern\&. When a pattern is prepared by text editing, it is often easier to use one of the following escape sequences than the binary character it represents:
+.RS 2
+.TP 2
+.B
+\\a:
+Alarm, that is, the BEL character (hex 07)
+.TP 2
+.B
+\\cx:
+"Control-x", where x is any ASCII character
+.TP 2
+.B
+\\e:
+Escape (hex 1B)
+.TP 2
+.B
+\\f:
+Form feed (hex 0C)
+.TP 2
+.B
+\\n:
+Line feed (hex 0A)
+.TP 2
+.B
+\\r:
+Carriage return (hex 0D)
+.TP 2
+.B
+\\t:
+Tab (hex 09)
+.TP 2
+.B
+\\ddd:
+Character with octal code ddd, or back reference 
+.TP 2
+.B
+\\xhh:
+Character with hex code hh
+.TP 2
+.B
+\\x{hhh\&.\&.}:
+Character with hex code hhh\&.\&.
+.RE
+.LP
+The precise effect of \\cx on ASCII characters is as follows: if x is a lowercase letter, it is converted to upper case\&. Then bit 6 of the character (hex 40) is inverted\&. Thus \\cA to \\cZ become hex 01 to hex 1A (A is 41, Z is 5A), but \\c{ becomes hex 3B ({ is 7B), and \\c; becomes hex 7B (; is 3B)\&. If the data item (byte or 16-bit value) following \\c has a value > 127, a compile-time error occurs\&. This locks out non-ASCII characters in all modes\&.
+.LP
+The \\c facility was designed for use with ASCII characters, but with the extension to Unicode it is even less useful than it once was\&.
+.LP
+By default, after \\x, from zero to two hexadecimal digits are read (letters can be in upper or lower case)\&. Any number of hexadecimal digits can appear between \\x{ and }, but the character code is constrained as follows:
+.RS 2
+.TP 2
+.B
+8-bit non-Unicode mode:
+< 0x100
+.TP 2
+.B
+8-bit UTF-8 mode:
+< 0x10ffff and a valid code point
+.RE
+.LP
+Invalid Unicode code points are the range 0xd800 to 0xdfff (the so-called "surrogate" code points), and 0xffef\&.
+.LP
+If characters other than hexadecimal digits appear between \\x{ and }, or if there is no terminating }, this form of escape is not recognized\&. Instead, the initial \\x is interpreted as a basic hexadecimal escape, with no following digits, giving a character whose value is zero\&.
+.LP
+Characters whose value is < 256 can be defined by either of the two syntaxes for \\x\&. There is no difference in the way they are handled\&. For example, \\xdc is the same as \\x{dc}\&.
+.LP
+After \\0 up to two further octal digits are read\&. If there are fewer than two digits, only those that are present are used\&. Thus the sequence \\0\\x\\07 specifies two binary zeros followed by a BEL character (code value 7)\&. Ensure to supply two digits after the initial zero if the pattern character that follows is itself an octal digit\&.
+.LP
+The handling of a backslash followed by a digit other than 0 is complicated\&. Outside a character class, PCRE reads it and any following digits as a decimal number\&. If the number is < 10, or if there have been at least that many previous capturing left parentheses in the expression, the entire sequence is taken as a \fIback reference\fR\&\&. A description of how this works is provided later, following the discussion of parenthesized subpatterns\&.
+.LP
+Inside a character class, or if the decimal number is > 9 and there have not been that many capturing subpatterns, PCRE re-reads up to three octal digits following the backslash, and uses them to generate a data character\&. Any subsequent digits stand for themselves\&. The value of the character is constrained in the same way as characters specified in hexadecimal\&. For example:
+.RS 2
+.TP 2
+.B
+\\040:
+Another way of writing an ASCII space
+.TP 2
+.B
+\\40:
+The same, provided there are < 40 previous capturing subpatterns
+.TP 2
+.B
+\\7:
+Always a back reference
+.TP 2
+.B
+\\11:
+Can be a back reference, or another way of writing a tab
+.TP 2
+.B
+\\011:
+Always a tab
+.TP 2
+.B
+\\0113:
+A tab followed by character "3"
+.TP 2
+.B
+\\113:
+Can be a back reference, otherwise the character with octal code 113 
+.TP 2
+.B
+\\377:
+Can be a back reference, otherwise value 255 (decimal)
+.TP 2
+.B
+\\81:
+Either a back reference, or a binary zero followed by the two characters "8" and "1"
+.RE
+.LP
+Notice that octal values >= 100 must not be introduced by a leading zero, as no more than three octal digits are ever read\&.
+.LP
+All the sequences that define a single character value can be used both inside and outside character classes\&. Also, inside a character class, \\b is interpreted as the backspace character (hex 08)\&.
+.LP
+\\N is not allowed in a character class\&. \\B, \\R, and \\X are not special inside a character class\&. Like other unrecognized escape sequences, they are treated as the literal characters "B", "R", and "X"\&. Outside a character class, these sequences have different meanings\&.
+.LP
+\fIUnsupported Escape Sequences\fR\&
+.LP
+In Perl, the sequences \\l, \\L, \\u, and \\U are recognized by its string handler and used to modify the case of following characters\&. PCRE does not support these escape sequences\&.
+.LP
+\fIAbsolute and Relative Back References\fR\&
+.LP
+The sequence \\g followed by an unsigned or a negative number, optionally enclosed in braces, is an absolute or relative back reference\&. A named back reference can be coded as \\g{name}\&. Back references are discussed later, following the discussion of parenthesized subpatterns\&.
+.LP
+\fIAbsolute and Relative Subroutine Calls\fR\&
+.LP
+For compatibility with Oniguruma, the non-Perl syntax \\g followed by a name or a number enclosed either in angle brackets or single quotes, is alternative syntax for referencing a subpattern as a "subroutine"\&. Details are discussed later\&. Notice that \\g{\&.\&.\&.} (Perl syntax) and \\g<\&.\&.\&.> (Oniguruma syntax) are \fInot\fR\& synonymous\&. The former is a back reference and the latter is a subroutine call\&.
+.LP
+\fIGeneric Character Types\fR\&
+.LP
+Another use of backslash is for specifying generic character types:
+.RS 2
+.TP 2
+.B
+\\d:
+Any decimal digit
+.TP 2
+.B
+\\D:
+Any character that is not a decimal digit
+.TP 2
+.B
+\\h:
+Any horizontal whitespace character
+.TP 2
+.B
+\\H:
+Any character that is not a horizontal whitespace character
+.TP 2
+.B
+\\s:
+Any whitespace character
+.TP 2
+.B
+\\S:
+Any character that is not a whitespace character 
+.TP 2
+.B
+\\v:
+Any vertical whitespace character
+.TP 2
+.B
+\\V:
+Any character that is not a vertical whitespace character
+.TP 2
+.B
+\\w:
+Any "word" character
+.TP 2
+.B
+\\W:
+Any "non-word" character
+.RE
+.LP
+There is also the single sequence \\N, which matches a non-newline character\&. This is the same as the "\&." metacharacter when \fIdotall\fR\& is not set\&. Perl also uses \\N to match characters by name, but PCRE does not support this\&.
+.LP
+Each pair of lowercase and uppercase escape sequences partitions the complete set of characters into two disjoint sets\&. Any given character matches one, and only one, of each pair\&. The sequences can appear both inside and outside character classes\&. They each match one character of the appropriate type\&. If the current matching point is at the end of the subject string, all fail, as there is no character to match\&.
+.LP
+For compatibility with Perl, \\s does not match the VT character (code 11)\&. This makes it different from the Posix "space" class\&. The \\s characters are HT (9), LF (10), FF (12), CR (13), and space (32)\&. If "use locale;" is included in a Perl script, \\s can match the VT character\&. In PCRE, it never does\&.
+.LP
+A "word" character is an underscore or any character that is a letter or a digit\&. By default, the definition of letters and digits is controlled by the PCRE low-valued character tables, in Erlang\&'s case (and without option \fIunicode\fR\&), the ISO Latin-1 character set\&.
+.LP
+By default, in \fIunicode\fR\& mode, characters with values > 255, that is, all characters outside the ISO Latin-1 character set, never match \\d, \\s, or \\w, and always match \\D, \\S, and \\W\&. These sequences retain their original meanings from before UTF support was available, mainly for efficiency reasons\&. However, if option \fIucp\fR\& is set, the behavior is changed so that Unicode properties are used to determine character types, as follows:
+.RS 2
+.TP 2
+.B
+\\d:
+Any character that \\p{Nd} matches (decimal digit) 
+.TP 2
+.B
+\\s:
+Any character that \\p{Z} matches, plus HT, LF, FF, CR 
+.TP 2
+.B
+\\w:
+Any character that \\p{L} or \\p{N} matches, plus underscore
+.RE
+.LP
+The uppercase escapes match the inverse sets of characters\&. Notice that \\d matches only decimal digits, while \\w matches any Unicode digit, any Unicode letter, and underscore\&. Notice also that \fIucp\fR\& affects \\b and \\B, as they are defined in terms of \\w and \\W\&. Matching these sequences is noticeably slower when \fIucp\fR\& is set\&.
+.LP
+The sequences \\h, \\H, \\v, and \\V are features that were added to Perl in release 5\&.10\&. In contrast to the other sequences, which match only ASCII characters by default, these always match certain high-valued code points, regardless if \fIucp\fR\& is set\&.
+.LP
+The following are the horizontal space characters:
+.RS 2
+.TP 2
+.B
+U+0009:
+Horizontal tab (HT)
+.TP 2
+.B
+U+0020:
+Space
+.TP 2
+.B
+U+00A0:
+Non-break space
+.TP 2
+.B
+U+1680:
+Ogham space mark
+.TP 2
+.B
+U+180E:
+Mongolian vowel separator
+.TP 2
+.B
+U+2000:
+En quad
+.TP 2
+.B
+U+2001:
+Em quad
+.TP 2
+.B
+U+2002:
+En space
+.TP 2
+.B
+U+2003:
+Em space
+.TP 2
+.B
+U+2004:
+Three-per-em space
+.TP 2
+.B
+U+2005:
+Four-per-em space
+.TP 2
+.B
+U+2006:
+Six-per-em space
+.TP 2
+.B
+U+2007:
+Figure space
+.TP 2
+.B
+U+2008:
+Punctuation space
+.TP 2
+.B
+U+2009:
+Thin space
+.TP 2
+.B
+U+200A:
+Hair space
+.TP 2
+.B
+U+202F:
+Narrow no-break space
+.TP 2
+.B
+U+205F:
+Medium mathematical space
+.TP 2
+.B
+U+3000:
+Ideographic space
+.RE
+.LP
+The following are the vertical space characters:
+.RS 2
+.TP 2
+.B
+U+000A:
+Line feed (LF)
+.TP 2
+.B
+U+000B:
+Vertical tab (VT)
+.TP 2
+.B
+U+000C:
+Form feed (FF)
+.TP 2
+.B
+U+000D:
+Carriage return (CR)
+.TP 2
+.B
+U+0085:
+Next line (NEL)
+.TP 2
+.B
+U+2028:
+Line separator
+.TP 2
+.B
+U+2029:
+Paragraph separator
+.RE
+.LP
+In 8-bit, non-UTF-8 mode, only the characters with code points < 256 are relevant\&.
+.LP
+\fINewline Sequences\fR\&
+.LP
+Outside a character class, by default, the escape sequence \\R matches any Unicode newline sequence\&. In non-UTF-8 mode, \\R is equivalent to the following:
+.LP
+.nf
+
+(?>\\r\\n|\\n|\\x0b|\\f|\\r|\\x85)
+.fi
+.LP
+This is an example of an "atomic group", details are provided below\&.
+.LP
+This particular group matches either the two-character sequence CR followed by LF, or one of the single characters LF (line feed, U+000A), VT (vertical tab, U+000B), FF (form feed, U+000C), CR (carriage return, U+000D), or NEL (next line, U+0085)\&. The two-character sequence is treated as a single unit that cannot be split\&.
+.LP
+In Unicode mode, two more characters whose code points are > 255 are added: LS (line separator, U+2028) and PS (paragraph separator, U+2029)\&. Unicode character property support is not needed for these characters to be recognized\&.
+.LP
+\\R can be restricted to match only CR, LF, or CRLF (instead of the complete set of Unicode line endings) by setting option \fIbsr_anycrlf\fR\& either at compile time or when the pattern is matched\&. (BSR is an acronym for "backslash R"\&.) This can be made the default when PCRE is built; if so, the other behavior can be requested through option \fIbsr_unicode\fR\&\&. These settings can also be specified by starting a pattern string with one of the following sequences:
+.RS 2
+.TP 2
+.B
+(*BSR_ANYCRLF):
+CR, LF, or CRLF only
+.TP 2
+.B
+(*BSR_UNICODE):
+Any Unicode newline sequence
+.RE
+.LP
+These override the default and the options specified to the compiling function, but they can themselves be overridden by options specified to a matching function\&. Notice that these special settings, which are not Perl-compatible, are recognized only at the very start of a pattern, and that they must be in upper case\&. If more than one of them is present, the last one is used\&. They can be combined with a change of newline convention; for example, a pattern can start with:
+.LP
+.nf
+
+(*ANY)(*BSR_ANYCRLF)
+.fi
+.LP
+They can also be combined with the (*UTF8), (*UTF), or (*UCP) special sequences\&. Inside a character class, \\R is treated as an unrecognized escape sequence, and so matches the letter "R" by default\&.
+.LP
+\fIUnicode Character Properties\fR\&
+.LP
+Three more escape sequences that match characters with specific properties are available\&. When in 8-bit non-UTF-8 mode, these sequences are limited to testing characters whose code points are < 256, but they do work in this mode\&. The following are the extra escape sequences:
+.RS 2
+.TP 2
+.B
+\\p{\fIxx\fR\&}:
+A character with property \fIxx\fR\&
+.TP 2
+.B
+\\P{\fIxx\fR\&}:
+A character without property \fIxx\fR\&
+.TP 2
+.B
+\\X:
+A Unicode extended grapheme cluster
+.RE
+.LP
+The property names represented by \fIxx\fR\& above are limited to the Unicode script names, the general category properties, "Any", which matches any character (including newline), and some special PCRE properties (described in the next section)\&. Other Perl properties, such as "InMusicalSymbols", are currently not supported by PCRE\&. Notice that \\P{Any} does not match any characters and always causes a match failure\&.
+.LP
+Sets of Unicode characters are defined as belonging to certain scripts\&. A character from one of these sets can be matched using a script name, for example:
+.LP
+.nf
+
+\\p{Greek} \\P{Han}
+.fi
+.LP
+Those that are not part of an identified script are lumped together as "Common"\&. The following is the current list of scripts:
+.RS 2
+.TP 2
+*
+Arabic
+.LP
+.TP 2
+*
+Armenian
+.LP
+.TP 2
+*
+Avestan
+.LP
+.TP 2
+*
+Balinese
+.LP
+.TP 2
+*
+Bamum
+.LP
+.TP 2
+*
+Batak
+.LP
+.TP 2
+*
+Bengali
+.LP
+.TP 2
+*
+Bopomofo
+.LP
+.TP 2
+*
+Braille
+.LP
+.TP 2
+*
+Buginese
+.LP
+.TP 2
+*
+Buhid
+.LP
+.TP 2
+*
+Canadian_Aboriginal
+.LP
+.TP 2
+*
+Carian
+.LP
+.TP 2
+*
+Chakma
+.LP
+.TP 2
+*
+Cham
+.LP
+.TP 2
+*
+Cherokee
+.LP
+.TP 2
+*
+Common
+.LP
+.TP 2
+*
+Coptic
+.LP
+.TP 2
+*
+Cuneiform
+.LP
+.TP 2
+*
+Cypriot
+.LP
+.TP 2
+*
+Cyrillic
+.LP
+.TP 2
+*
+Deseret
+.LP
+.TP 2
+*
+Devanagari
+.LP
+.TP 2
+*
+Egyptian_Hieroglyphs
+.LP
+.TP 2
+*
+Ethiopic
+.LP
+.TP 2
+*
+Georgian
+.LP
+.TP 2
+*
+Glagolitic
+.LP
+.TP 2
+*
+Gothic
+.LP
+.TP 2
+*
+Greek
+.LP
+.TP 2
+*
+Gujarati
+.LP
+.TP 2
+*
+Gurmukhi
+.LP
+.TP 2
+*
+Han
+.LP
+.TP 2
+*
+Hangul
+.LP
+.TP 2
+*
+Hanunoo
+.LP
+.TP 2
+*
+Hebrew
+.LP
+.TP 2
+*
+Hiragana
+.LP
+.TP 2
+*
+Imperial_Aramaic
+.LP
+.TP 2
+*
+Inherited
+.LP
+.TP 2
+*
+Inscriptional_Pahlavi
+.LP
+.TP 2
+*
+Inscriptional_Parthian
+.LP
+.TP 2
+*
+Javanese
+.LP
+.TP 2
+*
+Kaithi
+.LP
+.TP 2
+*
+Kannada
+.LP
+.TP 2
+*
+Katakana
+.LP
+.TP 2
+*
+Kayah_Li
+.LP
+.TP 2
+*
+Kharoshthi
+.LP
+.TP 2
+*
+Khmer
+.LP
+.TP 2
+*
+Lao
+.LP
+.TP 2
+*
+Latin
+.LP
+.TP 2
+*
+Lepcha
+.LP
+.TP 2
+*
+Limbu
+.LP
+.TP 2
+*
+Linear_B
+.LP
+.TP 2
+*
+Lisu
+.LP
+.TP 2
+*
+Lycian
+.LP
+.TP 2
+*
+Lydian
+.LP
+.TP 2
+*
+Malayalam
+.LP
+.TP 2
+*
+Mandaic
+.LP
+.TP 2
+*
+Meetei_Mayek
+.LP
+.TP 2
+*
+Meroitic_Cursive
+.LP
+.TP 2
+*
+Meroitic_Hieroglyphs
+.LP
+.TP 2
+*
+Miao
+.LP
+.TP 2
+*
+Mongolian
+.LP
+.TP 2
+*
+Myanmar
+.LP
+.TP 2
+*
+New_Tai_Lue
+.LP
+.TP 2
+*
+Nko
+.LP
+.TP 2
+*
+Ogham
+.LP
+.TP 2
+*
+Old_Italic
+.LP
+.TP 2
+*
+Old_Persian
+.LP
+.TP 2
+*
+Oriya
+.LP
+.TP 2
+*
+Old_South_Arabian
+.LP
+.TP 2
+*
+Old_Turkic
+.LP
+.TP 2
+*
+Ol_Chiki
+.LP
+.TP 2
+*
+Osmanya
+.LP
+.TP 2
+*
+Phags_Pa
+.LP
+.TP 2
+*
+Phoenician
+.LP
+.TP 2
+*
+Rejang
+.LP
+.TP 2
+*
+Runic
+.LP
+.TP 2
+*
+Samaritan
+.LP
+.TP 2
+*
+Saurashtra
+.LP
+.TP 2
+*
+Sharada
+.LP
+.TP 2
+*
+Shavian
+.LP
+.TP 2
+*
+Sinhala
+.LP
+.TP 2
+*
+Sora_Sompeng
+.LP
+.TP 2
+*
+Sundanese
+.LP
+.TP 2
+*
+Syloti_Nagri
+.LP
+.TP 2
+*
+Syriac
+.LP
+.TP 2
+*
+Tagalog
+.LP
+.TP 2
+*
+Tagbanwa
+.LP
+.TP 2
+*
+Tai_Le
+.LP
+.TP 2
+*
+Tai_Tham
+.LP
+.TP 2
+*
+Tai_Viet
+.LP
+.TP 2
+*
+Takri
+.LP
+.TP 2
+*
+Tamil
+.LP
+.TP 2
+*
+Telugu
+.LP
+.TP 2
+*
+Thaana
+.LP
+.TP 2
+*
+Thai
+.LP
+.TP 2
+*
+Tibetan
+.LP
+.TP 2
+*
+Tifinagh
+.LP
+.TP 2
+*
+Ugaritic
+.LP
+.TP 2
+*
+Vai
+.LP
+.TP 2
+*
+Yi
+.LP
+.RE
+
+.LP
+Each character has exactly one Unicode general category property, specified by a two-letter acronym\&. For compatibility with Perl, negation can be specified by including a circumflex between the opening brace and the property name\&. For example, \\p{^Lu} is the same as \\P{Lu}\&.
+.LP
+If only one letter is specified with \\p or \\P, it includes all the general category properties that start with that letter\&. In this case, in the absence of negation, the curly brackets in the escape sequence are optional\&. The following two examples have the same effect:
+.LP
+.nf
+
+\\p{L}
+\\pL
+.fi
+.LP
+The following general category property codes are supported:
+.RS 2
+.TP 2
+.B
+C:
+Other
+.TP 2
+.B
+Cc:
+Control
+.TP 2
+.B
+Cf:
+Format
+.TP 2
+.B
+Cn:
+Unassigned
+.TP 2
+.B
+Co:
+Private use
+.TP 2
+.B
+Cs:
+Surrogate
+.TP 2
+.B
+L:
+Letter
+.TP 2
+.B
+Ll:
+Lowercase letter
+.TP 2
+.B
+Lm:
+Modifier letter
+.TP 2
+.B
+Lo:
+Other letter
+.TP 2
+.B
+Lt:
+Title case letter
+.TP 2
+.B
+Lu:
+Uppercase letter
+.TP 2
+.B
+M:
+Mark
+.TP 2
+.B
+Mc:
+Spacing mark
+.TP 2
+.B
+Me:
+Enclosing mark
+.TP 2
+.B
+Mn:
+Non-spacing mark
+.TP 2
+.B
+N:
+Number
+.TP 2
+.B
+Nd:
+Decimal number
+.TP 2
+.B
+Nl:
+Letter number
+.TP 2
+.B
+No:
+Other number
+.TP 2
+.B
+P:
+Punctuation
+.TP 2
+.B
+Pc:
+Connector punctuation
+.TP 2
+.B
+Pd:
+Dash punctuation
+.TP 2
+.B
+Pe:
+Close punctuation
+.TP 2
+.B
+Pf:
+Final punctuation
+.TP 2
+.B
+Pi:
+Initial punctuation
+.TP 2
+.B
+Po:
+Other punctuation
+.TP 2
+.B
+Ps:
+Open punctuation
+.TP 2
+.B
+S:
+Symbol
+.TP 2
+.B
+Sc:
+Currency symbol
+.TP 2
+.B
+Sk:
+Modifier symbol
+.TP 2
+.B
+Sm:
+Mathematical symbol
+.TP 2
+.B
+So:
+Other symbol
+.TP 2
+.B
+Z:
+Separator
+.TP 2
+.B
+Zl:
+Line separator
+.TP 2
+.B
+Zp:
+Paragraph separator
+.TP 2
+.B
+Zs:
+Space separator
+.RE
+.LP
+The special property L& is also supported\&. It matches a character that has the Lu, Ll, or Lt property, that is, a letter that is not classified as a modifier or "other"\&.
+.LP
+The Cs (Surrogate) property applies only to characters in the range U+D800 to U+DFFF\&. Such characters are invalid in Unicode strings and so cannot be tested by PCRE\&. Perl does not support the Cs property\&.
+.LP
+The long synonyms for property names supported by Perl (such as \\p{Letter}) are not supported by PCRE\&. It is not permitted to prefix any of these properties with "Is"\&.
+.LP
+No character in the Unicode table has the Cn (unassigned) property\&. This property is instead assumed for any code point that is not in the Unicode table\&.
+.LP
+Specifying caseless matching does not affect these escape sequences\&. For example, \\p{Lu} always matches only uppercase letters\&. This is different from the behavior of current versions of Perl\&.
+.LP
+Matching characters by Unicode property is not fast, as PCRE must do a multistage table lookup to find a character property\&. That is why the traditional escape sequences such as \\d and \\w do not use Unicode properties in PCRE by default\&. However, you can make them do so by setting option \fIucp\fR\& or by starting the pattern with (*UCP)\&.
+.LP
+\fIExtended Grapheme Clusters\fR\&
+.LP
+The \\X escape matches any number of Unicode characters that form an "extended grapheme cluster", and treats the sequence as an atomic group (see below)\&. Up to and including release 8\&.31, PCRE matched an earlier, simpler definition that was equivalent to \fI(?>\\PM\\pM*)\fR\&\&. That is, it matched a character without the "mark" property, followed by zero or more characters with the "mark" property\&. Characters with the "mark" property are typically non-spacing accents that affect the preceding character\&.
+.LP
+This simple definition was extended in Unicode to include more complicated kinds of composite character by giving each character a grapheme breaking property, and creating rules that use these properties to define the boundaries of extended grapheme clusters\&. In PCRE releases later than 8\&.31, \\X matches one of these clusters\&.
+.LP
+\\X always matches at least one character\&. Then it decides whether to add more characters according to the following rules for ending a cluster:
+.RS 2
+.TP 2
+*
+End at the end of the subject string\&.
+.LP
+.TP 2
+*
+Do not end between CR and LF; otherwise end after any control character\&.
+.LP
+.TP 2
+*
+Do not break Hangul (a Korean script) syllable sequences\&. Hangul characters are of five types: L, V, T, LV, and LVT\&. An L character can be followed by an L, V, LV, or LVT character\&. An LV or V character can be followed by a V or T character\&. An LVT or T character can be followed only by a T character\&.
+.LP
+.TP 2
+*
+Do not end before extending characters or spacing marks\&. Characters with the "mark" property always have the "extend" grapheme breaking property\&.
+.LP
+.TP 2
+*
+Do not end after prepend characters\&.
+.LP
+.TP 2
+*
+Otherwise, end the cluster\&.
+.LP
+.RE
+
+.LP
+\fIPCRE Additional Properties\fR\&
+.LP
+In addition to the standard Unicode properties described earlier, PCRE supports four more that make it possible to convert traditional escape sequences, such as \\w and \\s, and Posix character classes to use Unicode properties\&. PCRE uses these non-standard, non-Perl properties internally when \fIPCRE_UCP\fR\& is set\&. However, they can also be used explicitly\&. The properties are as follows:
+.RS 2
+.TP 2
+.B
+Xan:
+Any alphanumeric character\&. Matches characters that have either the L (letter) or the N (number) property\&.
+.TP 2
+.B
+Xps:
+Any Posix space character\&. Matches the characters tab, line feed, vertical tab, form feed, carriage return, and any other character that has the Z (separator) property\&.
+.TP 2
+.B
+Xsp:
+Any Perl space character\&. Matches the same as Xps, except that vertical tab is excluded\&.
+.TP 2
+.B
+Xwd:
+Any Perl "word" character\&. Matches the same characters as Xan, plus underscore\&.
+.RE
+.LP
+There is another non-standard property, Xuc, which matches any character that can be represented by a Universal Character Name in C++ and other programming languages\&. These are the characters $, @, ` (grave accent), and all characters with Unicode code points >= U+00A0, except for the surrogates U+D800 to U+DFFF\&. Notice that most base (ASCII) characters are excluded\&. (Universal Character Names are of the form \\uHHHH or \\UHHHHHHHH, where H is a hexadecimal digit\&. Notice that the Xuc property does not match these sequences but the characters that they represent\&.)
+.LP
+\fIResetting the Match Start\fR\&
+.LP
+The escape sequence \\K causes any previously matched characters not to be included in the final matched sequence\&. For example, the following pattern matches "foobar", but reports that it has matched "bar":
+.LP
+.nf
+
+foo\\Kbar
+.fi
+.LP
+This feature is similar to a lookbehind assertion (described below)\&. However, in this case, the part of the subject before the real match does not have to be of fixed length, as lookbehind assertions do\&. The use of \\K does not interfere with the setting of captured substrings\&. For example, when the following pattern matches "foobar", the first substring is still set to "foo":
+.LP
+.nf
+
+(foo)\\Kbar
+.fi
+.LP
+Perl documents that the use of \\K within assertions is "not well defined"\&. In PCRE, \\K is acted upon when it occurs inside positive assertions, but is ignored in negative assertions\&.
+.LP
+\fISimple Assertions\fR\&
+.LP
+The final use of backslash is for certain simple assertions\&. An assertion specifies a condition that must be met at a particular point in a match, without consuming any characters from the subject string\&. The use of subpatterns for more complicated assertions is described below\&. The following are the backslashed assertions:
+.RS 2
+.TP 2
+.B
+\\b:
+Matches at a word boundary\&.
+.TP 2
+.B
+\\B:
+Matches when not at a word boundary\&.
+.TP 2
+.B
+\\A:
+Matches at the start of the subject\&.
+.TP 2
+.B
+\\Z:
+Matches at the end of the subject, and before a newline at the end of the subject\&.
+.TP 2
+.B
+\\z:
+Matches only at the end of the subject\&.
+.TP 2
+.B
+\\G:
+Matches at the first matching position in the subject\&. 
+.RE
+.LP
+Inside a character class, \\b has a different meaning; it matches the backspace character\&. If any other of these assertions appears in a character class, by default it matches the corresponding literal character (for example, \\B matches the letter B)\&.
+.LP
+A word boundary is a position in the subject string where the current character and the previous character do not both match \\w or \\W (that is, one matches \\w and the other matches \\W), or the start or end of the string if the first or last character matches \\w, respectively\&. In UTF mode, the meanings of \\w and \\W can be changed by setting option \fIucp\fR\&\&. When this is done, it also affects \\b and \\B\&. PCRE and Perl do not have a separate "start of word" or "end of word" metasequence\&. However, whatever follows \\b normally determines which it is\&. For example, the fragment \\ba matches "a" at the start of a word\&.
+.LP
+The \\A, \\Z, and \\z assertions differ from the traditional circumflex and dollar (described in the next section) in that they only ever match at the very start and end of the subject string, whatever options are set\&. Thus, they are independent of multiline mode\&. These three assertions are not affected by options \fInotbol\fR\& or \fInoteol\fR\&, which affect only the behavior of the circumflex and dollar metacharacters\&. However, if argument \fIstartoffset\fR\& of \fB\fIrun/3\fR\&\fR\& is non-zero, indicating that matching is to start at a point other than the beginning of the subject, \\A can never match\&. The difference between \\Z and \\z is that \\Z matches before a newline at the end of the string and at the very end, while \\z matches only at the end\&.
+.LP
+The \\G assertion is true only when the current matching position is at the start point of the match, as specified by argument \fIstartoffset\fR\& of \fIrun/3\fR\&\&. It differs from \\A when the value of \fIstartoffset\fR\& is non-zero\&. By calling \fIrun/3\fR\& multiple times with appropriate arguments, you can mimic the Perl option \fI/g\fR\&, and it is in this kind of implementation where \\G can be useful\&.
+.LP
+Notice, however, that the PCRE interpretation of \\G, as the start of the current match, is subtly different from Perl, which defines it as the end of the previous match\&. In Perl, these can be different when the previously matched string was empty\&. As PCRE does only one match at a time, it cannot reproduce this behavior\&.
+.LP
+If all the alternatives of a pattern begin with \\G, the expression is anchored to the starting match position, and the "anchored" flag is set in the compiled regular expression\&.
+.SH "CIRCUMFLEX AND DOLLAR"
+
+.LP
+The circumflex and dollar metacharacters are zero-width assertions\&. That is, they test for a particular condition to be true without consuming any characters from the subject string\&.
+.LP
+Outside a character class, in the default matching mode, the circumflex character is an assertion that is true only if the current matching point is at the start of the subject string\&. If argument \fIstartoffset\fR\& of \fB\fIrun/3\fR\&\fR\& is non-zero, circumflex can never match if option \fImultiline\fR\& is unset\&. Inside a character class, circumflex has an entirely different meaning (see below)\&.
+.LP
+Circumflex needs not to be the first character of the pattern if some alternatives are involved, but it is to be the first thing in each alternative in which it appears if the pattern is ever to match that branch\&. If all possible alternatives start with a circumflex, that is, if the pattern is constrained to match only at the start of the subject, it is said to be an "anchored" pattern\&. (There are also other constructs that can cause a pattern to be anchored\&.)
+.LP
+The dollar character is an assertion that is true only if the current matching point is at the end of the subject string, or immediately before a newline at the end of the string (by default)\&. Notice however that it does not match the newline\&. Dollar needs not to be the last character of the pattern if some alternatives are involved, but it is to be the last item in any branch in which it appears\&. Dollar has no special meaning in a character class\&.
+.LP
+The meaning of dollar can be changed so that it matches only at the very end of the string, by setting option \fIdollar_endonly\fR\& at compile time\&. This does not affect the \\Z assertion\&.
+.LP
+The meanings of the circumflex and dollar characters are changed if option \fImultiline\fR\& is set\&. When this is the case, a circumflex matches immediately after internal newlines and at the start of the subject string\&. It does not match after a newline that ends the string\&. A dollar matches before any newlines in the string, and at the very end, when \fImultiline\fR\& is set\&. When newline is specified as the two-character sequence CRLF, isolated CR and LF characters do not indicate newlines\&.
+.LP
+For example, the pattern /^abc$/ matches the subject string "def\\nabc" (where \\n represents a newline) in multiline mode, but not otherwise\&. So, patterns that are anchored in single-line mode because all branches start with ^ are not anchored in multiline mode, and a match for circumflex is possible when argument \fIstartoffset\fR\& of \fIrun/3\fR\& is non-zero\&. Option \fIdollar_endonly\fR\& is ignored if \fImultiline\fR\& is set\&.
+.LP
+Notice that the sequences \\A, \\Z, and \\z can be used to match the start and end of the subject in both modes\&. If all branches of a pattern start with \\A, it is always anchored, regardless if \fImultiline\fR\& is set\&.
+.SH "FULL STOP (PERIOD, DOT) AND \\\N"
+
+.LP
+Outside a character class, a dot in the pattern matches any character in the subject string except (by default) a character that signifies the end of a line\&.
+.LP
+When a line ending is defined as a single character, dot never matches that character\&. When the two-character sequence CRLF is used, dot does not match CR if it is immediately followed by LF, otherwise it matches all characters (including isolated CRs and LFs)\&. When any Unicode line endings are recognized, dot does not match CR, LF, or any of the other line-ending characters\&.
+.LP
+The behavior of dot regarding newlines can be changed\&. If option \fIdotall\fR\& is set, a dot matches any character, without exception\&. If the two-character sequence CRLF is present in the subject string, it takes two dots to match it\&.
+.LP
+The handling of dot is entirely independent of the handling of circumflex and dollar, the only relationship is that both involve newlines\&. Dot has no special meaning in a character class\&.
+.LP
+The escape sequence \\N behaves like a dot, except that it is not affected by option \fIPCRE_DOTALL\fR\&\&. That is, it matches any character except one that signifies the end of a line\&. Perl also uses \\N to match characters by name but PCRE does not support this\&.
+.SH "MATCHING A SINGLE DATA UNIT"
+
+.LP
+Outside a character class, the escape sequence \\C matches any data unit, regardless if a UTF mode is set\&. One data unit is one byte\&. Unlike a dot, \\C always matches line-ending characters\&. The feature is provided in Perl to match individual bytes in UTF-8 mode, but it is unclear how it can usefully be used\&. As \\C breaks up characters into individual data units, matching one unit with \\C in a UTF mode means that the remaining string can start with a malformed UTF character\&. This has undefined results, as PCRE assumes that it deals with valid UTF strings\&.
+.LP
+PCRE does not allow \\C to appear in lookbehind assertions (described below) in a UTF mode, as this would make it impossible to calculate the length of the lookbehind\&.
+.LP
+The \\C escape sequence is best avoided\&. However, one way of using it that avoids the problem of malformed UTF characters is to use a lookahead to check the length of the next character, as in the following pattern, which can be used with a UTF-8 string (ignore whitespace and line breaks):
+.LP
+.nf
+
+(?| (?=[\\x00-\\x7f])(\\C) |
+    (?=[\\x80-\\x{7ff}])(\\C)(\\C) |
+    (?=[\\x{800}-\\x{ffff}])(\\C)(\\C)(\\C) |
+    (?=[\\x{10000}-\\x{1fffff}])(\\C)(\\C)(\\C)(\\C))
+.fi
+.LP
+A group that starts with (?| resets the capturing parentheses numbers in each alternative (see section \fBDuplicate Subpattern Numbers\fR\&)\&. The assertions at the start of each branch check the next UTF-8 character for values whose encoding uses 1, 2, 3, or 4 bytes, respectively\&. The individual bytes of the character are then captured by the appropriate number of groups\&.
+.SH "SQUARE BRACKETS AND CHARACTER CLASSES"
+
+.LP
+An opening square bracket introduces a character class, terminated by a closing square bracket\&. A closing square bracket on its own is not special by default\&. However, if option \fIPCRE_JAVASCRIPT_COMPAT\fR\& is set, a lone closing square bracket causes a compile-time error\&. If a closing square bracket is required as a member of the class, it is to be the first data character in the class (after an initial circumflex, if present) or escaped with a backslash\&.
+.LP
+A character class matches a single character in the subject\&. In a UTF mode, the character can be more than one data unit long\&. A matched character must be in the set of characters defined by the class, unless the first character in the class definition is a circumflex, in which case the subject character must not be in the set defined by the class\&. If a circumflex is required as a member of the class, ensure that it is not the first character, or escape it with a backslash\&.
+.LP
+For example, the character class \fI[aeiou]\fR\& matches any lowercase vowel, while \fI[^aeiou]\fR\& matches any character that is not a lowercase vowel\&. Notice that a circumflex is just a convenient notation for specifying the characters that are in the class by enumerating those that are not\&. A class that starts with a circumflex is not an assertion; it still consumes a character from the subject string, and therefore it fails if the current pointer is at the end of the string\&.
+.LP
+In UTF-8 mode, characters with values > 255 (0xffff) can be included in a class as a literal string of data units, or by using the \\x{ escaping mechanism\&.
+.LP
+When caseless matching is set, any letters in a class represent both their uppercase and lowercase versions\&. For example, a caseless \fI[aeiou]\fR\& matches "A" and "a", and a caseless \fI[^aeiou]\fR\& does not match "A", but a caseful version would\&. In a UTF mode, PCRE always understands the concept of case for characters whose values are < 256, so caseless matching is always possible\&. For characters with higher values, the concept of case is supported only if PCRE is compiled with Unicode property support\&. If you want to use caseless matching in a UTF mode for characters >=, ensure that PCRE is compiled with Unicode property support and with UTF support\&.
+.LP
+Characters that can indicate line breaks are never treated in any special way when matching character classes, whatever line-ending sequence is in use, and whatever setting of options \fIPCRE_DOTALL\fR\& and \fIPCRE_MULTILINE\fR\& is used\&. A class such as [^a] always matches one of these characters\&.
+.LP
+The minus (hyphen) character can be used to specify a range of characters in a character class\&. For example, [d-m] matches any letter between d and m, inclusive\&. If a minus character is required in a class, it must be escaped with a backslash or appear in a position where it cannot be interpreted as indicating a range, typically as the first or last character in the class\&.
+.LP
+The literal character "]" cannot be the end character of a range\&. A pattern such as [W-]46] is interpreted as a class of two characters ("W" and "-") followed by a literal string "46]", so it would match "W46]" or "-46]"\&. However, if "]" is escaped with a backslash, it is interpreted as the end of range, so [W-\\]46] is interpreted as a class containing a range followed by two other characters\&. The octal or hexadecimal representation of "]" can also be used to end a range\&.
+.LP
+Ranges operate in the collating sequence of character values\&. They can also be used for characters specified numerically, for example, [\\000-\\037]\&. Ranges can include any characters that are valid for the current mode\&.
+.LP
+If a range that includes letters is used when caseless matching is set, it matches the letters in either case\&. For example, [W-c] is equivalent to [][\\\\^_`wxyzabc], matched caselessly\&. In a non-UTF mode, if character tables for a French locale are in use, [\\xc8-\\xcb] matches accented E characters in both cases\&. In UTF modes, PCRE supports the concept of case for characters with values > 255 only when it is compiled with Unicode property support\&.
+.LP
+The character escape sequences \\d, \\D, \\h, \\H, \\p, \\P, \\s, \\S, \\v, \\V, \\w, and \\W can appear in a character class, and add the characters that they match to the class\&. For example, [\\dABCDEF] matches any hexadecimal digit\&. In UTF modes, option \fIucp\fR\& affects the meanings of \\d, \\s, \\w and their uppercase partners, just as it does when they appear outside a character class, as described in section \fBGeneric Character Types\fR\& earlier\&. The escape sequence \\b has a different meaning inside a character class; it matches the backspace character\&. The sequences \\B, \\N, \\R, and \\X are not special inside a character class\&. Like any other unrecognized escape sequences, they are treated as the literal characters "B", "N", "R", and "X"\&.
+.LP
+A circumflex can conveniently be used with the uppercase character types to specify a more restricted set of characters than the matching lowercase type\&. For example, class [^\\W_] matches any letter or digit, but not underscore, while [\\w] includes underscore\&. A positive character class is to be read as "something OR something OR \&.\&.\&." and a negative class as "NOT something AND NOT something AND NOT \&.\&.\&."\&.
+.LP
+Only the following metacharacters are recognized in character classes:
+.RS 2
+.TP 2
+*
+Backslash
+.LP
+.TP 2
+*
+Hyphen (only where it can be interpreted as specifying a range)
+.LP
+.TP 2
+*
+Circumflex (only at the start)
+.LP
+.TP 2
+*
+Opening square bracket (only when it can be interpreted as introducing a Posix class name; see the next section)
+.LP
+.TP 2
+*
+Terminating closing square bracket
+.LP
+.RE
+
+.LP
+However, escaping other non-alphanumeric characters does no harm\&.
+.SH "POSIX CHARACTER CLASSES"
+
+.LP
+Perl supports the Posix notation for character classes\&. This uses names enclosed by [: and :] within the enclosing square brackets\&. PCRE also supports this notation\&. For example, the following matches "0", "1", any alphabetic character, or "%":
+.LP
+.nf
+
+[01[:alpha:]%]
+.fi
+.LP
+The following are the supported class names:
+.RS 2
+.TP 2
+.B
+alnum:
+Letters and digits
+.TP 2
+.B
+alpha:
+Letters
+.TP 2
+.B
+ascii:
+Character codes 0-127
+.TP 2
+.B
+blank:
+Space or tab only
+.TP 2
+.B
+cntrl:
+Control characters
+.TP 2
+.B
+digit:
+Decimal digits (same as \\d)
+.TP 2
+.B
+graph:
+Printing characters, excluding space
+.TP 2
+.B
+lower:
+Lowercase letters
+.TP 2
+.B
+print:
+Printing characters, including space
+.TP 2
+.B
+punct:
+Printing characters, excluding letters, digits, and space
+.TP 2
+.B
+space:
+Whitespace (not quite the same as \\s)
+.TP 2
+.B
+upper:
+Uppercase letters
+.TP 2
+.B
+word:
+"Word" characters (same as \\w)
+.TP 2
+.B
+xdigit:
+Hexadecimal digits
+.RE
+.LP
+The "space" characters are HT (9), LF (10), VT (11), FF (12), CR (13), and space (32)\&. Notice that this list includes the VT character (code 11)\&. This makes "space" different to \\s, which does not include VT (for Perl compatibility)\&.
+.LP
+The name "word" is a Perl extension, and "blank" is a GNU extension from Perl 5\&.8\&. Another Perl extension is negation, which is indicated by a ^ character after the colon\&. For example, the following matches "1", "2", or any non-digit:
+.LP
+.nf
+
+[12[:^digit:]]
+.fi
+.LP
+PCRE (and Perl) also recognize the Posix syntax [\&.ch\&.] and [=ch=] where "ch" is a "collating element", but these are not supported, and an error is given if they are encountered\&.
+.LP
+By default, in UTF modes, characters with values > 255 do not match any of the Posix character classes\&. However, if option \fIPCRE_UCP\fR\& is passed to \fIpcre_compile()\fR\&, some of the classes are changed so that Unicode character properties are used\&. This is achieved by replacing the Posix classes by other sequences, as follows:
+.RS 2
+.TP 2
+.B
+[:alnum:]:
+Becomes \fI\\p{Xan}\fR\&
+.TP 2
+.B
+[:alpha:]:
+Becomes \fI\\p{L}\fR\&
+.TP 2
+.B
+[:blank:]:
+Becomes \fI\\h\fR\&
+.TP 2
+.B
+[:digit:]:
+Becomes \fI\\p{Nd}\fR\&
+.TP 2
+.B
+[:lower:]:
+Becomes \fI\\p{Ll}\fR\&
+.TP 2
+.B
+[:space:]:
+Becomes \fI\\p{Xps}\fR\&
+.TP 2
+.B
+[:upper:]:
+Becomes \fI\\p{Lu}\fR\&
+.TP 2
+.B
+[:word:]:
+Becomes \fI\\p{Xwd}\fR\&
+.RE
+.LP
+Negated versions, such as [:^alpha:], use \\P instead of \\p\&. The other Posix classes are unchanged, and match only characters with code points < 256\&.
+.SH "VERTICAL BAR"
+
+.LP
+Vertical bar characters are used to separate alternative patterns\&. For example, the following pattern matches either "gilbert" or "sullivan":
+.LP
+.nf
+
+gilbert|sullivan
+.fi
+.LP
+Any number of alternatives can appear, and an empty alternative is permitted (matching the empty string)\&. The matching process tries each alternative in turn, from left to right, and the first that succeeds is used\&. If the alternatives are within a subpattern (defined in section \fBSubpatterns\fR\&), "succeeds" means matching the remaining main pattern and the alternative in the subpattern\&.
+.SH "INTERNAL OPTION SETTING"
+
+.LP
+The settings of the Perl-compatible options \fIcaseless\fR\&, \fImultiline\fR\&, \fIdotall\fR\&, and \fIextended\fR\& can be changed from within the pattern by a sequence of Perl option letters enclosed between "(?" and ")"\&. The option letters are as follows:
+.RS 2
+.TP 2
+.B
+i:
+For \fIcaseless\fR\&
+.TP 2
+.B
+m:
+For \fImultiline\fR\&
+.TP 2
+.B
+s:
+For \fIdotall\fR\&
+.TP 2
+.B
+x:
+For \fIextended\fR\&
+.RE
+.LP
+For example, \fI(?im)\fR\& sets caseless, multiline matching\&. These options can also be unset by preceding the letter with a hyphen\&. A combined setting and unsetting such as \fI(?im-sx)\fR\&, which sets \fIcaseless\fR\& and \fImultiline\fR\&, while unsetting \fIdotall\fR\& and \fIextended\fR\&, is also permitted\&. If a letter appears both before and after the hyphen, the option is unset\&.
+.LP
+The PCRE-specific options \fIdupnames\fR\&, \fIungreedy\fR\&, and \fIextra\fR\& can be changed in the same way as the Perl-compatible options by using the characters J, U, and X respectively\&.
+.LP
+When one of these option changes occurs at top-level (that is, not inside subpattern parentheses), the change applies to the remainder of the pattern that follows\&. If the change is placed right at the start of a pattern, PCRE extracts it into the global options\&.
+.LP
+An option change within a subpattern (see section \fBSubpatterns\fR\&) affects only that part of the subpattern that follows it\&. So, the following matches abc and aBc and no other strings (assuming \fIcaseless\fR\& is not used):
+.LP
+.nf
+
+(a(?i)b)c
+.fi
+.LP
+By this means, options can be made to have different settings in different parts of the pattern\&. Any changes made in one alternative do carry on into subsequent branches within the same subpattern\&. For example:
+.LP
+.nf
+
+(a(?i)b|c)
+.fi
+.LP
+matches "ab", "aB", "c", and "C", although when matching "C" the first branch is abandoned before the option setting\&. This is because the effects of option settings occur at compile time\&. There would be some weird behavior otherwise\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Other PCRE-specific options can be set by the application when the compiling or matching functions are called\&. Sometimes the pattern can contain special leading sequences, such as (*CRLF), to override what the application has set or what has been defaulted\&. Details are provided in section \fB Newline Sequences\fR\& earlier\&.
+.LP
+The (*UTF8) and (*UCP) leading sequences can be used to set UTF and Unicode property modes\&. They are equivalent to setting options \fIunicode\fR\& and \fIucp\fR\&, respectively\&. The (*UTF) sequence is a generic version that can be used with any of the libraries\&. However, the application can set option \fInever_utf\fR\&, which locks out the use of the (*UTF) sequences\&.
+
+.SH "SUBPATTERNS"
+
+.LP
+Subpatterns are delimited by parentheses (round brackets), which can be nested\&. Turning part of a pattern into a subpattern does two things:
+.RS 2
+.TP 2
+.B
+1\&.:
+It localizes a set of alternatives\&. For example, the following pattern matches "cataract", "caterpillar", or "cat":
+.LP
+.nf
+
+cat(aract|erpillar|)
+.fi
+.RS 2
+.LP
+Without the parentheses, it would match "cataract", "erpillar", or an empty string\&.
+.RE
+.TP 2
+.B
+2\&.:
+It sets up the subpattern as a capturing subpattern\&. That is, when the complete pattern matches, that portion of the subject string that matched the subpattern is passed back to the caller through the return value of \fB\fIrun/3\fR\&\fR\&\&.
+.RE
+.LP
+Opening parentheses are counted from left to right (starting from 1) to obtain numbers for the capturing subpatterns\&. For example, if the string "the red king" is matched against the following pattern, the captured substrings are "red king", "red", and "king", and are numbered 1, 2, and 3, respectively:
+.LP
+.nf
+
+the ((red|white) (king|queen))
+.fi
+.LP
+It is not always helpful that plain parentheses fulfill two functions\&. Often a grouping subpattern is required without a capturing requirement\&. If an opening parenthesis is followed by a question mark and a colon, the subpattern does not do any capturing, and is not counted when computing the number of any subsequent capturing subpatterns\&. For example, if the string "the white queen" is matched against the following pattern, the captured substrings are "white queen" and "queen", and are numbered 1 and 2:
+.LP
+.nf
+
+the ((?:red|white) (king|queen))
+.fi
+.LP
+The maximum number of capturing subpatterns is 65535\&.
+.LP
+As a convenient shorthand, if any option settings are required at the start of a non-capturing subpattern, the option letters can appear between "?" and ":"\&. Thus, the following two patterns match the same set of strings:
+.LP
+.nf
+
+(?i:saturday|sunday)
+(?:(?i)saturday|sunday)
+.fi
+.LP
+As alternative branches are tried from left to right, and options are not reset until the end of the subpattern is reached, an option setting in one branch does affect subsequent branches, so the above patterns match both "SUNDAY" and "Saturday"\&.
+.SH "DUPLICATE SUBPATTERN NUMBERS"
+
+.LP
+Perl 5\&.10 introduced a feature where each alternative in a subpattern uses the same numbers for its capturing parentheses\&. Such a subpattern starts with \fI(?|\fR\& and is itself a non-capturing subpattern\&. For example, consider the following pattern:
+.LP
+.nf
+
+(?|(Sat)ur|(Sun))day
+.fi
+.LP
+As the two alternatives are inside a \fI(?|\fR\& group, both sets of capturing parentheses are numbered one\&. Thus, when the pattern matches, you can look at captured substring number one, whichever alternative matched\&. This construct is useful when you want to capture a part, but not all, of one of many alternatives\&. Inside a \fI(?|\fR\& group, parentheses are numbered as usual, but the number is reset at the start of each branch\&. The numbers of any capturing parentheses that follow the subpattern start after the highest number used in any branch\&. The following example is from the Perl documentation; the numbers underneath show in which buffer the captured content is stored:
+.LP
+.nf
+
+# before  ---------------branch-reset----------- after
+/ ( a )  (?| x ( y ) z | (p (q) r) | (t) u (v) ) ( z ) /x
+# 1            2         2  3        2     3     4
+.fi
+.LP
+A back reference to a numbered subpattern uses the most recent value that is set for that number by any subpattern\&. The following pattern matches "abcabc" or "defdef":
+.LP
+.nf
+
+/(?|(abc)|(def))\\1/
+.fi
+.LP
+In contrast, a subroutine call to a numbered subpattern always refers to the first one in the pattern with the given number\&. The following pattern matches "abcabc" or "defabc":
+.LP
+.nf
+
+/(?|(abc)|(def))(?1)/
+.fi
+.LP
+If a condition test for a subpattern having matched refers to a non-unique number, the test is true if any of the subpatterns of that number have matched\&.
+.LP
+An alternative approach using this "branch reset" feature is to use duplicate named subpatterns, as described in the next section\&.
+.SH "NAMED SUBPATTERNS"
+
+.LP
+Identifying capturing parentheses by number is simple, but it can be hard to keep track of the numbers in complicated regular expressions\&. Also, if an expression is modified, the numbers can change\&. To help with this difficulty, PCRE supports the naming of subpatterns\&. This feature was not added to Perl until release 5\&.10\&. Python had the feature earlier, and PCRE introduced it at release 4\&.0, using the Python syntax\&. PCRE now supports both the Perl and the Python syntax\&. Perl allows identically numbered subpatterns to have different names, but PCRE does not\&.
+.LP
+In PCRE, a subpattern can be named in one of three ways: \fI(?<name>\&.\&.\&.)\fR\& or \fI(?\&'name\&'\&.\&.\&.)\fR\& as in Perl, or \fI(?P<name>\&.\&.\&.)\fR\& as in Python\&. References to capturing parentheses from other parts of the pattern, such as back references, recursion, and conditions, can be made by name and by number\&.
+.LP
+Names consist of up to 32 alphanumeric characters and underscores\&. Named capturing parentheses are still allocated numbers as well as names, exactly as if the names were not present\&. The \fIcapture\fR\& specification to \fB\fIrun/3\fR\&\fR\& can use named values if they are present in the regular expression\&.
+.LP
+By default, a name must be unique within a pattern, but this constraint can be relaxed by setting option \fIdupnames\fR\& at compile time\&. (Duplicate names are also always permitted for subpatterns with the same number, set up as described in the previous section\&.) Duplicate names can be useful for patterns where only one instance of the named parentheses can match\&. Suppose that you want to match the name of a weekday, either as a 3-letter abbreviation or as the full name, and in both cases you want to extract the abbreviation\&. The following pattern (ignoring the line breaks) does the job:
+.LP
+.nf
+
+(?<DN>Mon|Fri|Sun)(?:day)?|
+(?<DN>Tue)(?:sday)?|
+(?<DN>Wed)(?:nesday)?|
+(?<DN>Thu)(?:rsday)?|
+(?<DN>Sat)(?:urday)?
+.fi
+.LP
+There are five capturing substrings, but only one is ever set after a match\&. (An alternative way of solving this problem is to use a "branch reset" subpattern, as described in the previous section\&.)
+.LP
+For capturing named subpatterns which names are not unique, the first matching occurrence (counted from left to right in the subject) is returned from \fB\fIrun/3\fR\&\fR\&, if the name is specified in the \fIvalues\fR\& part of the \fIcapture\fR\& statement\&. The \fIall_names\fR\& capturing value matches all the names in the same way\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+You cannot use different names to distinguish between two subpatterns with the same number, as PCRE uses only the numbers when matching\&. For this reason, an error is given at compile time if different names are specified to subpatterns with the same number\&. However, you can specify the same name to subpatterns with the same number, even when \fIdupnames\fR\& is not set\&.
+
+.SH "REPETITION"
+
+.LP
+Repetition is specified by quantifiers, which can follow any of the following items:
+.RS 2
+.TP 2
+*
+A literal data character
+.LP
+.TP 2
+*
+The dot metacharacter
+.LP
+.TP 2
+*
+The \\C escape sequence
+.LP
+.TP 2
+*
+The \\X escape sequence
+.LP
+.TP 2
+*
+The \\R escape sequence
+.LP
+.TP 2
+*
+An escape such as \\d or \\pL that matches a single character
+.LP
+.TP 2
+*
+A character class
+.LP
+.TP 2
+*
+A back reference (see the next section)
+.LP
+.TP 2
+*
+A parenthesized subpattern (including assertions)
+.LP
+.TP 2
+*
+A subroutine call to a subpattern (recursive or otherwise)
+.LP
+.RE
+
+.LP
+The general repetition quantifier specifies a minimum and maximum number of permitted matches, by giving the two numbers in curly brackets (braces), separated by a comma\&. The numbers must be < 65536, and the first must be less than or equal to the second\&. For example, the following matches "zz", "zzz", or "zzzz":
+.LP
+.nf
+
+z{2,4}
+.fi
+.LP
+A closing brace on its own is not a special character\&. If the second number is omitted, but the comma is present, there is no upper limit\&. If the second number and the comma are both omitted, the quantifier specifies an exact number of required matches\&. Thus, the following matches at least three successive vowels, but can match many more:
+.LP
+.nf
+
+[aeiou]{3,}
+.fi
+.LP
+The following matches exactly eight digits:
+.LP
+.nf
+
+\\d{8}
+.fi
+.LP
+An opening curly bracket that appears in a position where a quantifier is not allowed, or one that does not match the syntax of a quantifier, is taken as a literal character\&. For example, {,6} is not a quantifier, but a literal string of four characters\&.
+.LP
+In Unicode mode, quantifiers apply to characters rather than to individual data units\&. Thus, for example, \\x{100}{2} matches two characters, each of which is represented by a 2-byte sequence in a UTF-8 string\&. Similarly, \\X{3} matches three Unicode extended grapheme clusters, each of which can be many data units long (and they can be of different lengths)\&.
+.LP
+The quantifier {0} is permitted, causing the expression to behave as if the previous item and the quantifier were not present\&. This can be useful for subpatterns that are referenced as subroutines from elsewhere in the pattern (but see also section \fB Defining Subpatterns for Use by Reference Only\fR\&)\&. Items other than subpatterns that have a {0} quantifier are omitted from the compiled pattern\&.
+.LP
+For convenience, the three most common quantifiers have single-character abbreviations:
+.RS 2
+.TP 2
+.B
+*:
+Equivalent to {0,}
+.TP 2
+.B
++:
+Equivalent to {1,}
+.TP 2
+.B
+?:
+Equivalent to {0,1}
+.RE
+.LP
+Infinite loops can be constructed by following a subpattern that can match no characters with a quantifier that has no upper limit, for example:
+.LP
+.nf
+
+(a?)*
+.fi
+.LP
+Earlier versions of Perl and PCRE used to give an error at compile time for such patterns\&. However, as there are cases where this can be useful, such patterns are now accepted\&. However, if any repetition of the subpattern matches no characters, the loop is forcibly broken\&.
+.LP
+By default, the quantifiers are "greedy", that is, they match as much as possible (up to the maximum number of permitted times), without causing the remaining pattern to fail\&. The classic example of where this gives problems is in trying to match comments in C programs\&. These appear between /* and */\&. Within the comment, individual * and / characters can appear\&. An attempt to match C comments by applying the pattern
+.LP
+.nf
+
+/\\*.*\\*/
+.fi
+.LP
+to the string
+.LP
+.nf
+
+/* first comment */  not comment  /* second comment */
+.fi
+.LP
+fails, as it matches the entire string owing to the greediness of the \&.* item\&.
+.LP
+However, if a quantifier is followed by a question mark, it ceases to be greedy, and instead matches the minimum number of times possible, so the following pattern does the right thing with the C comments:
+.LP
+.nf
+
+/\\*.*?\\*/
+.fi
+.LP
+The meaning of the various quantifiers is not otherwise changed, only the preferred number of matches\&. Do not confuse this use of question mark with its use as a quantifier in its own right\&. As it has two uses, it can sometimes appear doubled, as in
+.LP
+.nf
+
+\\d??\\d
+.fi
+.LP
+which matches one digit by preference, but can match two if that is the only way the remaining pattern matches\&.
+.LP
+If option \fIungreedy\fR\& is set (an option that is not available in Perl), the quantifiers are not greedy by default, but individual ones can be made greedy by following them with a question mark\&. That is, it inverts the default behavior\&.
+.LP
+When a parenthesized subpattern is quantified with a minimum repeat count that is > 1 or with a limited maximum, more memory is required for the compiled pattern, in proportion to the size of the minimum or maximum\&.
+.LP
+If a pattern starts with \&.* or \&.{0,} and option \fIdotall\fR\& (equivalent to Perl option \fI/s\fR\&) is set, thus allowing the dot to match newlines, the pattern is implicitly anchored, because whatever follows is tried against every character position in the subject string\&. So, there is no point in retrying the overall match at any position after the first\&. PCRE normally treats such a pattern as if it was preceded by \\A\&.
+.LP
+In cases where it is known that the subject string contains no newlines, it is worth setting \fIdotall\fR\& to obtain this optimization, or alternatively using ^ to indicate anchoring explicitly\&.
+.LP
+However, there are some cases where the optimization cannot be used\&. When \&.* is inside capturing parentheses that are the subject of a back reference elsewhere in the pattern, a match at the start can fail where a later one succeeds\&. Consider, for example:
+.LP
+.nf
+
+(.*)abc\\1
+.fi
+.LP
+If the subject is "xyz123abc123", the match point is the fourth character\&. Therefore, such a pattern is not implicitly anchored\&.
+.LP
+Another case where implicit anchoring is not applied is when the leading \&.* is inside an atomic group\&. Once again, a match at the start can fail where a later one succeeds\&. Consider the following pattern:
+.LP
+.nf
+
+(?>.*?a)b
+.fi
+.LP
+It matches "ab" in the subject "aab"\&. The use of the backtracking control verbs (*PRUNE) and (*SKIP) also disable this optimization\&.
+.LP
+When a capturing subpattern is repeated, the value captured is the substring that matched the final iteration\&. For example, after
+.LP
+.nf
+
+(tweedle[dume]{3}\\s*)+
+.fi
+.LP
+has matched "tweedledum tweedledee", the value of the captured substring is "tweedledee"\&. However, if there are nested capturing subpatterns, the corresponding captured values can have been set in previous iterations\&. For example, after
+.LP
+.nf
+
+/(a|(b))+/
+.fi
+.LP
+matches "aba", the value of the second captured substring is "b"\&.
+.SH "ATOMIC GROUPING AND POSSESSIVE QUANTIFIERS"
+
+.LP
+With both maximizing ("greedy") and minimizing ("ungreedy" or "lazy") repetition, failure of what follows normally causes the repeated item to be re-evaluated to see if a different number of repeats allows the remaining pattern to match\&. Sometimes it is useful to prevent this, either to change the nature of the match, or to cause it to fail earlier than it otherwise might, when the author of the pattern knows that there is no point in carrying on\&.
+.LP
+Consider, for example, the pattern \\d+foo when applied to the following subject line:
+.LP
+.nf
+
+123456bar
+.fi
+.LP
+After matching all six digits and then failing to match "foo", the normal action of the matcher is to try again with only five digits matching item \\d+, and then with four, and so on, before ultimately failing\&. "Atomic grouping" (a term taken from Jeffrey Friedl\&'s book) provides the means for specifying that once a subpattern has matched, it is not to be re-evaluated in this way\&.
+.LP
+If atomic grouping is used for the previous example, the matcher gives up immediately on failing to match "foo" the first time\&. The notation is a kind of special parenthesis, starting with \fI(?>\fR\& as in the following example:
+.LP
+.nf
+
+(?>\\d+)foo
+.fi
+.LP
+This kind of parenthesis "locks up" the part of the pattern it contains once it has matched, and a failure further into the pattern is prevented from backtracking into it\&. Backtracking past it to previous items, however, works as normal\&.
+.LP
+An alternative description is that a subpattern of this type matches the string of characters that an identical standalone pattern would match, if anchored at the current point in the subject string\&.
+.LP
+Atomic grouping subpatterns are not capturing subpatterns\&. Simple cases such as the above example can be thought of as a maximizing repeat that must swallow everything it can\&. So, while both \\d+ and \\d+? are prepared to adjust the number of digits they match to make the remaining pattern match, \fI(?>\\d+)\fR\& can only match an entire sequence of digits\&.
+.LP
+Atomic groups in general can contain any complicated subpatterns, and can be nested\&. However, when the subpattern for an atomic group is just a single repeated item, as in the example above, a simpler notation, called a "possessive quantifier" can be used\&. This consists of an extra + character following a quantifier\&. Using this notation, the previous example can be rewritten as
+.LP
+.nf
+
+\\d++foo
+.fi
+.LP
+Notice that a possessive quantifier can be used with an entire group, for example:
+.LP
+.nf
+
+(abc|xyz){2,3}+
+.fi
+.LP
+Possessive quantifiers are always greedy; the setting of option \fIungreedy\fR\& is ignored\&. They are a convenient notation for the simpler forms of an atomic group\&. However, there is no difference in the meaning of a possessive quantifier and the equivalent atomic group, but there can be a performance difference; possessive quantifiers are probably slightly faster\&.
+.LP
+The possessive quantifier syntax is an extension to the Perl 5\&.8 syntax\&. Jeffrey Friedl originated the idea (and the name) in the first edition of his book\&. Mike McCloskey liked it, so implemented it when he built the Sun Java package, and PCRE copied it from there\&. It ultimately found its way into Perl at release 5\&.10\&.
+.LP
+PCRE has an optimization that automatically "possessifies" certain simple pattern constructs\&. For example, the sequence A+B is treated as A++B, as there is no point in backtracking into a sequence of A:s when B must follow\&.
+.LP
+When a pattern contains an unlimited repeat inside a subpattern that can itself be repeated an unlimited number of times, the use of an atomic group is the only way to avoid some failing matches taking a long time\&. The pattern
+.LP
+.nf
+
+(\\D+|<\\d+>)*[!?]
+.fi
+.LP
+matches an unlimited number of substrings that either consist of non-digits, or digits enclosed in <>, followed by ! or ?\&. When it matches, it runs quickly\&. However, if it is applied to
+.LP
+.nf
+
+aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+.fi
+.LP
+it takes a long time before reporting failure\&. This is because the string can be divided between the internal \\D+ repeat and the external * repeat in many ways, and all must be tried\&. (The example uses [!?] rather than a single character at the end, as both PCRE and Perl have an optimization that allows for fast failure when a single character is used\&. They remember the last single character that is required for a match, and fail early if it is not present in the string\&.) If the pattern is changed so that it uses an atomic group, like the following, sequences of non-digits cannot be broken, and failure happens quickly:
+.LP
+.nf
+
+((?>\\D+)|<\\d+>)*[!?]
+.fi
+.SH "BACK REFERENCES"
+
+.LP
+Outside a character class, a backslash followed by a digit > 0 (and possibly further digits) is a back reference to a capturing subpattern earlier (that is, to its left) in the pattern, provided there have been that many previous capturing left parentheses\&.
+.LP
+However, if the decimal number following the backslash is < 10, it is always taken as a back reference, and causes an error only if there are not that many capturing left parentheses in the entire pattern\&. That is, the parentheses that are referenced do need not be to the left of the reference for numbers < 10\&. A "forward back reference" of this type can make sense when a repetition is involved and the subpattern to the right has participated in an earlier iteration\&.
+.LP
+It is not possible to have a numerical "forward back reference" to a subpattern whose number is 10 or more using this syntax, as a sequence such as \\50 is interpreted as a character defined in octal\&. For more details of the handling of digits following a backslash, see section \fBNon-Printing Characters\fR\& earlier\&. There is no such problem when named parentheses are used\&. A back reference to any subpattern is possible using named parentheses (see below)\&.
+.LP
+Another way to avoid the ambiguity inherent in the use of digits following a backslash is to use the \\g escape sequence\&. This escape must be followed by an unsigned number or a negative number, optionally enclosed in braces\&. The following examples are identical:
+.LP
+.nf
+
+(ring), \\1
+(ring), \\g1
+(ring), \\g{1}
+.fi
+.LP
+An unsigned number specifies an absolute reference without the ambiguity that is present in the older syntax\&. It is also useful when literal digits follow the reference\&. A negative number is a relative reference\&. Consider the following example:
+.LP
+.nf
+
+(abc(def)ghi)\\g{-1}
+.fi
+.LP
+The sequence \\g{-1} is a reference to the most recently started capturing subpattern before \\g, that is, it is equivalent to \\2 in this example\&. Similarly, \\g{-2} would be equivalent to \\1\&. The use of relative references can be helpful in long patterns, and also in patterns that are created by joining fragments containing references within themselves\&.
+.LP
+A back reference matches whatever matched the capturing subpattern in the current subject string, rather than anything matching the subpattern itself (section \fBSubpattern as Subroutines\fR\& describes a way of doing that)\&. So, the following pattern matches "sense and sensibility" and "response and responsibility", but not "sense and responsibility":
+.LP
+.nf
+
+(sens|respons)e and \\1ibility
+.fi
+.LP
+If caseful matching is in force at the time of the back reference, the case of letters is relevant\&. For example, the following matches "rah rah" and "RAH RAH", but not "RAH rah", although the original capturing subpattern is matched caselessly:
+.LP
+.nf
+
+((?i)rah)\\s+\\1
+.fi
+.LP
+There are many different ways of writing back references to named subpatterns\&. The \&.NET syntax \fI\\k{name}\fR\& and the Perl syntax \fI\\k<name>\fR\& or \fI\\k\&'name\&'\fR\& are supported, as is the Python syntax \fI(?P=name)\fR\&\&. The unified back reference syntax in Perl 5\&.10, in which \\g can be used for both numeric and named references, is also supported\&. The previous example can be rewritten in the following ways:
+.LP
+.nf
+
+(?<p1>(?i)rah)\\s+\\k<p1>
+(?'p1'(?i)rah)\\s+\\k{p1}
+(?P<p1>(?i)rah)\\s+(?P=p1)
+(?<p1>(?i)rah)\\s+\\g{p1}
+.fi
+.LP
+A subpattern that is referenced by name can appear in the pattern before or after the reference\&.
+.LP
+There can be more than one back reference to the same subpattern\&. If a subpattern has not been used in a particular match, any back references to it always fails\&. For example, the following pattern always fails if it starts to match "a" rather than "bc":
+.LP
+.nf
+
+(a|(bc))\\2
+.fi
+.LP
+As there can be many capturing parentheses in a pattern, all digits following the backslash are taken as part of a potential back reference number\&. If the pattern continues with a digit character, some delimiter must be used to terminate the back reference\&. If option \fIextended\fR\& is set, this can be whitespace\&. Otherwise an empty comment (see section \fBComments\fR\&) can be used\&.
+.LP
+\fIRecursive Back References\fR\&
+.LP
+A back reference that occurs inside the parentheses to which it refers fails when the subpattern is first used, so, for example, (a\\1) never matches\&. However, such references can be useful inside repeated subpatterns\&. For example, the following pattern matches any number of "a"s and also "aba", "ababbaa", and so on:
+.LP
+.nf
+
+(a|b\\1)+
+.fi
+.LP
+At each iteration of the subpattern, the back reference matches the character string corresponding to the previous iteration\&. In order for this to work, the pattern must be such that the first iteration does not need to match the back reference\&. This can be done using alternation, as in the example above, or by a quantifier with a minimum of zero\&.
+.LP
+Back references of this type cause the group that they reference to be treated as an atomic group\&. Once the whole group has been matched, a subsequent matching failure cannot cause backtracking into the middle of the group\&.
+.SH "ASSERTIONS"
+
+.LP
+An assertion is a test on the characters following or preceding the current matching point that does not consume any characters\&. The simple assertions coded as \\b, \\B, \\A, \\G, \\Z, \\z, ^, and $ are described in the previous sections\&.
+.LP
+More complicated assertions are coded as subpatterns\&. There are two kinds: those that look ahead of the current position in the subject string, and those that look behind it\&. An assertion subpattern is matched in the normal way, except that it does not cause the current matching position to be changed\&.
+.LP
+Assertion subpatterns are not capturing subpatterns\&. If such an assertion contains capturing subpatterns within it, these are counted for the purposes of numbering the capturing subpatterns in the whole pattern\&. However, substring capturing is done only for positive assertions\&. (Perl sometimes, but not always, performs capturing in negative assertions\&.)
+.LP
+For compatibility with Perl, assertion subpatterns can be repeated\&. However, it makes no sense to assert the same thing many times, the side effect of capturing parentheses can occasionally be useful\&. In practice, there are only three cases:
+.RS 2
+.TP 2
+*
+If the quantifier is {0}, the assertion is never obeyed during matching\&. However, it can contain internal capturing parenthesized groups that are called from elsewhere through the subroutine mechanism\&.
+.LP
+.TP 2
+*
+If quantifier is {0,n}, where n > 0, it is treated as if it was {0,1}\&. At runtime, the remaining pattern match is tried with and without the assertion, the order depends on the greediness of the quantifier\&.
+.LP
+.TP 2
+*
+If the minimum repetition is > 0, the quantifier is ignored\&. The assertion is obeyed only once when encountered during matching\&.
+.LP
+.RE
+
+.LP
+\fILookahead Assertions\fR\&
+.LP
+Lookahead assertions start with (?= for positive assertions and (?! for negative assertions\&. For example, the following matches a word followed by a semicolon, but does not include the semicolon in the match:
+.LP
+.nf
+
+\\w+(?=;)
+.fi
+.LP
+The following matches any occurrence of "foo" that is not followed by "bar":
+.LP
+.nf
+
+foo(?!bar)
+.fi
+.LP
+Notice that the apparently similar pattern
+.LP
+.nf
+
+(?!foo)bar
+.fi
+.LP
+does not find an occurrence of "bar" that is preceded by something other than "foo"\&. It finds any occurrence of "bar" whatsoever, as the assertion (?!foo) is always true when the next three characters are "bar"\&. A lookbehind assertion is needed to achieve the other effect\&.
+.LP
+If you want to force a matching failure at some point in a pattern, the most convenient way to do it is with (?!), as an empty string always matches\&. So, an assertion that requires there is not to be an empty string must always fail\&. The backtracking control verb (*FAIL) or (*F) is a synonym for (?!)\&.
+.LP
+\fILookbehind Assertions\fR\&
+.LP
+Lookbehind assertions start with (?<= for positive assertions and (?<! for negative assertions\&. For example, the following finds an occurrence of "bar" that is not preceded by "foo":
+.LP
+.nf
+
+(?<!foo)bar
+.fi
+.LP
+The contents of a lookbehind assertion are restricted such that all the strings it matches must have a fixed length\&. However, if there are many top-level alternatives, they do not all have to have the same fixed length\&. Thus, the following is permitted:
+.LP
+.nf
+
+(?<=bullock|donkey)
+.fi
+.LP
+The following causes an error at compile time:
+.LP
+.nf
+
+(?<!dogs?|cats?)
+.fi
+.LP
+Branches that match different length strings are permitted only at the top-level of a lookbehind assertion\&. This is an extension compared with Perl, which requires all branches to match the same length of string\&. An assertion such as the following is not permitted, as its single top-level branch can match two different lengths:
+.LP
+.nf
+
+(?<=ab(c|de))
+.fi
+.LP
+However, it is acceptable to PCRE if rewritten to use two top-level branches:
+.LP
+.nf
+
+(?<=abc|abde)
+.fi
+.LP
+Sometimes the escape sequence \\K (see above) can be used instead of a lookbehind assertion to get round the fixed-length restriction\&.
+.LP
+The implementation of lookbehind assertions is, for each alternative, to move the current position back temporarily by the fixed length and then try to match\&. If there are insufficient characters before the current position, the assertion fails\&.
+.LP
+In a UTF mode, PCRE does not allow the \\C escape (which matches a single data unit even in a UTF mode) to appear in lookbehind assertions, as it makes it impossible to calculate the length of the lookbehind\&. The \\X and \\R escapes, which can match different numbers of data units, are not permitted either\&.
+.LP
+"Subroutine" calls (see below), such as (?2) or (?&X), are permitted in lookbehinds, as long as the subpattern matches a fixed-length string\&. Recursion, however, is not supported\&.
+.LP
+Possessive quantifiers can be used with lookbehind assertions to specify efficient matching of fixed-length strings at the end of subject strings\&. Consider the following simple pattern when applied to a long string that does not match:
+.LP
+.nf
+
+abcd$
+.fi
+.LP
+As matching proceeds from left to right, PCRE looks for each "a" in the subject and then sees if what follows matches the remaining pattern\&. If the pattern is specified as
+.LP
+.nf
+
+^.*abcd$
+.fi
+.LP
+the initial \&.* matches the entire string at first\&. However, when this fails (as there is no following "a"), it backtracks to match all but the last character, then all but the last two characters, and so on\&. Once again the search for "a" covers the entire string, from right to left, so we are no better off\&. However, if the pattern is written as
+.LP
+.nf
+
+^.*+(?<=abcd)
+.fi
+.LP
+there can be no backtracking for the \&.*+ item; it can match only the entire string\&. The subsequent lookbehind assertion does a single test on the last four characters\&. If it fails, the match fails immediately\&. For long strings, this approach makes a significant difference to the processing time\&.
+.LP
+\fIUsing Multiple Assertions\fR\&
+.LP
+Many assertions (of any sort) can occur in succession\&. For example, the following matches "foo" preceded by three digits that are not "999":
+.LP
+.nf
+
+(?<=\\d{3})(?<!999)foo
+.fi
+.LP
+Notice that each of the assertions is applied independently at the same point in the subject string\&. First there is a check that the previous three characters are all digits, and then there is a check that the same three characters are not "999"\&. This pattern does \fInot\fR\& match "foo" preceded by six characters, the first of which are digits and the last three of which are not "999"\&. For example, it does not match "123abcfoo"\&. A pattern to do that is the following:
+.LP
+.nf
+
+(?<=\\d{3}...)(?<!999)foo
+.fi
+.LP
+This time the first assertion looks at the preceding six characters, checks that the first three are digits, and then the second assertion checks that the preceding three characters are not "999"\&.
+.LP
+Assertions can be nested in any combination\&. For example, the following matches an occurrence of "baz" that is preceded by "bar", which in turn is not preceded by "foo":
+.LP
+.nf
+
+(?<=(?<!foo)bar)baz
+.fi
+.LP
+The following pattern matches "foo" preceded by three digits and any three characters that are not "999":
+.LP
+.nf
+
+(?<=\\d{3}(?!999)...)foo
+.fi
+.SH "CONDITIONAL SUBPATTERNS"
+
+.LP
+It is possible to cause the matching process to obey a subpattern conditionally or to choose between two alternative subpatterns, depending on the result of an assertion, or whether a specific capturing subpattern has already been matched\&. The following are the two possible forms of conditional subpattern:
+.LP
+.nf
+
+(?(condition)yes-pattern)
+(?(condition)yes-pattern|no-pattern)
+.fi
+.LP
+If the condition is satisfied, the yes-pattern is used, otherwise the no-pattern (if present)\&. If more than two alternatives exist in the subpattern, a compile-time error occurs\&. Each of the two alternatives can itself contain nested subpatterns of any form, including conditional subpatterns; the restriction to two alternatives applies only at the level of the condition\&. The following pattern fragment is an example where the alternatives are complex:
+.LP
+.nf
+
+(?(1) (A|B|C) | (D | (?(2)E|F) | E) )
+.fi
+.LP
+There are four kinds of condition: references to subpatterns, references to recursion, a pseudo-condition called DEFINE, and assertions\&.
+.LP
+\fIChecking for a Used Subpattern By Number\fR\&
+.LP
+If the text between the parentheses consists of a sequence of digits, the condition is true if a capturing subpattern of that number has previously matched\&. If more than one capturing subpattern with the same number exists (see section \fB Duplicate Subpattern Numbers\fR\& earlier), the condition is true if any of them have matched\&. An alternative notation is to precede the digits with a plus or minus sign\&. In this case, the subpattern number is relative rather than absolute\&. The most recently opened parentheses can be referenced by (?(-1), the next most recent by (?(-2), and so on\&. Inside loops, it can also make sense to refer to subsequent groups\&. The next parentheses to be opened can be referenced as (?(+1), and so on\&. (The value zero in any of these forms is not used; it provokes a compile-time error\&.)
+.LP
+Consider the following pattern, which contains non-significant whitespace to make it more readable (assume option \fIextended\fR\&) and to divide it into three parts for ease of discussion:
+.LP
+.nf
+
+( \\( )?    [^()]+    (?(1) \\) )
+.fi
+.LP
+The first part matches an optional opening parenthesis, and if that character is present, sets it as the first captured substring\&. The second part matches one or more characters that are not parentheses\&. The third part is a conditional subpattern that tests whether the first set of parentheses matched or not\&. If they did, that is, if subject started with an opening parenthesis, the condition is true, and so the yes-pattern is executed and a closing parenthesis is required\&. Otherwise, as no-pattern is not present, the subpattern matches nothing\&. That is, this pattern matches a sequence of non-parentheses, optionally enclosed in parentheses\&.
+.LP
+If this pattern is embedded in a larger one, a relative reference can be used:
+.LP
+.nf
+
+...other stuff... ( \\( )?    [^()]+    (?(-1) \\) ) ...
+.fi
+.LP
+This makes the fragment independent of the parentheses in the larger pattern\&.
+.LP
+\fIChecking for a Used Subpattern By Name\fR\&
+.LP
+Perl uses the syntax (?(<name>)\&.\&.\&.) or (?(\&'name\&')\&.\&.\&.) to test for a used subpattern by name\&. For compatibility with earlier versions of PCRE, which had this facility before Perl, the syntax (?(name)\&.\&.\&.) is also recognized\&. However, there is a possible ambiguity with this syntax, as subpattern names can consist entirely of digits\&. PCRE looks first for a named subpattern; if it cannot find one and the name consists entirely of digits, PCRE looks for a subpattern of that number, which must be > 0\&. Using subpattern names that consist entirely of digits is not recommended\&.
+.LP
+Rewriting the previous example to use a named subpattern gives:
+.LP
+.nf
+
+(?<OPEN> \\( )?    [^()]+    (?(<OPEN>) \\) )
+.fi
+.LP
+If the name used in a condition of this kind is a duplicate, the test is applied to all subpatterns of the same name, and is true if any one of them has matched\&.
+.LP
+\fIChecking for Pattern Recursion\fR\&
+.LP
+If the condition is the string (R), and there is no subpattern with the name R, the condition is true if a recursive call to the whole pattern or any subpattern has been made\&. If digits or a name preceded by ampersand follow the letter R, for example:
+.LP
+.nf
+
+(?(R3)...) or (?(R&name)...)
+.fi
+.LP
+the condition is true if the most recent recursion is into a subpattern whose number or name is given\&. This condition does not check the entire recursion stack\&. If the name used in a condition of this kind is a duplicate, the test is applied to all subpatterns of the same name, and is true if any one of them is the most recent recursion\&.
+.LP
+At "top-level", all these recursion test conditions are false\&. The syntax for recursive patterns is described below\&.
+.LP
+\fIDefining Subpatterns for Use By Reference Only\fR\&
+.LP
+If the condition is the string (DEFINE), and there is no subpattern with the name DEFINE, the condition is always false\&. In this case, there can be only one alternative in the subpattern\&. It is always skipped if control reaches this point in the pattern\&. The idea of DEFINE is that it can be used to define "subroutines" that can be referenced from elsewhere\&. (The use of subroutines is described below\&.) For example, a pattern to match an IPv4 address, such as "192\&.168\&.23\&.245", can be written like this (ignore whitespace and line breaks):
+.LP
+.nf
+
+(?(DEFINE) (?<byte> 2[0-4]\\d | 25[0-5] | 1\\d\\d | [1-9]?\\d) ) \\b (?&byte) (\\.(?&byte)){3} \\b
+.fi
+.LP
+The first part of the pattern is a DEFINE group inside which is a another group named "byte" is defined\&. This matches an individual component of an IPv4 address (a number < 256)\&. When matching takes place, this part of the pattern is skipped, as DEFINE acts like a false condition\&. The remaining pattern uses references to the named group to match the four dot-separated components of an IPv4 address, insisting on a word boundary at each end\&.
+.LP
+\fIAssertion Conditions\fR\&
+.LP
+If the condition is not in any of the above formats, it must be an assertion\&. This can be a positive or negative lookahead or lookbehind assertion\&. Consider the following pattern, containing non-significant whitespace, and with the two alternatives on the second line:
+.LP
+.nf
+
+(?(?=[^a-z]*[a-z])
+\\d{2}-[a-z]{3}-\\d{2}  |  \\d{2}-\\d{2}-\\d{2} )
+.fi
+.LP
+The condition is a positive lookahead assertion that matches an optional sequence of non-letters followed by a letter\&. That is, it tests for the presence of at least one letter in the subject\&. If a letter is found, the subject is matched against the first alternative, otherwise it is matched against the second\&. This pattern matches strings in one of the two forms dd-aaa-dd or dd-dd-dd, where aaa are letters and dd are digits\&.
+.SH "COMMENTS"
+
+.LP
+There are two ways to include comments in patterns that are processed by PCRE\&. In both cases, the start of the comment must not be in a character class, or in the middle of any other sequence of related characters such as (?: or a subpattern name or number\&. The characters that make up a comment play no part in the pattern matching\&.
+.LP
+The sequence (?# marks the start of a comment that continues up to the next closing parenthesis\&. Nested parentheses are not permitted\&. If option PCRE_EXTENDED is set, an unescaped # character also introduces a comment, which in this case continues to immediately after the next newline character or character sequence in the pattern\&. Which characters are interpreted as newlines is controlled by the options passed to a compiling function or by a special sequence at the start of the pattern, as described in section \fB Newline Conventions\fR\& earlier\&.
+.LP
+Notice that the end of this type of comment is a literal newline sequence in the pattern; escape sequences that happen to represent a newline do not count\&. For example, consider the following pattern when \fIextended\fR\& is set, and the default newline convention is in force:
+.LP
+.nf
+
+abc #comment \\n still comment
+.fi
+.LP
+On encountering character #, \fIpcre_compile()\fR\& skips along, looking for a newline in the pattern\&. The sequence \\n is still literal at this stage, so it does not terminate the comment\&. Only a character with code value 0x0a (the default newline) does so\&.
+.SH "RECURSIVE PATTERNS"
+
+.LP
+Consider the problem of matching a string in parentheses, allowing for unlimited nested parentheses\&. Without the use of recursion, the best that can be done is to use a pattern that matches up to some fixed depth of nesting\&. It is not possible to handle an arbitrary nesting depth\&.
+.LP
+For some time, Perl has provided a facility that allows regular expressions to recurse (among other things)\&. It does this by interpolating Perl code in the expression at runtime, and the code can refer to the expression itself\&. A Perl pattern using code interpolation to solve the parentheses problem can be created like this:
+.LP
+.nf
+
+$re = qr{\\( (?: (?>[^()]+) | (?p{$re}) )* \\)}x;
+.fi
+.LP
+Item (?p{\&.\&.\&.}) interpolates Perl code at runtime, and in this case refers recursively to the pattern in which it appears\&.
+.LP
+Obviously, PCRE cannot support the interpolation of Perl code\&. Instead, it supports special syntax for recursion of the entire pattern, and for individual subpattern recursion\&. After its introduction in PCRE and Python, this kind of recursion was later introduced into Perl at release 5\&.10\&.
+.LP
+A special item that consists of (? followed by a number > 0 and a closing parenthesis is a recursive subroutine call of the subpattern of the given number, if it occurs inside that subpattern\&. (If not, it is a non-recursive subroutine call, which is described in the next section\&.) The special item (?R) or (?0) is a recursive call of the entire regular expression\&.
+.LP
+This PCRE pattern solves the nested parentheses problem (assume that option \fIextended\fR\& is set so that whitespace is ignored):
+.LP
+.nf
+
+\\( ( [^()]++ | (?R) )* \\)
+.fi
+.LP
+First it matches an opening parenthesis\&. Then it matches any number of substrings, which can either be a sequence of non-parentheses or a recursive match of the pattern itself (that is, a correctly parenthesized substring)\&. Finally there is a closing parenthesis\&. Notice the use of a possessive quantifier to avoid backtracking into sequences of non-parentheses\&.
+.LP
+If this was part of a larger pattern, you would not want to recurse the entire pattern, so instead you can use:
+.LP
+.nf
+
+( \\( ( [^()]++ | (?1) )* \\) )
+.fi
+.LP
+The pattern is here within parentheses so that the recursion refers to them instead of the whole pattern\&.
+.LP
+In a larger pattern, keeping track of parenthesis numbers can be tricky\&. This is made easier by the use of relative references\&. Instead of (?1) in the pattern above, you can write (?-2) to refer to the second most recently opened parentheses preceding the recursion\&. That is, a negative number counts capturing parentheses leftwards from the point at which it is encountered\&.
+.LP
+It is also possible to refer to later opened parentheses, by writing references such as (?+2)\&. However, these cannot be recursive, as the reference is not inside the parentheses that are referenced\&. They are always non-recursive subroutine calls, as described in the next section\&.
+.LP
+An alternative approach is to use named parentheses instead\&. The Perl syntax for this is (?&name)\&. The earlier PCRE syntax (?P>name) is also supported\&. We can rewrite the above example as follows:
+.LP
+.nf
+
+(?<pn> \\( ( [^()]++ | (?&pn) )* \\) )
+.fi
+.LP
+If there is more than one subpattern with the same name, the earliest one is used\&.
+.LP
+This particular example pattern that we have studied contains nested unlimited repeats, and so the use of a possessive quantifier for matching strings of non-parentheses is important when applying the pattern to strings that do not match\&. For example, when this pattern is applied to
+.LP
+.nf
+
+(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa()
+.fi
+.LP
+it gives "no match" quickly\&. However, if a possessive quantifier is not used, the match runs for a long time, as there are so many different ways the + and * repeats can carve up the subject, and all must be tested before failure can be reported\&.
+.LP
+At the end of a match, the values of capturing parentheses are those from the outermost level\&. If the pattern above is matched against
+.LP
+.nf
+
+(ab(cd)ef)
+.fi
+.LP
+the value for the inner capturing parentheses (numbered 2) is "ef", which is the last value taken on at the top-level\&. If a capturing subpattern is not matched at the top level, its final captured value is unset, even if it was (temporarily) set at a deeper level during the matching process\&.
+.LP
+Do not confuse item (?R) with condition (R), which tests for recursion\&. Consider the following pattern, which matches text in angle brackets, allowing for arbitrary nesting\&. Only digits are allowed in nested brackets (that is, when recursing), while any characters are permitted at the outer level\&.
+.LP
+.nf
+
+< (?: (?(R) \\d++  | [^<>]*+) | (?R)) * >
+.fi
+.LP
+Here (?(R) is the start of a conditional subpattern, with two different alternatives for the recursive and non-recursive cases\&. Item (?R) is the actual recursive call\&.
+.LP
+\fIDifferences in Recursion Processing between PCRE and Perl\fR\&
+.LP
+Recursion processing in PCRE differs from Perl in two important ways\&. In PCRE (like Python, but unlike Perl), a recursive subpattern call is always treated as an atomic group\&. That is, once it has matched some of the subject string, it is never re-entered, even if it contains untried alternatives and there is a subsequent matching failure\&. This can be illustrated by the following pattern, which means to match a palindromic string containing an odd number of characters (for example, "a", "aba", "abcba", "abcdcba"):
+.LP
+.nf
+
+^(.|(.)(?1)\\2)$
+.fi
+.LP
+The idea is that it either matches a single character, or two identical characters surrounding a subpalindrome\&. In Perl, this pattern works; in PCRE it does not work if the pattern is longer than three characters\&. Consider the subject string "abcba"\&.
+.LP
+At the top level, the first character is matched, but as it is not at the end of the string, the first alternative fails, the second alternative is taken, and the recursion kicks in\&. The recursive call to subpattern 1 successfully matches the next character ("b")\&. (Notice that the beginning and end of line tests are not part of the recursion\&.)
+.LP
+Back at the top level, the next character ("c") is compared with what subpattern 2 matched, which was "a"\&. This fails\&. As the recursion is treated as an atomic group, there are now no backtracking points, and so the entire match fails\&. (Perl can now re-enter the recursion and try the second alternative\&.) However, if the pattern is written with the alternatives in the other order, things are different:
+.LP
+.nf
+
+^((.)(?1)\\2|.)$
+.fi
+.LP
+This time, the recursing alternative is tried first, and continues to recurse until it runs out of characters, at which point the recursion fails\&. But this time we have another alternative to try at the higher level\&. That is the significant difference: in the previous case the remaining alternative is at a deeper recursion level, which PCRE cannot use\&.
+.LP
+To change the pattern so that it matches all palindromic strings, not only those with an odd number of characters, it is tempting to change the pattern to this:
+.LP
+.nf
+
+^((.)(?1)\\2|.?)$
+.fi
+.LP
+Again, this works in Perl, but not in PCRE, and for the same reason\&. When a deeper recursion has matched a single character, it cannot be entered again to match an empty string\&. The solution is to separate the two cases, and write out the odd and even cases as alternatives at the higher level:
+.LP
+.nf
+
+^(?:((.)(?1)\\2|)|((.)(?3)\\4|.))
+.fi
+.LP
+If you want to match typical palindromic phrases, the pattern must ignore all non-word characters, which can be done as follows:
+.LP
+.nf
+
+^\\W*+(?:((.)\\W*+(?1)\\W*+\\2|)|((.)\\W*+(?3)\\W*+\\4|\\W*+.\\W*+))\\W*+$
+.fi
+.LP
+If run with option \fIcaseless\fR\&, this pattern matches phrases such as "A man, a plan, a canal: Panama!" and it works well in both PCRE and Perl\&. Notice the use of the possessive quantifier *+ to avoid backtracking into sequences of non-word characters\&. Without this, PCRE takes much longer (10 times or more) to match typical phrases, and Perl takes so long that you think it has gone into a loop\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The palindrome-matching patterns above work only if the subject string does not start with a palindrome that is shorter than the entire string\&. For example, although "abcba" is correctly matched, if the subject is "ababa", PCRE finds palindrome "aba" at the start, and then fails at top level, as the end of the string does not follow\&. Once again, it cannot jump back into the recursion to try other alternatives, so the entire match fails\&.
+
+.LP
+The second way in which PCRE and Perl differ in their recursion processing is in the handling of captured values\&. In Perl, when a subpattern is called recursively or as a subpattern (see the next section), it has no access to any values that were captured outside the recursion\&. In PCRE these values can be referenced\&. Consider the following pattern:
+.LP
+.nf
+
+^(.)(\\1|a(?2))
+.fi
+.LP
+In PCRE, it matches "bab"\&. The first capturing parentheses match "b", then in the second group, when the back reference \\1 fails to match "b", the second alternative matches "a", and then recurses\&. In the recursion, \\1 does now match "b" and so the whole match succeeds\&. In Perl, the pattern fails to match because inside the recursive call \\1 cannot access the externally set value\&.
+.SH "SUBPATTERNS AS SUBROUTINES"
+
+.LP
+If the syntax for a recursive subpattern call (either by number or by name) is used outside the parentheses to which it refers, it operates like a subroutine in a programming language\&. The called subpattern can be defined before or after the reference\&. A numbered reference can be absolute or relative, as in the following examples:
+.LP
+.nf
+
+(...(absolute)...)...(?2)...
+(...(relative)...)...(?-1)...
+(...(?+1)...(relative)...
+.fi
+.LP
+An earlier example pointed out that the following pattern matches "sense and sensibility" and "response and responsibility", but not "sense and responsibility":
+.LP
+.nf
+
+(sens|respons)e and \\1ibility
+.fi
+.LP
+If instead the following pattern is used, it matches "sense and responsibility" and the other two strings:
+.LP
+.nf
+
+(sens|respons)e and (?1)ibility
+.fi
+.LP
+Another example is provided in the discussion of DEFINE earlier\&.
+.LP
+All subroutine calls, recursive or not, are always treated as atomic groups\&. That is, once a subroutine has matched some of the subject string, it is never re-entered, even if it contains untried alternatives and there is a subsequent matching failure\&. Any capturing parentheses that are set during the subroutine call revert to their previous values afterwards\&.
+.LP
+Processing options such as case-independence are fixed when a subpattern is defined, so if it is used as a subroutine, such options cannot be changed for different calls\&. For example, the following pattern matches "abcabc" but not "abcABC", as the change of processing option does not affect the called subpattern:
+.LP
+.nf
+
+(abc)(?i:(?-1))
+.fi
+.SH "ONIGURUMA SUBROUTINE SYNTAX"
+
+.LP
+For compatibility with Oniguruma, the non-Perl syntax \\g followed by a name or a number enclosed either in angle brackets or single quotes, is alternative syntax for referencing a subpattern as a subroutine, possibly recursively\&. Here follows two of the examples used above, rewritten using this syntax:
+.LP
+.nf
+
+(?<pn> \\( ( (?>[^()]+) | \\g<pn> )* \\) )
+(sens|respons)e and \\g'1'ibility
+.fi
+.LP
+PCRE supports an extension to Oniguruma: if a number is preceded by a plus or minus sign, it is taken as a relative reference, for example:
+.LP
+.nf
+
+(abc)(?i:\\g<-1>)
+.fi
+.LP
+Notice that \\g{\&.\&.\&.} (Perl syntax) and \\g<\&.\&.\&.> (Oniguruma syntax) are \fInot\fR\& synonymous\&. The former is a back reference; the latter is a subroutine call\&.
+.SH "BACKTRACKING CONTROL"
+
+.LP
+Perl 5\&.10 introduced some "Special Backtracking Control Verbs", which are still described in the Perl documentation as "experimental and subject to change or removal in a future version of Perl"\&. It goes on to say: "Their usage in production code should be noted to avoid problems during upgrades\&." The same remarks apply to the PCRE features described in this section\&.
+.LP
+The new verbs make use of what was previously invalid syntax: an opening parenthesis followed by an asterisk\&. They are generally of the form (*VERB) or (*VERB:NAME)\&. Some can take either form, possibly behaving differently depending on whether a name is present\&. A name is any sequence of characters that does not include a closing parenthesis\&. The maximum name length is 255 in the 8-bit library and 65535 in the 16-bit and 32-bit libraries\&. If the name is empty, that is, if the closing parenthesis immediately follows the colon, the effect is as if the colon was not there\&. Any number of these verbs can occur in a pattern\&.
+.LP
+The behavior of these verbs in repeated groups, assertions, and in subpatterns called as subroutines (whether or not recursively) is described below\&.
+.LP
+\fIOptimizations That Affect Backtracking Verbs\fR\&
+.LP
+PCRE contains some optimizations that are used to speed up matching by running some checks at the start of each match attempt\&. For example, it can know the minimum length of matching subject, or that a particular character must be present\&. When one of these optimizations bypasses the running of a match, any included backtracking verbs are not processed\&. processed\&. You can suppress the start-of-match optimizations by setting option \fIno_start_optimize\fR\& when calling \fB\fIcompile/2\fR\&\fR\& or \fB\fIrun/3\fR\&\fR\&, or by starting the pattern with (*NO_START_OPT)\&.
+.LP
+Experiments with Perl suggest that it too has similar optimizations, sometimes leading to anomalous results\&.
+.LP
+\fIVerbs That Act Immediately\fR\&
+.LP
+The following verbs act as soon as they are encountered\&. They must not be followed by a name\&.
+.LP
+.nf
+
+(*ACCEPT)
+.fi
+.LP
+This verb causes the match to end successfully, skipping the remainder of the pattern\&. However, when it is inside a subpattern that is called as a subroutine, only that subpattern is ended successfully\&. Matching then continues at the outer level\&. If (*ACCEPT) is triggered in a positive assertion, the assertion succeeds; in a negative assertion, the assertion fails\&.
+.LP
+If (*ACCEPT) is inside capturing parentheses, the data so far is captured\&. For example, the following matches "AB", "AAD", or "ACD"\&. When it matches "AB", "B" is captured by the outer parentheses\&.
+.LP
+.nf
+
+A((?:A|B(*ACCEPT)|C)D)
+.fi
+.LP
+The following verb causes a matching failure, forcing backtracking to occur\&. It is equivalent to (?!) but easier to read\&.
+.LP
+.nf
+
+(*FAIL) or (*F)
+.fi
+.LP
+The Perl documentation states that it is probably useful only when combined with (?{}) or (??{})\&. Those are Perl features that are not present in PCRE\&.
+.LP
+A match with the string "aaaa" always fails, but the callout is taken before each backtrack occurs (in this example, 10 times)\&.
+.LP
+\fIRecording Which Path Was Taken\fR\&
+.LP
+The main purpose of this verb is to track how a match was arrived at, although it also has a secondary use in with advancing the match starting point (see (*SKIP) below)\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+In Erlang, there is no interface to retrieve a mark with \fB\fIrun/2,3\fR\&\fR\&, so only the secondary purpose is relevant to the Erlang programmer\&.
+.LP
+The rest of this section is therefore deliberately not adapted for reading by the Erlang programmer, but the examples can help in understanding NAMES as they can be used by (*SKIP)\&.
+
+.LP
+.nf
+
+(*MARK:NAME) or (*:NAME)
+.fi
+.LP
+A name is always required with this verb\&. There can be as many instances of (*MARK) as you like in a pattern, and their names do not have to be unique\&.
+.LP
+When a match succeeds, the name of the last encountered (*MARK:NAME), (*PRUNE:NAME), or (*THEN:NAME) on the matching path is passed back to the caller as described in section "Extra data for \fIpcre_exec()\fR\&" in the \fIpcreapi\fR\& documentation\&. In the following example of \fIpcretest\fR\& output, the /K modifier requests the retrieval and outputting of (*MARK) data:
+.LP
+.nf
+
+  re> /X(*MARK:A)Y|X(*MARK:B)Z/K
+data> XY
+ 0: XY
+MK: A
+XZ
+ 0: XZ
+MK: B
+.fi
+.LP
+The (*MARK) name is tagged with "MK:" in this output, and in this example it indicates which of the two alternatives matched\&. This is a more efficient way of obtaining this information than putting each alternative in its own capturing parentheses\&.
+.LP
+If a verb with a name is encountered in a positive assertion that is true, the name is recorded and passed back if it is the last encountered\&. This does not occur for negative assertions or failing positive assertions\&.
+.LP
+After a partial match or a failed match, the last encountered name in the entire match process is returned, for example:
+.LP
+.nf
+
+  re> /X(*MARK:A)Y|X(*MARK:B)Z/K
+data> XP
+No match, mark = B
+.fi
+.LP
+Notice that in this unanchored example, the mark is retained from the match attempt that started at letter "X" in the subject\&. Subsequent match attempts starting at "P" and then with an empty string do not get as far as the (*MARK) item, nevertheless do not reset it\&.
+.LP
+\fIVerbs That Act after Backtracking\fR\&
+.LP
+The following verbs do nothing when they are encountered\&. Matching continues with what follows, but if there is no subsequent match, causing a backtrack to the verb, a failure is forced\&. That is, backtracking cannot pass to the left of the verb\&. However, when one of these verbs appears inside an atomic group or an assertion that is true, its effect is confined to that group, as once the group has been matched, there is never any backtracking into it\&. In this situation, backtracking can "jump back" to the left of the entire atomic group or assertion\&. (Remember also, as stated above, that this localization also applies in subroutine calls\&.)
+.LP
+These verbs differ in exactly what kind of failure occurs when backtracking reaches them\&. The behavior described below is what occurs when the verb is not in a subroutine or an assertion\&. Subsequent sections cover these special cases\&.
+.LP
+The following verb, which must not be followed by a name, causes the whole match to fail outright if there is a later matching failure that causes backtracking to reach it\&. Even if the pattern is unanchored, no further attempts to find a match by advancing the starting point take place\&.
+.LP
+.nf
+
+(*COMMIT)
+.fi
+.LP
+If (*COMMIT) is the only backtracking verb that is encountered, once it has been passed, \fB\fIrun/2,3\fR\&\fR\& is committed to find a match at the current starting point, or not at all, for example:
+.LP
+.nf
+
+a+(*COMMIT)b
+.fi
+.LP
+This matches "xxaab" but not "aacaab"\&. It can be thought of as a kind of dynamic anchor, or "I\&'ve started, so I must finish"\&. The name of the most recently passed (*MARK) in the path is passed back when (*COMMIT) forces a match failure\&.
+.LP
+If more than one backtracking verb exists in a pattern, a different one that follows (*COMMIT) can be triggered first, so merely passing (*COMMIT) during a match does not always guarantee that a match must be at this starting point\&.
+.LP
+Notice that (*COMMIT) at the start of a pattern is not the same as an anchor, unless the PCRE start-of-match optimizations are turned off, as shown in the following example:
+.LP
+.nf
+
+1> re:run("xyzabc","(*COMMIT)abc",[{capture,all,list}]).
+{match,["abc"]}
+2> re:run("xyzabc","(*COMMIT)abc",[{capture,all,list},no_start_optimize]).
+nomatch
+.fi
+.LP
+PCRE knows that any match must start with "a", so the optimization skips along the subject to "a" before running the first match attempt, which succeeds\&. When the optimization is disabled by option \fIno_start_optimize\fR\&, the match starts at "x" and so the (*COMMIT) causes it to fail without trying any other starting points\&.
+.LP
+The following verb causes the match to fail at the current starting position in the subject if there is a later matching failure that causes backtracking to reach it:
+.LP
+.nf
+
+(*PRUNE) or (*PRUNE:NAME)
+.fi
+.LP
+If the pattern is unanchored, the normal "bumpalong" advance to the next starting character then occurs\&. Backtracking can occur as usual to the left of (*PRUNE), before it is reached, or when matching to the right of (*PRUNE), but if there is no match to the right, backtracking cannot cross (*PRUNE)\&. In simple cases, the use of (*PRUNE) is just an alternative to an atomic group or possessive quantifier, but there are some uses of (*PRUNE) that cannot be expressed in any other way\&. In an anchored pattern, (*PRUNE) has the same effect as (*COMMIT)\&.
+.LP
+The behavior of (*PRUNE:NAME) is the not the same as (*MARK:NAME)(*PRUNE)\&. It is like (*MARK:NAME) in that the name is remembered for passing back to the caller\&. However, (*SKIP:NAME) searches only for names set with (*MARK)\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The fact that (*PRUNE:NAME) remembers the name is useless to the Erlang programmer, as names cannot be retrieved\&.
+
+.LP
+The following verb, when specified without a name, is like (*PRUNE), except that if the pattern is unanchored, the "bumpalong" advance is not to the next character, but to the position in the subject where (*SKIP) was encountered\&.
+.LP
+.nf
+
+(*SKIP)
+.fi
+.LP
+(*SKIP) signifies that whatever text was matched leading up to it cannot be part of a successful match\&. Consider:
+.LP
+.nf
+
+a+(*SKIP)b
+.fi
+.LP
+If the subject is "aaaac\&.\&.\&.", after the first match attempt fails (starting at the first character in the string), the starting point skips on to start the next attempt at "c"\&. Notice that a possessive quantifier does not have the same effect as this example; although it would suppress backtracking during the first match attempt, the second attempt would start at the second character instead of skipping on to "c"\&.
+.LP
+When (*SKIP) has an associated name, its behavior is modified:
+.LP
+.nf
+
+(*SKIP:NAME)
+.fi
+.LP
+When this is triggered, the previous path through the pattern is searched for the most recent (*MARK) that has the same name\&. If one is found, the "bumpalong" advance is to the subject position that corresponds to that (*MARK) instead of to where (*SKIP) was encountered\&. If no (*MARK) with a matching name is found, (*SKIP) is ignored\&.
+.LP
+Notice that (*SKIP:NAME) searches only for names set by (*MARK:NAME)\&. It ignores names that are set by (*PRUNE:NAME) or (*THEN:NAME)\&.
+.LP
+The following verb causes a skip to the next innermost alternative when backtracking reaches it\&. That is, it cancels any further backtracking within the current alternative\&.
+.LP
+.nf
+
+(*THEN) or (*THEN:NAME)
+.fi
+.LP
+The verb name comes from the observation that it can be used for a pattern-based if-then-else block:
+.LP
+.nf
+
+( COND1 (*THEN) FOO | COND2 (*THEN) BAR | COND3 (*THEN) BAZ ) ...
+.fi
+.LP
+If the COND1 pattern matches, FOO is tried (and possibly further items after the end of the group if FOO succeeds)\&. On failure, the matcher skips to the second alternative and tries COND2, without backtracking into COND1\&. If that succeeds and BAR fails, COND3 is tried\&. If BAZ then fails, there are no more alternatives, so there is a backtrack to whatever came before the entire group\&. If (*THEN) is not inside an alternation, it acts like (*PRUNE)\&.
+.LP
+The behavior of (*THEN:NAME) is the not the same as (*MARK:NAME)(*THEN)\&. It is like (*MARK:NAME) in that the name is remembered for passing back to the caller\&. However, (*SKIP:NAME) searches only for names set with (*MARK)\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The fact that (*THEN:NAME) remembers the name is useless to the Erlang programmer, as names cannot be retrieved\&.
+
+.LP
+A subpattern that does not contain a | character is just a part of the enclosing alternative; it is not a nested alternation with only one alternative\&. The effect of (*THEN) extends beyond such a subpattern to the enclosing alternative\&. Consider the following pattern, where A, B, and so on, are complex pattern fragments that do not contain any | characters at this level:
+.LP
+.nf
+
+A (B(*THEN)C) | D
+.fi
+.LP
+If A and B are matched, but there is a failure in C, matching does not backtrack into A; instead it moves to the next alternative, that is, D\&. However, if the subpattern containing (*THEN) is given an alternative, it behaves differently:
+.LP
+.nf
+
+A (B(*THEN)C | (*FAIL)) | D
+.fi
+.LP
+The effect of (*THEN) is now confined to the inner subpattern\&. After a failure in C, matching moves to (*FAIL), which causes the whole subpattern to fail, as there are no more alternatives to try\&. In this case, matching does now backtrack into A\&.
+.LP
+Notice that a conditional subpattern is not considered as having two alternatives, as only one is ever used\&. That is, the | character in a conditional subpattern has a different meaning\&. Ignoring whitespace, consider:
+.LP
+.nf
+
+^.*? (?(?=a) a | b(*THEN)c )
+.fi
+.LP
+If the subject is "ba", this pattern does not match\&. As \&.*? is ungreedy, it initially matches zero characters\&. The condition (?=a) then fails, the character "b" is matched, but "c" is not\&. At this point, matching does not backtrack to \&.*? as can perhaps be expected from the presence of the | character\&. The conditional subpattern is part of the single alternative that comprises the whole pattern, and so the match fails\&. (If there was a backtrack into \&.*?, allowing it to match "b", the match would succeed\&.)
+.LP
+The verbs described above provide four different "strengths" of control when subsequent matching fails:
+.RS 2
+.TP 2
+*
+(*THEN) is the weakest, carrying on the match at the next alternative\&.
+.LP
+.TP 2
+*
+(*PRUNE) comes next, fails the match at the current starting position, but allows an advance to the next character (for an unanchored pattern)\&.
+.LP
+.TP 2
+*
+(*SKIP) is similar, except that the advance can be more than one character\&.
+.LP
+.TP 2
+*
+(*COMMIT) is the strongest, causing the entire match to fail\&.
+.LP
+.RE
+
+.LP
+\fIMore than One Backtracking Verb\fR\&
+.LP
+If more than one backtracking verb is present in a pattern, the one that is backtracked onto first acts\&. For example, consider the following pattern, where A, B, and so on, are complex pattern fragments:
+.LP
+.nf
+
+(A(*COMMIT)B(*THEN)C|ABD)
+.fi
+.LP
+If A matches but B fails, the backtrack to (*COMMIT) causes the entire match to fail\&. However, if A and B match, but C fails, the backtrack to (*THEN) causes the next alternative (ABD) to be tried\&. This behavior is consistent, but is not always the same as in Perl\&. It means that if two or more backtracking verbs appear in succession, the last of them has no effect\&. Consider the following example:
+.LP
+.nf
+
+...(*COMMIT)(*PRUNE)...
+.fi
+.LP
+If there is a matching failure to the right, backtracking onto (*PRUNE) cases it to be triggered, and its action is taken\&. There can never be a backtrack onto (*COMMIT)\&.
+.LP
+\fIBacktracking Verbs in Repeated Groups\fR\&
+.LP
+PCRE differs from Perl in its handling of backtracking verbs in repeated groups\&. For example, consider:
+.LP
+.nf
+
+/(a(*COMMIT)b)+ac/
+.fi
+.LP
+If the subject is "abac", Perl matches, but PCRE fails because the (*COMMIT) in the second repeat of the group acts\&.
+.LP
+\fIBacktracking Verbs in Assertions\fR\&
+.LP
+(*FAIL) in an assertion has its normal effect: it forces an immediate backtrack\&.
+.LP
+(*ACCEPT) in a positive assertion causes the assertion to succeed without any further processing\&. In a negative assertion, (*ACCEPT) causes the assertion to fail without any further processing\&.
+.LP
+The other backtracking verbs are not treated specially if they appear in a positive assertion\&. In particular, (*THEN) skips to the next alternative in the innermost enclosing group that has alternations, regardless if this is within the assertion\&.
+.LP
+Negative assertions are, however, different, to ensure that changing a positive assertion into a negative assertion changes its result\&. Backtracking into (*COMMIT), (*SKIP), or (*PRUNE) causes a negative assertion to be true, without considering any further alternative branches in the assertion\&. Backtracking into (*THEN) causes it to skip to the next enclosing alternative within the assertion (the normal behavior), but if the assertion does not have such an alternative, (*THEN) behaves like (*PRUNE)\&.
+.LP
+\fIBacktracking Verbs in Subroutines\fR\&
+.LP
+These behaviors occur regardless if the subpattern is called recursively\&. The treatment of subroutines in Perl is different in some cases\&.
+.RS 2
+.TP 2
+*
+(*FAIL) in a subpattern called as a subroutine has its normal effect: it forces an immediate backtrack\&.
+.LP
+.TP 2
+*
+(*ACCEPT) in a subpattern called as a subroutine causes the subroutine match to succeed without any further processing\&. Matching then continues after the subroutine call\&.
+.LP
+.TP 2
+*
+(*COMMIT), (*SKIP), and (*PRUNE) in a subpattern called as a subroutine cause the subroutine match to fail\&.
+.LP
+.TP 2
+*
+(*THEN) skips to the next alternative in the innermost enclosing group within the subpattern that has alternatives\&. If there is no such group within the subpattern, (*THEN) causes the subroutine match to fail\&.
+.LP
+.RE

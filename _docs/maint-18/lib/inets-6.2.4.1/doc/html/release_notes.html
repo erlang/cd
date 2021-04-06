@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- </title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/inets-6.2.4.1.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>inets</strong><br><strong>Release Notes</strong><br><small>Version 6.2.4.1</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu"><li id="no" title="Inets Release Notes" expanded="false">Inets Release Notes<ul>
+<li><a href="notes.html">
+              Top of chapter
+            </a></li>
+<li title="Inets 6.2.4.1"><a href="notes.html#idp25748480">Inets 6.2.4.1</a></li>
+<li title="Inets 6.2.4"><a href="notes.html#idp25751808">Inets 6.2.4</a></li>
+<li title="Inets 6.2.3"><a href="notes.html#idp24744816">Inets 6.2.3</a></li>
+<li title="Inets 6.2.2"><a href="notes.html#idp24748384">Inets 6.2.2</a></li>
+<li title="Inets 6.2.1"><a href="notes.html#idp24736016">Inets 6.2.1</a></li>
+<li title="Inets 6.2"><a href="notes.html#idp24739376">Inets 6.2</a></li>
+<li title="Inets 6.1.1.1"><a href="notes.html#idm3537632">Inets 6.1.1.1</a></li>
+<li title="Inets 6.1.1"><a href="notes.html#idm3465664">Inets 6.1.1</a></li>
+<li title="Inets 6.1"><a href="notes.html#idm3462032">Inets 6.1</a></li>
+<li title="Inets 6.0.3"><a href="notes.html#idp25358688">Inets 6.0.3</a></li>
+<li title="Inets 6.0.2"><a href="notes.html#idp25365696">Inets 6.0.2</a></li>
+<li title="Inets 6.0.1"><a href="notes.html#idp25372304">Inets 6.0.1</a></li>
+<li title="Inets 6.0"><a href="notes.html#idp25383632">Inets 6.0</a></li>
+<li title="Inets 5.10.9"><a href="notes.html#idp25685904">Inets 5.10.9</a></li>
+<li title="Inets 5.10.8"><a href="notes.html#idp25689424">Inets 5.10.8</a></li>
+<li title="Inets 5.10.7"><a href="notes.html#idp25693040">Inets 5.10.7</a></li>
+<li title="Inets 5.10.6"><a href="notes.html#idp25698880">Inets 5.10.6</a></li>
+<li title="Inets 5.10.5"><a href="notes.html#idp24792880">Inets 5.10.5</a></li>
+<li title="Inets 5.10.4"><a href="notes.html#idp24800000">Inets 5.10.4</a></li>
+<li title="Inets 5.10.3"><a href="notes.html#idp24806624">Inets 5.10.3</a></li>
+<li title="Inets 5.10.2"><a href="notes.html#idp24818816">Inets 5.10.2</a></li>
+<li title="Inets 5.10.1"><a href="notes.html#idp24822416">Inets 5.10.1</a></li>
+<li title="Inets 5.10"><a href="notes.html#idp24829296">Inets 5.10</a></li>
+<li title="Inets 5.9.8"><a href="notes.html#idp24847696">Inets 5.9.8</a></li>
+<li title="Inets 5.9.7"><a href="notes.html#idp24851376">Inets 5.9.7</a></li>
+<li title="Inets 5.9.6"><a href="notes.html#idp24862240">Inets 5.9.6</a></li>
+<li title="Inets 5.9.5"><a href="notes.html#idp25233040">Inets 5.9.5</a></li>
+<li title="Inets 5.9.4"><a href="notes.html#idp25244368">Inets 5.9.4</a></li>
+<li title="Inets 5.9.3"><a href="notes.html#idp25252496">Inets 5.9.3</a></li>
+<li title="Inets 5.9.2.2"><a href="notes.html#idp25258976">Inets 5.9.2.2</a></li>
+<li title="Inets 5.9.2.1"><a href="notes.html#idp25262608">Inets 5.9.2.1</a></li>
+<li title="Inets 5.9.2"><a href="notes.html#idp25266224">Inets 5.9.2</a></li>
+<li title="Inets 5.9.1"><a href="notes.html#idp25270624">Inets 5.9.1</a></li>
+<li title="Inets 5.9"><a href="notes.html#idp25286128">Inets 5.9</a></li>
+<li title="Inets 5.8.1"><a href="notes.html#idp25304016">Inets 5.8.1</a></li>
+<li title="Inets 5.8"><a href="notes.html#idp26198576">Inets 5.8</a></li>
+<li title="Inets 5.7.2"><a href="notes.html#idp26219072">Inets 5.7.2</a></li>
+<li title="Inets 5.7.1"><a href="notes.html#idp26227504">Inets 5.7.1</a></li>
+<li title="Inets 5.7"><a href="notes.html#idp26236992">Inets 5.7</a></li>
+<li title="Inets 5.6"><a href="notes.html#idp26250944">Inets 5.6</a></li>
+<li title="Inets 5.5.2"><a href="notes.html#idp25406272">Inets 5.5.2</a></li>
+<li title="Inets 5.5.1"><a href="notes.html#idp25412160">Inets 5.5.1</a></li>
+<li title="Inets 5.5"><a href="notes.html#idp25422352">Inets 5.5</a></li>
+<li title="Inets 5.4"><a href="notes.html#idp25432384">Inets 5.4</a></li>
+<li title="Inets 5.3.3"><a href="notes.html#idp25446528">Inets 5.3.3</a></li>
+<li title="Inets 5.3.2"><a href="notes.html#idp25457200">Inets 5.3.2</a></li>
+<li title="Inets 5.3.1"><a href="notes.html#idp25466000">Inets 5.3.1</a></li>
+<li title="Inets 5.3"><a href="notes.html#idp25477536">Inets 5.3</a></li>
+<li title="Inets 5.2"><a href="notes.html#idp25511552">Inets 5.2</a></li>
+<li title="Inets 5.1.3"><a href="notes.html#idp25545360">Inets 5.1.3</a></li>
+<li title="Inets 5.1.2"><a href="notes.html#idp25552240">Inets 5.1.2</a></li>
+<li title="Inets 5.1.1"><a href="notes.html#idp25565408">Inets 5.1.1</a></li>
+<li title="Inets 5.1"><a href="notes.html#idp25578944">Inets 5.1</a></li>
+</ul>
+</li></ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>inets Release Notes</h1></center>
+<center><h4>Version 6.2.4.1</h4></center>
+<center><h4>June 15, 2018</h4></center>
+<div class="extrafrontpageinfo"><center></center></div>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 1997-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

@@ -1,0 +1,189 @@
+.TH pg 3 "kernel 7.1" "Maxim Fedorov, WhatsApp Inc." "Erlang Module Definition"
+.SH NAME
+pg \- Distributed named process groups.
+.SH DESCRIPTION
+.LP
+This module implements process groups\&. A message can be sent to one, some, or all group members\&.
+.LP
+Up until OTP 17 there used to exist an experimental \fIpg\fR\& module in \fIstdlib\fR\&\&. This \fIpg\fR\& module is not the same module as that experimental \fIpg\fR\& module, and only share the same module name\&.
+.LP
+A group of processes can be accessed by a common name\&. For example, if there is a group named \fIfoobar\fR\&, there can be a set of processes (which can be located on different nodes) that are all members of the group \fIfoobar\fR\&\&. There are no special functions for sending a message to the group\&. Instead, client functions are to be written with the functions \fIget_members/1\fR\& and \fIget_local_members/1\fR\& to determine which processes are members of the group\&. Then the message can be sent to one or more group members\&.
+.LP
+If a member terminates, it is automatically removed from the group\&.
+.LP
+A process may join multiple groups\&. It may join the same group multiple times\&. It is only allowed to join processes running on local node\&.
+.LP
+Process Groups implement strong eventual consistency\&. Unlike \fIpg2\fR\&, that provides strong ordering guarantees, Process Groups membership view may temporarily diverge\&. For example, when processes on \fInode1\fR\& and \fInode2\fR\& join concurrently, \fInode3\fR\& and \fInode4\fR\& may receive updates in a different order\&.
+.LP
+Membership view is not transitive\&. If \fInode1\fR\& is not directly connected to \fInode2\fR\&, they will not see each other groups\&. But if both are connected to \fInode3\fR\&, \fInode3\fR\& will have the full view\&.
+.LP
+Groups are automatically created when any process joins, and are removed when all processes leave the group\&. Non-existing group is considered empty (containing no processes)\&.
+.LP
+Process groups can be organised into multiple scopes\&. Scopes are completely independent of each other\&. A process may join any number of groups in any number of scopes\&. Scopes are designed to decouple single mesh into a set of overlay networks, reducing amount of traffic required to propagate group membership information\&. Default scope \fIpg\fR\& is started automatically when \fIkernel(6)\fR\& is configured to do so\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Scope name is used to register process locally, and to name an ETS table\&. If there is another process registered under this name, or another ETS table exists, scope fails to start\&.
+.LP
+Local membership is not preserved if scope process exits and restarts\&. This behaviour is different from \fIpg2\fR\&, that recovers local membership from remote nodes\&.
+
+.SH DATA TYPES
+.nf
+
+\fBgroup()\fR\& = any()
+.br
+.fi
+.RS
+.LP
+The identifier of a process group\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+start_link() -> {ok, pid()} | {error, any()}
+.br
+.fi
+.br
+.RS
+.LP
+Starts the default \fIpg\fR\& scope within supervision tree\&. Kernel may be configured to do it automatically, see \fIkernel(6)\fR\& configuration manual\&.
+.RE
+.LP
+.nf
+
+.B
+start(Scope :: atom()) -> {ok, pid()} | {error, any()}
+.br
+.fi
+.br
+.nf
+
+.B
+start_link(Scope :: atom()) -> {ok, pid()} | {error, any()}
+.br
+.fi
+.br
+.RS
+.LP
+Starts additional scope\&.
+.RE
+.LP
+.nf
+
+.B
+join(Group :: group(), PidOrPids :: pid() | [pid()]) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+join(Scope :: atom(),
+.B
+     Group :: group(),
+.B
+     PidOrPids :: pid() | [pid()]) ->
+.B
+        ok
+.br
+.fi
+.br
+.RS
+.LP
+Joins single process or multiple processes to the group \fIName\fR\&\&. A process can join a group many times and must then leave the group the same number of times\&.
+.LP
+\fIPidOrPids\fR\& may contain the same process multiple times\&.
+.RE
+.LP
+.nf
+
+.B
+leave(Group :: group(), PidOrPids :: pid() | [pid()]) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+leave(Scope :: atom(),
+.B
+      Group :: group(),
+.B
+      PidOrPids :: pid() | [pid()]) ->
+.B
+         ok | not_joined
+.br
+.fi
+.br
+.RS
+.LP
+Makes the process \fIPidOrPids\fR\& leave the group \fIName\fR\&\&. If the process is not a member of the group, \fInot_joined\fR\& is returned\&.
+.LP
+When list of processes is passed as \fIPidOrPids\fR\&, function returns \fInot_joined\fR\& only when all processes of the list are not joined\&.
+.RE
+.LP
+.nf
+
+.B
+get_local_members(Group :: group()) -> [pid()]
+.br
+.fi
+.br
+.nf
+
+.B
+get_local_members(Scope :: atom(), Group :: group()) -> [pid()]
+.br
+.fi
+.br
+.RS
+.LP
+Returns all processes running on the local node in the group \fIName\fR\&\&. Processes are returned in no specific order\&. This function is optimised for speed\&.
+.RE
+.LP
+.nf
+
+.B
+get_members(Group :: group()) -> [pid()]
+.br
+.fi
+.br
+.nf
+
+.B
+get_members(Scope :: atom(), Group :: group()) -> [pid()]
+.br
+.fi
+.br
+.RS
+.LP
+Returns all processes in the group \fIName\fR\&\&. Processes are returned in no specific order\&. This function is optimised for speed\&.
+.RE
+.LP
+.nf
+
+.B
+which_groups() -> [Group :: group()]
+.br
+.fi
+.br
+.nf
+
+.B
+which_groups(Scope :: atom()) -> [Group :: group()]
+.br
+.fi
+.br
+.RS
+.LP
+Returns a list of all known groups\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fIkernel(6)\fR\&

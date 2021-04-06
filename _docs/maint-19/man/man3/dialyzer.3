@@ -1,0 +1,538 @@
+.TH dialyzer 3 "dialyzer 3.1.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+dialyzer \- Dialyzer, a DIscrepancy AnaLYZer for ERlang programs.
+  
+.SH DESCRIPTION
+.LP
+Dialyzer is a static analysis tool that identifies software discrepancies, such as definite type errors, code that has become dead or unreachable because of programming error, and unnecessary tests, in single Erlang modules or entire (sets of) applications\&.
+.LP
+Dialyzer starts its analysis from either debug-compiled BEAM bytecode or from Erlang source code\&. The file and line number of a discrepancy is reported along with an indication of what the discrepancy is about\&. Dialyzer bases its analysis on the concept of success typings, which allows for sound warnings (no false positives)\&.
+.SH "USING DIALYZER FROM THE COMMAND LINE"
+
+.LP
+Dialyzer has a command-line version for automated use\&. This section provides a brief description of the options\&. The same information can be obtained by writing the following in a shell:
+.LP
+.nf
+
+dialyzer --help
+.fi
+.LP
+For more details about the operation of Dialyzer, see section \fB Using Dialyzer from the GUI\fR\& in the User\&'s Guide\&.
+.LP
+\fIExit status of the command-line version:\fR\&
+.RS 2
+.TP 2
+.B
+\fI0\fR\&:
+No problems were found during the analysis and no warnings were emitted\&.
+.TP 2
+.B
+\fI1\fR\&:
+Problems were found during the analysis\&.
+.TP 2
+.B
+\fI2\fR\&:
+No problems were found during the analysis, but warnings were emitted\&.
+.RE
+.LP
+\fIUsage:\fR\&
+.LP
+.nf
+
+dialyzer [--add_to_plt] [--apps applications] [--build_plt]
+         [--check_plt] [-Ddefine]* [-Dname] [--dump_callgraph file]
+         [files_or_dirs] [--fullpath] [--get_warnings] [--gui] [--help]
+         [-I include_dir]* [--no_check_plt] [--no_native]
+         [--no_native_cache] [-o outfile] [--output_plt file] [-pa dir]*
+         [--plt plt] [--plt_info] [--plts plt*] [--quiet] [-r dirs]
+         [--raw] [--remove_from_plt] [--shell] [--src] [--statistics]
+         [--verbose] [--version] [-Wwarn]*
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+* denotes that multiple occurrences of the option are possible\&.
+
+.LP
+\fIOptions:\fR\&
+.RS 2
+.TP 2
+.B
+\fI--add_to_plt\fR\&:
+The PLT is extended to also include the files specified with \fI-c\fR\& and \fI-r\fR\&\&. Use \fI--plt\fR\& to specify which PLT to start from, and \fI--output_plt\fR\& to specify where to put the PLT\&. Notice that the analysis possibly can include files from the PLT if they depend on the new files\&. This option only works for BEAM files\&.
+.TP 2
+.B
+\fI--apps applications\fR\&:
+This option is typically used when building or modifying a PLT as in:
+.LP
+.nf
+
+dialyzer --build_plt --apps erts kernel stdlib mnesia ...
+.fi
+.RS 2
+.LP
+to refer conveniently to library applications corresponding to the Erlang/OTP installation\&. However, this option is general and can also be used during analysis to refer to Erlang/OTP applications\&. File or directory names can also be included, as in:
+.RE
+.LP
+.nf
+
+dialyzer --apps inets ssl ./ebin ../other_lib/ebin/my_module.beam
+.fi
+.TP 2
+.B
+\fI--build_plt\fR\&:
+The analysis starts from an empty PLT and creates a new one from the files specified with \fI-c\fR\& and \fI-r\fR\&\&. This option only works for BEAM files\&. To override the default PLT location, use \fI--plt\fR\& or \fI--output_plt\fR\&\&.
+.TP 2
+.B
+\fI--check_plt\fR\&:
+Check the PLT for consistency and rebuild it if it is not up-to-date\&.
+.TP 2
+.B
+\fI-Dname\fR\& (or \fI-Dname=value\fR\&):
+When analyzing from source, pass the define to Dialyzer\&. (**)
+.TP 2
+.B
+\fI--dump_callgraph file\fR\&:
+Dump the call graph into the specified file whose format is determined by the filename extension\&. Supported extensions are: \fIraw\fR\&, \fIdot\fR\&, and \fIps\fR\&\&. If something else is used as filename extension, default format \fI\&.raw\fR\& is used\&.
+.TP 2
+.B
+\fIfiles_or_dirs\fR\& (for backward compatibility also as \fI-c files_or_dirs\fR\&):
+Use Dialyzer from the command line to detect defects in the specified files or directories containing \fI\&.erl\fR\& or \fI\&.beam\fR\& files, depending on the type of the analysis\&.
+.TP 2
+.B
+\fI--fullpath\fR\&:
+Display the full path names of files for which warnings are emitted\&.
+.TP 2
+.B
+\fI--get_warnings\fR\&:
+Make Dialyzer emit warnings even when manipulating the PLT\&. Warnings are only emitted for files that are analyzed\&.
+.TP 2
+.B
+\fI--gui\fR\&:
+Use the GUI\&.
+.TP 2
+.B
+\fI--help\fR\& (or \fI-h\fR\&):
+Print this message and exit\&.
+.TP 2
+.B
+\fI-I include_dir\fR\&:
+When analyzing from source, pass the \fIinclude_dir\fR\& to Dialyzer\&. (**)
+.TP 2
+.B
+\fI--no_check_plt\fR\&:
+Skip the PLT check when running Dialyzer\&. This is useful when working with installed PLTs that never change\&.
+.TP 2
+.B
+\fI--no_native\fR\& (or \fI-nn\fR\&):
+Bypass the native code compilation of some key files that Dialyzer heuristically performs when dialyzing many files\&. This avoids the compilation time, but can result in (much) longer analysis time\&.
+.TP 2
+.B
+\fI--no_native_cache\fR\&:
+By default, Dialyzer caches the results of native compilation in directory \fI$XDG_CACHE_HOME/erlang/dialyzer_hipe_cache\fR\&\&. \fIXDG_CACHE_HOME\fR\& defaults to \fI$HOME/\&.cache\fR\&\&. Use this option to disable caching\&.
+.TP 2
+.B
+\fI-o outfile\fR\& (or \fI--output outfile\fR\&):
+When using Dialyzer from the command line, send the analysis results to the specified outfile rather than to \fIstdout\fR\&\&.
+.TP 2
+.B
+\fI--output_plt file\fR\&:
+Store the PLT at the specified file after building it\&.
+.TP 2
+.B
+\fI-pa dir\fR\&:
+Include \fIdir\fR\& in the path for Erlang\&. This is useful when analyzing files that have \fI-include_lib()\fR\& directives\&.
+.TP 2
+.B
+\fI--plt plt\fR\&:
+Use the specified PLT as the initial PLT\&. If the PLT was built during setup, the files are checked for consistency\&.
+.TP 2
+.B
+\fI--plt_info\fR\&:
+Make Dialyzer print information about the PLT and then quit\&. The PLT can be specified with \fI--plt(s)\fR\&\&.
+.TP 2
+.B
+\fI--plts plt*\fR\&:
+Merge the specified PLTs to create the initial PLT\&. This requires that the PLTs are disjoint (that is, do not have any module appearing in more than one PLT)\&. The PLTs are created in the usual way:
+.LP
+.nf
+
+dialyzer --build_plt --output_plt plt_1 files_to_include
+...
+dialyzer --build_plt --output_plt plt_n files_to_include
+.fi
+.RS 2
+.LP
+They can then be used in either of the following ways:
+.RE
+.LP
+.nf
+
+dialyzer files_to_analyze --plts plt_1 ... plt_n
+.fi
+.RS 2
+.LP
+or
+.RE
+.LP
+.nf
+
+dialyzer --plts plt_1 ... plt_n -- files_to_analyze
+.fi
+.RS 2
+.LP
+Notice the \fI--\fR\& delimiter in the second case\&.
+.RE
+.TP 2
+.B
+\fI--quiet\fR\& (or \fI-q\fR\&):
+Make Dialyzer a bit more quiet\&.
+.TP 2
+.B
+\fI-r dirs\fR\&:
+Same as \fIfiles_or_dirs\fR\&, but the specified directories are searched recursively for subdirectories containing \fI\&.erl\fR\& or \fI\&.beam\fR\& files in them, depending on the type of analysis\&.
+.TP 2
+.B
+\fI--raw\fR\&:
+When using Dialyzer from the command line, output the raw analysis results (Erlang terms) instead of the formatted result\&. The raw format is easier to post-process (for example, to filter warnings or to output HTML pages)\&.
+.TP 2
+.B
+\fI--remove_from_plt\fR\&:
+The information from the files specified with \fI-c\fR\& and \fI-r\fR\& is removed from the PLT\&. Notice that this can cause a reanalysis of the remaining dependent files\&.
+.TP 2
+.B
+\fI--shell\fR\&:
+Do not disable the Erlang shell while running the GUI\&.
+.TP 2
+.B
+\fI--src\fR\&:
+Override the default, which is to analyze BEAM files, and analyze starting from Erlang source code instead\&.
+.TP 2
+.B
+\fI--statistics\fR\&:
+Print information about the progress of execution (analysis phases, time spent in each, and size of the relative input)\&.
+.TP 2
+.B
+\fI--verbose\fR\&:
+Make Dialyzer a bit more verbose\&.
+.TP 2
+.B
+\fI--version\fR\& (or \fI-v\fR\&):
+Print the Dialyzer version and some more information and exit\&.
+.TP 2
+.B
+\fI-Wwarn\fR\&:
+A family of options that selectively turn on/off warnings\&. (For help on the names of warnings, use \fIdialyzer -Whelp\fR\&\&.) Notice that the options can also be specified in the file with a \fI-dialyzer()\fR\& attribute\&. For details, see section \fBRequesting or Suppressing Warnings in Source Files\fR\&\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+** options \fI-D\fR\& and \fI-I\fR\& work both from the command line and in the Dialyzer GUI; the syntax of defines and includes is the same as that used by \fBerlc(1)\fR\&\&.
+
+.LP
+\fIWarning options:\fR\&
+.RS 2
+.TP 2
+.B
+\fI-Werror_handling\fR\& (***):
+Include warnings for functions that only return by an exception\&.
+.TP 2
+.B
+\fI-Wno_behaviours\fR\&:
+Suppress warnings about behavior callbacks that drift from the published recommended interfaces\&.
+.TP 2
+.B
+\fI-Wno_contracts\fR\&:
+Suppress warnings about invalid contracts\&.
+.TP 2
+.B
+\fI-Wno_fail_call\fR\&:
+Suppress warnings for failing calls\&.
+.TP 2
+.B
+\fI-Wno_fun_app\fR\&:
+Suppress warnings for fun applications that will fail\&.
+.TP 2
+.B
+\fI-Wno_improper_lists\fR\&:
+Suppress warnings for construction of improper lists\&.
+.TP 2
+.B
+\fI-Wno_match\fR\&:
+Suppress warnings for patterns that are unused or cannot match\&.
+.TP 2
+.B
+\fI-Wno_missing_calls\fR\&:
+Suppress warnings about calls to missing functions\&.
+.TP 2
+.B
+\fI-Wno_opaque\fR\&:
+Suppress warnings for violations of opacity of data types\&.
+.TP 2
+.B
+\fI-Wno_return\fR\&:
+Suppress warnings for functions that will never return a value\&.
+.TP 2
+.B
+\fI-Wno_undefined_callbacks\fR\&:
+Suppress warnings about behaviors that have no \fI-callback\fR\& attributes for their callbacks\&.
+.TP 2
+.B
+\fI-Wno_unused\fR\&:
+Suppress warnings for unused functions\&.
+.TP 2
+.B
+\fI-Wrace_conditions\fR\& (***):
+Include warnings for possible race conditions\&. Notice that the analysis that finds data races performs intra-procedural data flow analysis and can sometimes explode in time\&. Enable it at your own risk\&.
+.TP 2
+.B
+\fI-Wunderspecs\fR\& (***):
+Warn about underspecified functions (the specification is strictly more allowing than the success typing)\&.
+.TP 2
+.B
+\fI-Wunknown\fR\& (***):
+Let warnings about unknown functions and types affect the exit status of the command-line version\&. The default is to ignore warnings about unknown functions and types when setting the exit status\&. When using Dialyzer from Erlang, warnings about unknown functions and types are returned; the default is not to return these warnings\&.
+.TP 2
+.B
+\fI-Wunmatched_returns\fR\& (***):
+Include warnings for function calls that ignore a structured return value or do not match against one of many possible return value(s)\&.
+.RE
+.LP
+The following options are also available, but their use is not recommended (they are mostly for Dialyzer developers and internal debugging):
+.RS 2
+.TP 2
+.B
+\fI-Woverspecs\fR\& (***):
+Warn about overspecified functions (the specification is strictly less allowing than the success typing)\&.
+.TP 2
+.B
+\fI-Wspecdiffs\fR\& (***):
+Warn when the specification is different than the success typing\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+*** denotes options that turn on warnings rather than turning them off\&.
+
+.SH "USING DIALYZER FROM ERLANG"
+
+.LP
+Dialyzer can be used directly from Erlang\&. Both the GUI and the command-line versions are also available\&. The options are similar to the ones given from the command line, see section \fB Using Dialyzer from the Command Line\fR\&\&.
+.SH "REQUESTING OR SUPPRESSING WARNINGS IN SOURCE FILES"
+
+.LP
+Attribute \fI-dialyzer()\fR\& can be used for turning off warnings in a module by specifying functions or warning options\&. For example, to turn off all warnings for the function \fIf/0\fR\&, include the following line:
+.LP
+.nf
+
+-dialyzer({nowarn_function, f/0}).
+.fi
+.LP
+To turn off warnings for improper lists, add the following line to the source file:
+.LP
+.nf
+
+-dialyzer(no_improper_lists).
+.fi
+.LP
+Attribute \fI-dialyzer()\fR\& is allowed after function declarations\&. Lists of warning options or functions are allowed:
+.LP
+.nf
+
+-dialyzer([{nowarn_function, [f/0]}, no_improper_lists]).
+.fi
+.LP
+Warning options can be restricted to functions:
+.LP
+.nf
+
+-dialyzer({no_improper_lists, g/0}).
+.fi
+.LP
+.nf
+
+-dialyzer({[no_return, no_match], [g/0, h/0]}).
+.fi
+.LP
+For help on the warning options, use \fIdialyzer -Whelp\fR\&\&. The options are also enumerated, see function \fB\fIgui/1\fR\&\fR\& below (\fIWarnOpts\fR\&)\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Attribute \fI-dialyzer()\fR\& is not checked by the Erlang compiler, but by Dialyzer itself\&.
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Warning option \fI-Wrace_conditions\fR\& has no effect when set in source files\&.
+
+.LP
+Attribute \fI-dialyzer()\fR\& can also be used for turning on warnings\&. For example, if a module has been fixed regarding unmatched returns, adding the following line can help in assuring that no new unmatched return warnings are introduced:
+.LP
+.nf
+
+-dialyzer(unmatched_returns).
+.fi
+.SH EXPORTS
+.LP
+.B
+format_warning(Msg) -> string()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Msg = {Tag, Id, msg()}
+.br
+.RS 2
+See \fIrun/1\fR\&\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+Get a string from warnings as returned by \fB\fIrun/1\fR\&\fR\&\&.
+.RE
+.LP
+.B
+gui() -> ok | {error, Msg}
+.br
+.B
+gui(OptList) -> ok | {error, Msg}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+OptList
+.br
+.RS 2
+See below\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+Dialyzer GUI version\&.
+.LP
+.nf
+
+OptList  :: [Option]
+Option   :: {files,          [Filename :: string()]}
+          | {files_rec,      [DirName :: string()]}
+          | {defines,        [{Macro :: atom(), Value :: term()}]}
+          | {from,           src_code | byte_code}
+                               %% Defaults to byte_code
+          | {init_plt,       FileName :: string()}
+                               %% If changed from default
+          | {plts,           [FileName :: string()]}
+                               %% If changed from default
+          | {include_dirs,   [DirName :: string()]}
+          | {output_file,    FileName :: string()}
+          | {output_plt,     FileName :: string()}
+          | {check_plt,      boolean()},
+          | {analysis_type,  'succ_typings' |
+                             'plt_add' |
+                             'plt_build' |
+                             'plt_check' |
+                             'plt_remove'}
+          | {warnings,       [WarnOpts]}
+          | {get_warnings,   bool()}
+
+WarnOpts :: error_handling
+          | no_behaviours
+          | no_contracts
+          | no_fail_call
+          | no_fun_app
+          | no_improper_lists
+          | no_match
+	  | no_missing_calls
+          | no_opaque
+	  | no_return
+          | no_undefined_callbacks
+          | no_unused
+          | race_conditions
+          | underspecs
+          | unknown
+          | unmatched_returns
+          | overspecs
+          | specdiffs
+.fi
+.RE
+.LP
+.B
+plt_info(string()) -> {\&'ok\&', [{atom(), any()}]} | {\&'error\&', atom()}
+.br
+.RS
+.LP
+Returns information about the specified PLT\&.
+.RE
+.LP
+.B
+run(OptList) -> Warnings
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+OptList
+.br
+.RS 2
+See \fIgui/0,1\fR\&\&.
+.RE
+Warnings
+.br
+.RS 2
+See below\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+Dialyzer command-line version\&.
+.LP
+.nf
+
+Warnings :: [{Tag, Id, Msg}]
+Tag      :: 'warn_behaviour'
+          | 'warn_bin_construction'
+          | 'warn_callgraph'
+          | 'warn_contract_not_equal'
+          | 'warn_contract_range'
+          | 'warn_contract_subtype'
+          | 'warn_contract_supertype'
+          | 'warn_contract_syntax'
+          | 'warn_contract_types'
+          | 'warn_failing_call'
+          | 'warn_fun_app'
+          | 'warn_matching'
+          | 'warn_non_proper_list'
+          | 'warn_not_called'
+          | 'warn_opaque'
+          | 'warn_race_condition'
+          | 'warn_return_no_exit'
+          | 'warn_return_only_exit'
+          | 'warn_umatched_return'
+          | 'warn_undefined_callbacks'
+          | 'warn_unknown'
+Id  = {File :: string(), Line :: integer()}
+Msg = msg() -- Undefined
+.fi
+.RE

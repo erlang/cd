@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:erl="http://erlang.org" xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- </title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/erl_interface-3.9.3.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>Erl_Interface</strong><br><strong>Release Notes</strong><br><small>Version 3.9.3</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu"><li id="no" title="Erl_interface Release Notes" expanded="false">Erl_interface Release Notes<ul>
+<li><a href="notes.html">
+              Top of chapter
+            </a></li>
+<li title="Erl_Interface 3.9.3"><a href="notes.html#idm3483712">Erl_Interface 3.9.3</a></li>
+<li title="Erl_Interface 3.9.2"><a href="notes.html#idm3480384">Erl_Interface 3.9.2</a></li>
+<li title="Erl_Interface 3.9.1"><a href="notes.html#idm3802560">Erl_Interface 3.9.1</a></li>
+<li title="Erl_Interface 3.9"><a href="notes.html#idp24621488">Erl_Interface 3.9</a></li>
+<li title="Erl_Interface 3.8.2"><a href="notes.html#idm3531696">Erl_Interface 3.8.2</a></li>
+<li title="Erl_Interface 3.8.1"><a href="notes.html#idm3524816">Erl_Interface 3.8.1</a></li>
+<li title="Erl_Interface 3.8"><a href="notes.html#idm3521296">Erl_Interface 3.8</a></li>
+<li title="Erl_Interface 3.7.20"><a href="notes.html#idp24628800">Erl_Interface 3.7.20</a></li>
+<li title="Erl_Interface 3.7.19"><a href="notes.html#idp24759120">Erl_Interface 3.7.19</a></li>
+<li title="Erl_Interface 3.7.18"><a href="notes.html#idp24763136">Erl_Interface 3.7.18</a></li>
+<li title="Erl_Interface 3.7.17"><a href="notes.html#idp24766848">Erl_Interface 3.7.17</a></li>
+<li title="Erl_Interface 3.7.16"><a href="notes.html#idp24770416">Erl_Interface 3.7.16</a></li>
+<li title="Erl_Interface 3.7.15"><a href="notes.html#idp24773936">Erl_Interface 3.7.15</a></li>
+<li title="Erl_Interface 3.7.14"><a href="notes.html#idp24494224">Erl_Interface 3.7.14</a></li>
+<li title="Erl_Interface 3.7.13"><a href="notes.html#idp24500608">Erl_Interface 3.7.13</a></li>
+<li title="Erl_Interface 3.7.12"><a href="notes.html#idp24504128">Erl_Interface 3.7.12</a></li>
+<li title="Erl_Interface 3.7.11"><a href="notes.html#idp24507760">Erl_Interface 3.7.11</a></li>
+<li title="Erl_Interface 3.7.10"><a href="notes.html#idp24513136">Erl_Interface 3.7.10</a></li>
+<li title="Erl_Interface 3.7.9"><a href="notes.html#idp24518448">Erl_Interface 3.7.9</a></li>
+<li title="Erl_Interface 3.7.8"><a href="notes.html#idp26196240">Erl_Interface 3.7.8</a></li>
+<li title="Erl_Interface 3.7.7"><a href="notes.html#idp26199920">Erl_Interface 3.7.7</a></li>
+<li title="Erl_Interface 3.7.6"><a href="notes.html#idp26203440">Erl_Interface 3.7.6</a></li>
+<li title="Erl_Interface 3.7.5"><a href="notes.html#idp26212720">Erl_Interface 3.7.5</a></li>
+<li title="Erl_Interface 3.7.4"><a href="notes.html#idm3426416">Erl_Interface 3.7.4</a></li>
+<li title="Erl_Interface 3.7.3"><a href="notes.html#idm3418064">Erl_Interface 3.7.3</a></li>
+<li title="Erl_Interface 3.7.2"><a href="notes.html#idm3408720">Erl_Interface 3.7.2</a></li>
+<li title="Erl_Interface 3.7.1.1"><a href="notes.html#idp24642400">Erl_Interface 3.7.1.1</a></li>
+<li title="Erl_Interface 3.7.1"><a href="notes.html#idp24646368">Erl_Interface 3.7.1</a></li>
+<li title="Erl_Interface 3.7"><a href="notes.html#idp24661328">Erl_Interface 3.7</a></li>
+<li title="Erl_Interface 3.6.5"><a href="notes.html#idp24670896">Erl_Interface 3.6.5</a></li>
+<li title="Erl_Interface 3.6.4"><a href="notes.html#idp25894896">Erl_Interface 3.6.4</a></li>
+<li title="Erl_Interface 3.6.3"><a href="notes.html#idp25898608">Erl_Interface 3.6.3</a></li>
+<li title="Erl_Interface 3.6.2"><a href="notes.html#idp25240048">Erl_Interface 3.6.2</a></li>
+<li title="Erl_Interface 3.6.1"><a href="notes.html#idp25245024">Erl_Interface 3.6.1</a></li>
+<li title="Erl_Interface 3.6.1"><a href="notes.html#idp25252368">Erl_Interface 3.6.1</a></li>
+<li title="Erl_Interface 3.6"><a href="notes.html#idp25256368">Erl_Interface 3.6</a></li>
+<li title="Erl_Interface 3.5.9"><a href="notes.html#idp25260064">Erl_Interface 3.5.9</a></li>
+<li title="Erl_Interface 3.5.8"><a href="notes.html#idp25267008">Erl_Interface 3.5.8</a></li>
+<li title="Erl_Interface 3.5.7"><a href="notes.html#idp25270608">Erl_Interface 3.5.7</a></li>
+<li title="Erl_Interface 3.5.6"><a href="notes.html#idp25276560">Erl_Interface 3.5.6</a></li>
+<li title="Erl_Interface 3.5.5.4"><a href="notes.html#idp25280160">Erl_Interface 3.5.5.4</a></li>
+<li title="Erl_Interface 3.5.5.3"><a href="notes.html#idp25285328">Erl_Interface 3.5.5.3</a></li>
+<li title="Erl_Interface 3.5.5.2"><a href="notes.html#idp25291040">Erl_Interface 3.5.5.2</a></li>
+<li title="Erl_Interface 3.5.5.1"><a href="notes.html#idp25295152">Erl_Interface 3.5.5.1</a></li>
+<li title="Erl_Interface 3.5.5"><a href="notes.html#idp25299040">Erl_Interface 3.5.5</a></li>
+<li title="Erl_interface 3.5.2"><a href="notes.html#idp25308944">Erl_interface 3.5.2</a></li>
+<li title="Erl_interface 3.5.1"><a href="notes.html#idp25312944">Erl_interface 3.5.1</a></li>
+<li title="Erl_interface 3.5"><a href="notes.html#idp25316976">Erl_interface 3.5</a></li>
+<li title="Erl_interface 3.4.5"><a href="notes.html#idp25325168">Erl_interface 3.4.5</a></li>
+<li title="Erl_interface 3.4.4"><a href="notes.html#idp25329104">Erl_interface 3.4.4</a></li>
+<li title="Erl_interface 3.4.2"><a href="notes.html#idp25092384">Erl_interface 3.4.2</a></li>
+<li title="Erl_interface 3.4.1"><a href="notes.html#idp25096240">Erl_interface 3.4.1</a></li>
+</ul>
+</li></ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Erl_Interface Release Notes</h1></center>
+<center><h4>Version 3.9.3</h4></center>
+<center><h4>June 15, 2018</h4></center>
+<div class="extrafrontpageinfo"><center></center></div>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 1998-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

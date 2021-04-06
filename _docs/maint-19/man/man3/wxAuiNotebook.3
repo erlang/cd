@@ -1,0 +1,518 @@
+.TH wxAuiNotebook 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxAuiNotebook \- See external documentation: wxAuiNotebook.
+.SH DESCRIPTION
+.LP
+See external documentation: wxAuiNotebook\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxControl\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxAuiNotebook():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxAuiNotebook()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent) -> \fBwxAuiNotebook()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxAuiNotebook()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+addPage(This, Page, Caption) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page = \fBwxWindow:wxWindow()\fR\&
+.br
+Caption = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBaddPage(This, Page, Caption, [])\fR\&\&.
+.RE
+.LP
+.B
+addPage(This, Page, Caption, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page = \fBwxWindow:wxWindow()\fR\&
+.br
+Caption = \fBunicode:chardata()\fR\&
+.br
+Option = {select, boolean()} | {bitmap, \fBwxBitmap:wxBitmap()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deletePage(This, Page) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getArtProvider(This) -> \fBwxAuiTabArt:wxAuiTabArt()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPage(This, Page_idx) -> \fBwxWindow:wxWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page_idx = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageBitmap(This, Page_idx) -> \fBwxBitmap:wxBitmap()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page_idx = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageIndex(This, Page_wnd) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page_wnd = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageText(This, Page_idx) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page_idx = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSelection(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+insertPage(This, Page_idx, Page, Caption) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page_idx = integer()
+.br
+Page = \fBwxWindow:wxWindow()\fR\&
+.br
+Caption = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBinsertPage(This, Page_idx, Page, Caption, [])\fR\&\&.
+.RE
+.LP
+.B
+insertPage(This, Page_idx, Page, Caption, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page_idx = integer()
+.br
+Page = \fBwxWindow:wxWindow()\fR\&
+.br
+Caption = \fBunicode:chardata()\fR\&
+.br
+Option = {select, boolean()} | {bitmap, \fBwxBitmap:wxBitmap()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+removePage(This, Page) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setArtProvider(This, Art) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Art = \fBwxAuiTabArt:wxAuiTabArt()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setFont(This, Font) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Font = \fBwxFont:wxFont()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageBitmap(This, Page, Bitmap) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page = integer()
+.br
+Bitmap = \fBwxBitmap:wxBitmap()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageText(This, Page, Text) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Page = integer()
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSelection(This, New_page) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+New_page = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setTabCtrlHeight(This, Height) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Height = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setUniformBitmapSize(This, Size) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxAuiNotebook()\fR\&
+.br
+Size = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxAuiNotebook()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

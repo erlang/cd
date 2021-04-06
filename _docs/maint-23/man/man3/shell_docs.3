@@ -1,0 +1,243 @@
+.TH shell_docs 3 "stdlib 3.13.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+shell_docs \- Functions used to render EEP-48 style documentation for a shell.
+.SH DESCRIPTION
+.LP
+This module can be used to render function and type documentation to be printed in a shell\&. It can only render EEP-48 documentation of the format \fIapplication/erlang+html\fR\&\&. For more information about this format see Documentation Storage in Erl_Docgen\&'s User\&'s Guide\&.
+.SH DATA TYPES
+.nf
+
+\fBdocs_v1()\fR\& = #docs_v1{}
+.br
+.fi
+.nf
+
+\fBchunk_element_block_type()\fR\& = 
+.br
+    p | \&'div\&' | br | pre | ul | ol | li | dl | dt | dd | h1 | h2 |
+.br
+    h3
+.br
+.fi
+.nf
+
+\fBchunk_element_inline_type()\fR\& = a | code | em | i
+.br
+.fi
+.nf
+
+\fBchunk_element_type()\fR\& = 
+.br
+    chunk_element_inline_type() | chunk_element_block_type()
+.br
+.fi
+.RS
+.LP
+The HTML tags allowed in \fIapplication/erlang+html\fR\&\&.
+.RE
+.nf
+
+\fBchunk_element_attr()\fR\& = {atom(), unicode:chardata()}
+.br
+.fi
+.nf
+
+\fBchunk_element_attrs()\fR\& = [chunk_element_attr()]
+.br
+.fi
+.nf
+
+\fBchunk_element()\fR\& = 
+.br
+    {chunk_element_type(),
+.br
+     chunk_element_attrs(),
+.br
+     chunk_elements()} |
+.br
+    binary()
+.br
+.fi
+.nf
+
+\fBchunk_elements()\fR\& = [chunk_element()]
+.br
+.fi
+.RS
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+render(Module :: module(), Docs :: docs_v1()) ->
+.B
+          unicode:chardata()
+.br
+.fi
+.br
+.RS
+.LP
+Render the documentation for a module\&.
+.RE
+.LP
+.nf
+
+.B
+render(Module :: module(), Function :: atom(), Docs :: docs_v1()) ->
+.B
+          unicode:chardata() | {error, function_missing}
+.br
+.fi
+.br
+.nf
+
+.B
+render(Module :: module(),
+.B
+       Function :: atom(),
+.B
+       Arity :: arity(),
+.B
+       Docs :: docs_v1()) ->
+.B
+          unicode:chardata() | {error, function_missing}
+.br
+.fi
+.br
+.RS
+.LP
+Render the documentation for a function\&.
+.RE
+.LP
+.nf
+
+.B
+render_type(Module :: module(), Docs :: docs_v1()) ->
+.B
+               unicode:chardata()
+.br
+.fi
+.br
+.RS
+.LP
+Render a list of all available types in a module\&.
+.RE
+.LP
+.nf
+
+.B
+render_type(Module :: module(), Type :: atom(), Docs :: docs_v1()) ->
+.B
+               unicode:chardata() | {error, type_missing}
+.br
+.fi
+.br
+.nf
+
+.B
+render_type(Module :: module(),
+.B
+            Type :: atom(),
+.B
+            Arity :: arity(),
+.B
+            Docs :: docs_v1()) ->
+.B
+               unicode:chardata() | {error, type_missing}
+.br
+.fi
+.br
+.RS
+.LP
+Render the documentation of a type in a module\&.
+.RE
+.LP
+.nf
+
+.B
+render_callback(Module :: module(), Docs :: docs_v1()) ->
+.B
+                   unicode:chardata()
+.br
+.fi
+.br
+.RS
+.LP
+Render a list of all available callbacks in a module\&.
+.RE
+.LP
+.nf
+
+.B
+render_callback(Module :: module(),
+.B
+                Callback :: atom(),
+.B
+                Docs :: docs_v1()) ->
+.B
+                   unicode:chardata() | {error, callback_missing}
+.br
+.fi
+.br
+.nf
+
+.B
+render_callback(Module :: module(),
+.B
+                Callback :: atom(),
+.B
+                Arity :: arity(),
+.B
+                Docs :: docs_v1()) ->
+.B
+                   unicode:chardata() | {error, callback_missing}
+.br
+.fi
+.br
+.RS
+.LP
+Render the documentation of a callback in a module\&.
+.RE
+.LP
+.nf
+
+.B
+validate(Module) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Module = module() | docs_v1()
+.br
+.RE
+.RE
+.RS
+.LP
+This function can be used to do a basic validation of the doc content of \fIapplication/erlang+html\fR\& format\&.
+.RE
+.LP
+.nf
+
+.B
+normalize(Docs) -> NormalizedDocs
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Docs = NormalizedDocs = chunk_elements()
+.br
+.RE
+.RE
+.RS
+.LP
+This function can be used to do whitespace normalization of \fIapplication/erlang+html\fR\& documentation\&.
+.RE

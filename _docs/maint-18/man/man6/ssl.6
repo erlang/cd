@@ -1,0 +1,102 @@
+.TH ssl 7 "ssl 7.3.3.2" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+ssl \- The ssl application provides secure communication over
+  sockets.
+.SH DESCRIPTION
+.LP
+The ssl application is an implementation of the SSL/TLS protocol in Erlang\&.
+.RS 2
+.TP 2
+*
+Supported SSL/TLS-versions are SSL-3\&.0, TLS-1\&.0, TLS-1\&.1, and TLS-1\&.2\&.
+.LP
+.TP 2
+*
+For security reasons SSL-2\&.0 is not supported\&.
+.LP
+.TP 2
+*
+For security reasons SSL-3\&.0 is no longer supported by default, but can be configured\&.
+.LP
+.TP 2
+*
+Ephemeral Diffie-Hellman cipher suites are supported, but not Diffie Hellman Certificates cipher suites\&.
+.LP
+.TP 2
+*
+Elliptic Curve cipher suites are supported if the Crypto application supports it and named curves are used\&. 
+.LP
+.TP 2
+*
+Export cipher suites are not supported as the U\&.S\&. lifted its export restrictions in early 2000\&.
+.LP
+.TP 2
+*
+IDEA cipher suites are not supported as they have become deprecated by the latest TLS specification so it is not motivated to implement them\&.
+.LP
+.TP 2
+*
+CRL validation is supported\&.
+.LP
+.TP 2
+*
+Policy certificate extensions are not supported\&.
+.LP
+.TP 2
+*
+\&'Server Name Indication\&' extension client side (RFC 6066, Section 3) is supported\&.
+.LP
+.RE
+
+.SH "DEPENDENCIES"
+
+.LP
+The SSL application uses the \fIpublic_key\fR\& and Crypto application to handle public keys and encryption, hence these applications must be loaded for the SSL application to work\&. In an embedded environment this means they must be started with \fIapplication:start/[1,2]\fR\& before the SSL application is started\&.
+.SH "CONFIGURATION"
+
+.LP
+The application environment configuration parameters in this section are defined for the SSL application\&. For more information about configuration parameters, see the \fBapplication(3)\fR\& manual page in Kernel\&.
+.LP
+The environment parameters can be set on the command line, for example:
+.LP
+\fIerl -ssl protocol_version "[\&'tlsv1\&.2\&', \&'tlsv1\&.1\&']"\fR\&
+.RS 2
+.TP 2
+.B
+\fIprotocol_version = \fR\&\fBssl:protocol()\fR\&\fI<optional>\fR\&:
+Protocol supported by started clients and servers\&. If this option is not set, it defaults to all protocols currently supported by the SSL application\&. This option can be overridden by the version option to \fIssl:connect/[2,3]\fR\& and \fIssl:listen/2\fR\&\&.
+.TP 2
+.B
+\fIsession_lifetime = integer() <optional>\fR\&:
+Maximum lifetime of the session data in seconds\&.
+.TP 2
+.B
+\fIsession_cb = atom() <optional>\fR\&:
+Name of the session cache callback module that implements the \fIssl_session_cache_api\fR\& behavior\&. Defaults to \fIssl_session_cache\fR\&\&.
+.TP 2
+.B
+\fIsession_cb_init_args = proplist:proplist() <optional>\fR\&:
+List of extra user-defined arguments to the \fIinit\fR\& function in the session cache callback module\&. Defaults to \fI[]\fR\&\&.
+.TP 2
+.B
+\fIsession_cache_client_max = integer() <optional>\fR\&
+.br
+\fIsession_cache_server_max = integer() <optional>\fR\&:
+Limits the growth of the clients/servers session cache, if the maximum number of sessions is reached, the current cache entries will be invalidated regardless of their remaining lifetime\&. Defaults to 1000\&.
+.TP 2
+.B
+\fIssl_pem_cache_clean = integer() <optional>\fR\&:
+Number of milliseconds between PEM cache validations\&.\fBssl:clear_pem_cache/0\fR\&
+.TP 2
+.B
+\fIalert_timeout = integer() <optional>\fR\&:
+Number of milliseconds between sending of a fatal alert and closing the connection\&. Waiting a little while improves the peers chances to properly receiving the alert so it may shutdown gracefully\&. Defaults to 5000 milliseconds\&.
+.RE
+.SH "ERROR LOGGER AND EVENT HANDLERS"
+
+.LP
+The SSL application uses the default \fBOTP error logger\fR\& to log unexpected errors and TLS alerts\&. The logging of TLS alerts may be turned off with the \fIlog_alert\fR\& option\&.
+.SH "SEE ALSO"
+
+.LP
+\fBapplication(3)\fR\&

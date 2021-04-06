@@ -1,0 +1,285 @@
+.TH persistent_term 3 "erts 10.3.5.4" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+persistent_term \- Persistent terms.
+.SH DESCRIPTION
+.LP
+This module is similar to \fB\fIets\fR\&\fR\& in that it provides a storage for Erlang terms that can be accessed in constant time, but with the difference that \fIpersistent_term\fR\& has been highly optimized for reading terms at the expense of writing and updating terms\&. When a persistent term is updated or deleted, a global garbage collection pass is run to scan all processes for the deleted term, and to copy it into each process that still uses it\&. Therefore, \fIpersistent_term\fR\& is suitable for storing Erlang terms that are frequently accessed but never or infrequently updated\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Persistent terms is an advanced feature and is not a general replacement for ETS tables\&. Before using persistent terms, make sure to fully understand the consequence to system performance when updating or deleting persistent terms\&.
+
+.LP
+Term lookup (using \fB\fIget/1\fR\&\fR\&), is done in constant time and without taking any locks, and the term is \fBnot\fR\&  copied to the heap (as is the case with terms stored in ETS tables)\&.
+.LP
+Storing or updating a term (using \fB\fIput/2\fR\&\fR\&) is proportional to the number of already created persistent terms because the hash table holding the keys will be copied\&. In addition, the term itself will be copied\&.
+.LP
+When a (complex) term is deleted (using \fB\fIerase/1\fR\&\fR\&) or replaced by another (using \fB\fIput/2\fR\&\fR\&), a global garbage collection is initiated\&. It works like this:
+.RS 2
+.TP 2
+*
+All processes in the system will be scheduled to run a scan of their heaps for the term that has been deleted\&. While such scan is relatively light-weight, if there are many processes, the system can become less responsive until all process have scanned their heaps\&.
+.LP
+.TP 2
+*
+If the deleted term (or any part of it) is still used by a process, that process will do a major (fullsweep) garbage collection and copy the term into the process\&. However, at most two processes at a time will be scheduled to do that kind of garbage collection\&.
+.LP
+.RE
+
+.LP
+Deletion of atoms and other terms that fit in one machine word is specially optimized to avoid doing a global GC\&. It is still not recommended to update persistent terms with such values too frequently because the hash table holding the keys is copied every time a persistent term is updated\&.
+.LP
+Some examples are suitable uses for persistent terms are:
+.RS 2
+.TP 2
+*
+Storing of configuration data that must be easily accessible by all processes\&.
+.LP
+.TP 2
+*
+Storing of references for NIF resources\&.
+.LP
+.TP 2
+*
+Storing of references for efficient counters\&.
+.LP
+.TP 2
+*
+Storing an atom to indicate a logging level or whether debugging is turned on\&.
+.LP
+.RE
+
+.SH "STORING HUGE PERSISTENT TERMS"
+
+.LP
+The current implementation of persistent terms uses the literal \fBallocator\fR\& also used for literals (constant terms) in BEAM code\&. By default, 1 GB of virtual address space is reserved for literals in BEAM code and persistent terms\&. The amount of virtual address space reserved for literals can be changed by using the \fB\fI+MIscs option\fR\&\fR\& when starting the emulator\&.
+.LP
+Here is an example how the reserved virtual address space for literals can be raised to 2 GB (2048 MB):
+.LP
+.nf
+
+    erl +MIscs 2048
+.fi
+.SH "WARNING FOR MANY PERSISTENT TERMS"
+
+.LP
+The runtime system will send a warning report to the error logger if more than 20000 persistent terms have been created\&. It will look like this:
+.LP
+.nf
+
+More than 20000 persistent terms have been created.
+It is recommended to avoid creating an excessive number of
+persistent terms, as creation and deletion of persistent terms
+will be slower as the number of persistent terms increases.
+.fi
+.SH "BEST PRACTICES FOR USING PERSISTENT TERMS"
+
+.LP
+It is recommended to use keys like \fI?MODULE\fR\& or \fI{?MODULE,SubKey}\fR\& to avoid name collisions\&.
+.LP
+Prefer creating a few large persistent terms to creating many small persistent terms\&. The execution time for storing a persistent term is proportional to the number of already existing terms\&.
+.LP
+Updating a persistent term with the same value as it already has is specially optimized to do nothing quickly; thus, there is no need compare the old and new values and avoid calling \fB\fIput/2\fR\&\fR\& if the values are equal\&.
+.LP
+When atoms or other terms that fit in one machine word are deleted, no global GC is needed\&. Therefore, persistent terms that have atoms as their values can be updated more frequently, but note that updating such persistent terms is still much more expensive than reading them\&.
+.LP
+Updating or deleting a persistent term will trigger a global GC if the term does not fit in one machine word\&. Processes will be scheduled as usual, but all processes will be made runnable at once, which will make the system less responsive until all process have run and scanned their heaps for the deleted terms\&. One way to minimize the effects on responsiveness could be to minimize the number of processes on the node before updating or deleting a persistent term\&. It would also be wise to avoid updating terms when the system is at peak load\&.
+.LP
+Avoid storing a retrieved persistent term in a process if that persistent term could be deleted or updated in the future\&. If a process holds a reference to a persistent term when the term is deleted, the process will be garbage collected and the term copied to process\&.
+.LP
+Avoid updating or deleting more than one persistent term at a time\&. Each deleted term will trigger its own global GC\&. That means that deleting N terms will make the system less responsive N times longer than deleting a single persistent term\&. Therefore, terms that are to be updated at the same time should be collected into a larger term, for example, a map or a tuple\&.
+.SH "EXAMPLE"
+
+.LP
+The following example shows how lock contention for ETS tables can be minimized by having one ETS table for each scheduler\&. The table identifiers for the ETS tables are stored as a single persistent term:
+.LP
+.nf
+
+    %% There is one ETS table for each scheduler.
+    Sid = erlang:system_info(scheduler_id),
+    Tid = element(Sid, persistent_term:get(?MODULE)),
+    ets:update_counter(Tid, Key, 1).
+.fi
+.SH DATA TYPES
+.nf
+
+\fBkey()\fR\& = term()
+.br
+.fi
+.RS
+.LP
+Any Erlang term\&.
+.RE
+.nf
+
+\fBvalue()\fR\& = term()
+.br
+.fi
+.RS
+.LP
+Any Erlang term\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+erase(Key) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = \fBkey()\fR\&
+.br
+Result = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+Erase the name for the persistent term with key \fIKey\fR\&\&. The return value will be \fItrue\fR\& if there was a persistent term with the key \fIKey\fR\&, and \fIfalse\fR\& if there was no persistent term associated with the key\&.
+.LP
+If there existed a previous persistent term associated with key \fIKey\fR\&, a global GC has been initiated when \fIerase/1\fR\& returns\&. See \fBDescription\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+get() -> List
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+List = [{\fBkey()\fR\&, \fBvalue()\fR\&}]
+.br
+.RE
+.RE
+.RS
+.LP
+Retrieve the keys and values for all persistent terms\&. The keys will be copied to the heap for the process calling \fIget/0\fR\&, but the values will not\&.
+.RE
+.LP
+.nf
+
+.B
+get(Key) -> Value
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = \fBkey()\fR\&
+.br
+Value = \fBvalue()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Retrieve the value for the persistent term associated with the key \fIKey\fR\&\&. The lookup will be made in constant time and the value will not be copied to the heap of the calling process\&.
+.LP
+This function fails with a \fIbadarg\fR\& exception if no term has been stored with the key \fIKey\fR\&\&.
+.LP
+If the calling process holds on to the value of the persistent term and the persistent term is deleted in the future, the term will be copied to the process\&.
+.RE
+.LP
+.nf
+
+.B
+get(Key, Default) -> Value
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = \fBkey()\fR\&
+.br
+Default = Value = \fBvalue()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Retrieve the value for the persistent term associated with the key \fIKey\fR\&\&. The lookup will be made in constant time and the value will not be copied to the heap of the calling process\&.
+.LP
+This function returns \fIDefault\fR\& if no term has been stored with the key \fIKey\fR\&\&.
+.LP
+If the calling process holds on to the value of the persistent term and the persistent term is deleted in the future, the term will be copied to the process\&.
+.RE
+.LP
+.nf
+
+.B
+info() -> Info
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Info = #{count := Count, memory := Memory}
+.br
+Count = Memory = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Return information about persistent terms in a map\&. The map has the following keys:
+.RS 2
+.TP 2
+.B
+\fIcount\fR\&:
+The number of persistent terms\&.
+.TP 2
+.B
+\fImemory\fR\&:
+The total amount of memory (measured in bytes) used by all persistent terms\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+put(Key, Value) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = \fBkey()\fR\&
+.br
+Value = \fBvalue()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Store the value \fIValue\fR\& as a persistent term and associate it with the key \fIKey\fR\&\&.
+.LP
+If the value \fIValue\fR\& is equal to the value previously stored for the key, \fIput/2\fR\& will do nothing and return quickly\&.
+.LP
+If there existed a previous persistent term associated with key \fIKey\fR\&, a global GC has been initiated when \fIput/2\fR\& returns\&. See \fBDescription\fR\&\&.
+.RE

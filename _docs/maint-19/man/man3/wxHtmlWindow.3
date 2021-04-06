@@ -1,0 +1,507 @@
+.TH wxHtmlWindow 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxHtmlWindow \- See external documentation: wxHtmlWindow.
+.SH DESCRIPTION
+.LP
+See external documentation: wxHtmlWindow\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxScrolledWindow\fR\& 
+.br
+\fBwxPanel\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxHtmlWindow():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxHtmlWindow()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent) -> \fBwxHtmlWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxHtmlWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+appendToPage(This, Source) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Source = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getOpenedAnchor(This) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getOpenedPage(This) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getOpenedPageTitle(This) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getRelatedFrame(This) -> \fBwxFrame:wxFrame()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+historyBack(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+historyCanBack(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+historyCanForward(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+historyClear(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+historyForward(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+loadFile(This, Filename) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Filename = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+loadPage(This, Location) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Location = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+selectAll(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+selectionToText(This) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+selectLine(This, Pos) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+selectWord(This, Pos) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setBorders(This, B) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+B = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setFonts(This, Normal_face, Fixed_face) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Normal_face = \fBunicode:chardata()\fR\&
+.br
+Fixed_face = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetFonts(This, Normal_face, Fixed_face, [])\fR\&\&.
+.RE
+.LP
+.B
+setFonts(This, Normal_face, Fixed_face, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Normal_face = \fBunicode:chardata()\fR\&
+.br
+Fixed_face = \fBunicode:chardata()\fR\&
+.br
+Option = {sizes, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPage(This, Source) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Source = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setRelatedFrame(This, Frame, Format) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Frame = \fBwxFrame:wxFrame()\fR\&
+.br
+Format = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setRelatedStatusBar(This, Bar) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+Bar = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+toText(This) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxHtmlWindow()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

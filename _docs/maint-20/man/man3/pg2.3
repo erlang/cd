@@ -1,0 +1,197 @@
+.TH pg2 3 "kernel 5.4.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+pg2 \- Distributed named process groups.
+.SH DESCRIPTION
+.LP
+This module implements process groups\&. Each message can be sent to one, some, or all group members\&.
+.LP
+A group of processes can be accessed by a common name\&. For example, if there is a group named \fIfoobar\fR\&, there can be a set of processes (which can be located on different nodes) that are all members of the group \fIfoobar\fR\&\&. There are no special functions for sending a message to the group\&. Instead, client functions are to be written with the functions \fB\fIget_members/1\fR\&\fR\& and \fB\fIget_local_members/1\fR\&\fR\& to determine which processes are members of the group\&. Then the message can be sent to one or more group members\&.
+.LP
+If a member terminates, it is automatically removed from the group\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This module is used by module \fB\fIdisk_log\fR\&\fR\& for managing distributed disk logs\&. The disk log names are used as group names, which means that some action can be needed to avoid name clashes\&.
+
+.SH DATA TYPES
+.nf
+
+\fBname()\fR\& = any()
+.br
+.fi
+.RS
+.LP
+The name of a process group\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+create(Name :: name()) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Creates a new, empty process group\&. The group is globally visible on all nodes\&. If the group exists, nothing happens\&.
+.RE
+.LP
+.nf
+
+.B
+delete(Name :: name()) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Deletes a process group\&.
+.RE
+.LP
+.nf
+
+.B
+get_closest_pid(Name) -> pid() | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+Reason = {no_process, Name} | {no_such_group, Name}
+.br
+.RE
+.RE
+.RS
+.LP
+A useful dispatch function that can be used from client functions\&. It returns a process on the local node, if such a process exists\&. Otherwise, it selects one randomly\&.
+.RE
+.LP
+.nf
+
+.B
+get_local_members(Name) ->
+.B
+                     [pid()] | {error, {no_such_group, Name}}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns all processes running on the local node in the group \fIName\fR\&\&. This function is to be used from within a client function that accesses the group\&. It is therefore optimized for speed\&.
+.RE
+.LP
+.nf
+
+.B
+get_members(Name) -> [pid()] | {error, {no_such_group, Name}}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns all processes in the group \fIName\fR\&\&. This function is to be used from within a client function that accesses the group\&. It is therefore optimized for speed\&.
+.RE
+.LP
+.nf
+
+.B
+join(Name, Pid :: pid()) -> ok | {error, {no_such_group, Name}}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Joins the process \fIPid\fR\& to the group \fIName\fR\&\&. A process can join a group many times and must then leave the group the same number of times\&.
+.RE
+.LP
+.nf
+
+.B
+leave(Name, Pid :: pid()) -> ok | {error, {no_such_group, Name}}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBname()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Makes the process \fIPid\fR\& leave the group \fIName\fR\&\&. If the process is not a member of the group, \fIok\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+start() -> {ok, pid()} | {error, any()}
+.br
+.fi
+.br
+.nf
+
+.B
+start_link() -> {ok, pid()} | {error, any()}
+.br
+.fi
+.br
+.RS
+.LP
+Starts the \fIpg2\fR\& server\&. Normally, the server does not need to be started explicitly, as it is started dynamically if it is needed\&. This is useful during development, but in a target system the server is to be started explicitly\&. Use the configuration parameters for \fB\fIkernel(6)\fR\&\fR\& for this\&.
+.RE
+.LP
+.nf
+
+.B
+which_groups() -> [Name :: name()]
+.br
+.fi
+.br
+.RS
+.LP
+Returns a list of all known groups\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIkernel(6)\fR\&\fR\&

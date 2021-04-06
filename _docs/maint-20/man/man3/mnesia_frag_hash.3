@@ -1,0 +1,146 @@
+.TH mnesia_frag_hash 3 "mnesia 4.15.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+mnesia_frag_hash \- Defines mnesia_frag_hash callback behavior
+.SH DESCRIPTION
+.LP
+This module defines a callback behavior for user-defined hash functions of fragmented tables\&.
+.LP
+Which module that is selected to implement the \fImnesia_frag_hash\fR\& behavior for a particular fragmented table is specified together with the other \fIfrag_properties\fR\&\&. The \fIhash_module\fR\& defines the module name\&. The \fIhash_state\fR\& defines the initial hash state\&.
+.LP
+This module implements dynamic hashing, which is a kind of hashing that grows nicely when new fragments are added\&. It is well suited for scalable hash tables\&.
+.SH EXPORTS
+.LP
+.B
+init_state(Tab, State) -> NewState | abort(Reason)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = atom()
+.br
+State = term()
+.br
+NewState = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts when a fragmented table is created with the function \fImnesia:create_table/2\fR\& or when a normal (unfragmented) table is converted to be a fragmented table with \fImnesia:change_table_frag/2\fR\&\&.
+.LP
+Notice that the function \fIadd_frag/2\fR\& is started one time for each of the other fragments (except number 1) as a part of the table creation procedure\&.
+.LP
+\fIState\fR\& is the initial value of the \fIhash_state\fR\& \fIfrag_property\fR\&\&. \fINewState\fR\& is stored as \fIhash_state\fR\& among the other \fIfrag_properties\fR\&\&.
+.RE
+.LP
+.B
+add_frag(State) -> {NewState, IterFrags, AdditionalLockFrags} | abort(Reason)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+State = term()
+.br
+NewState = term()
+.br
+IterFrags = [integer()]
+.br
+AdditionalLockFrags = [integer()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+To scale well, it is a good idea to ensure that the records are evenly distributed over all fragments, including the new one\&.
+.LP
+\fINewState\fR\& is stored as \fIhash_state\fR\& among the other \fIfrag_properties\fR\&\&.
+.LP
+As a part of the \fIadd_frag\fR\& procedure, Mnesia iterates over all fragments corresponding to the \fIIterFrags\fR\& numbers and starts \fIkey_to_frag_number(NewState,RecordKey)\fR\& for each record\&. If the new fragment differs from the old fragment, the record is moved to the new fragment\&.
+.LP
+As the \fIadd_frag\fR\& procedure is a part of a schema transaction, Mnesia acquires write locks on the affected tables\&. That is, both the fragments corresponding to \fIIterFrags\fR\& and those corresponding to \fIAdditionalLockFrags\fR\&\&.
+.RE
+.LP
+.B
+del_frag(State) -> {NewState, IterFrags, AdditionalLockFrags} | abort(Reason)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+State = term()
+.br
+NewState = term()
+.br
+IterFrags = [integer()]
+.br
+AdditionalLockFrags = [integer()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+\fINewState\fR\& is stored as \fIhash_state\fR\& among the other \fIfrag_properties\fR\&\&.
+.LP
+As a part of the \fIdel_frag\fR\& procedure, Mnesia iterates over all fragments corresponding to the \fIIterFrags\fR\& numbers and starts \fIkey_to_frag_number(NewState,RecordKey)\fR\& for each record\&. If the new fragment differs from the old fragment, the record is moved to the new fragment\&.
+.LP
+Notice that all records in the last fragment must be moved to another fragment, as the entire fragment is deleted\&.
+.LP
+As the \fIdel_frag\fR\& procedure is a part of a schema transaction, Mnesia acquires write locks on the affected tables\&. That is, both the fragments corresponding to \fIIterFrags\fR\& and those corresponding to \fIAdditionalLockFrags\fR\&\&.
+.RE
+.LP
+.B
+key_to_frag_number(State, Key) -> FragNum | abort(Reason)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FragNum = integer()()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts whenever Mnesia needs to determine which fragment a certain record belongs to\&. It is typically started at \fIread\fR\&, \fIwrite\fR\&, and \fIdelete\fR\&\&.
+.RE
+.LP
+.B
+match_spec_to_frag_numbers(State, MatchSpec) -> FragNums | abort(Reason)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+MatcSpec = ets_select_match_spec()
+.br
+FragNums = [FragNum]
+.br
+FragNum = integer()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This function is called whenever Mnesia needs to determine which fragments that need to be searched for a \fIMatchSpec\fR\&\&. It is typically called by \fIselect\fR\& and \fImatch_object\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fBmnesia(3)\fR\&

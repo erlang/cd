@@ -1,0 +1,1284 @@
+.TH erl 1 "erts 8.3.5.4" "Ericsson AB" "User Commands"
+.SH NAME
+erl \- The Erlang emulator.
+.SH DESCRIPTION
+.LP
+The \fIerl\fR\& program starts an Erlang runtime system\&. The exact details (for example, whether \fIerl\fR\& is a script or a program and which other programs it calls) are system-dependent\&.
+.LP
+Windows users probably want to use the \fIwerl\fR\& program instead, which runs in its own window with scrollbars and supports command-line editing\&. The \fIerl\fR\& program on Windows provides no line editing in its shell, and on Windows 95 there is no way to scroll back to text that has scrolled off the screen\&. The \fIerl\fR\& program must be used, however, in pipelines or if you want to redirect standard input or output\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+As from ERTS 5\&.9 (Erlang/OTP R15B) the runtime system does by default \fInot\fR\& bind schedulers to logical processors\&. For more information, see system flag \fB\fI+sbt\fR\&\fR\&\&.
+
+.SH EXPORTS
+.LP
+.B
+erl <arguments>
+.br
+.RS
+.LP
+Starts an Erlang runtime system\&.
+.LP
+The arguments can be divided into \fIemulator flags\fR\&, \fIflags\fR\&, and \fIplain arguments\fR\&:
+.RS 2
+.TP 2
+*
+Any argument starting with character \fI+\fR\& is interpreted as an \fBemulator flag\fR\&\&.
+.RS 2
+.LP
+As indicated by the name, emulator flags control the behavior of the emulator\&.
+.RE
+.LP
+.TP 2
+*
+Any argument starting with character \fI-\fR\& (hyphen) is interpreted as a \fBflag\fR\&, which is to be passed to the Erlang part of the runtime system, more specifically to the \fIinit\fR\& system process, see \fB\fIinit(3)\fR\&\fR\&\&.
+.RS 2
+.LP
+The \fIinit\fR\& process itself interprets some of these flags, the \fIinit flags\fR\&\&. It also stores any remaining flags, the \fIuser flags\fR\&\&. The latter can be retrieved by calling \fIinit:get_argument/1\fR\&\&.
+.RE
+.RS 2
+.LP
+A small number of "-" flags exist, which now actually are emulator flags, see the description below\&.
+.RE
+.LP
+.TP 2
+*
+Plain arguments are not interpreted in any way\&. They are also stored by the \fIinit\fR\& process and can be retrieved by calling \fIinit:get_plain_arguments/0\fR\&\&. Plain arguments can occur before the first flag, or after a \fI--\fR\& flag\&. Also, the \fI-extra\fR\& flag causes everything that follows to become plain arguments\&.
+.LP
+.RE
+
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+% erl +W w -sname arnie +R 9 -s my_init -extra +bertie
+(arnie@host)1> init:get_argument(sname)\&.
+{ok,[["arnie"]]}
+(arnie@host)2> init:get_plain_arguments()\&.
+["+bertie"]
+.fi
+.LP
+Here \fI+W w\fR\& and \fI+R 9\fR\& are emulator flags\&. \fI-s my_init\fR\& is an init flag, interpreted by \fIinit\fR\&\&. \fI-sname arnie\fR\& is a user flag, stored by \fIinit\fR\&\&. It is read by Kernel and causes the Erlang runtime system to become distributed\&. Finally, everything after \fI-extra\fR\& (that is, \fI+bertie\fR\&) is considered as plain arguments\&.
+.LP
+.nf
+
+% erl -myflag 1
+1> init:get_argument(myflag)\&.
+{ok,[["1"]]}
+2> init:get_plain_arguments()\&.
+[]
+.fi
+.LP
+Here the user flag \fI-myflag 1\fR\& is passed to and stored by the \fIinit\fR\& process\&. It is a user-defined flag, presumably used by some user-defined application\&.
+.RE
+.SH "FLAGS"
+
+.LP
+In the following list, init flags are marked "(init flag)"\&. Unless otherwise specified, all other flags are user flags, for which the values can be retrieved by calling \fIinit:get_argument/1\fR\&\&. Notice that the list of user flags is not exhaustive, there can be more application-specific flags that instead are described in the corresponding application documentation\&.
+.RS 2
+.TP 2
+.B
+\fI--\fR\& (init flag):
+Everything following \fI--\fR\& up to the next flag (\fI-flag\fR\& or \fI+flag\fR\&) is considered plain arguments and can be retrieved using \fIinit:get_plain_arguments/0\fR\&\&.
+.TP 2
+.B
+\fI-Application Par Val\fR\&:
+Sets the application configuration parameter \fIPar\fR\& to the value \fIVal\fR\& for the application \fIApplication\fR\&; see \fB\fIapp(4)\fR\&\fR\& and \fB\fIapplication(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-args_file FileName\fR\&:
+Command-line arguments are read from the file \fIFileName\fR\&\&. The arguments read from the file replace flag \&'\fI-args_file FileName\fR\&\&' on the resulting command line\&.
+.RS 2
+.LP
+The file \fIFileName\fR\& is to be a plain text file and can contain comments and command-line arguments\&. A comment begins with a \fI#\fR\& character and continues until the next end of line character\&. Backslash (\\\\) is used as quoting character\&. All command-line arguments accepted by \fIerl\fR\& are allowed, also flag \fI-args_file FileName\fR\&\&. Be careful not to cause circular dependencies between files containing flag \fI-args_file\fR\&, though\&.
+.RE
+.RS 2
+.LP
+The flag \fI-extra\fR\& is treated in special way\&. Its scope ends at the end of the file\&. Arguments following an \fI-extra\fR\& flag are moved on the command line into the \fI-extra\fR\& section, that is, the end of the command line following after an \fI-extra\fR\& flag\&.
+.RE
+.TP 2
+.B
+\fI-async_shell_start\fR\&:
+The initial Erlang shell does not read user input until the system boot procedure has been completed (Erlang/OTP 5\&.4 and later)\&. This flag disables the start synchronization feature and lets the shell start in parallel with the rest of the system\&.
+.TP 2
+.B
+\fI-boot File\fR\&:
+Specifies the name of the boot file, \fIFile\&.boot\fR\&, which is used to start the system; see \fB\fIinit(3)\fR\&\fR\&\&. Unless \fIFile\fR\& contains an absolute path, the system searches for \fIFile\&.boot\fR\& in the current and \fI$ROOT/bin\fR\& directories\&.
+.RS 2
+.LP
+Defaults to \fI$ROOT/bin/start\&.boot\fR\&\&.
+.RE
+.TP 2
+.B
+\fI-boot_var Var Dir\fR\&:
+If the boot script contains a path variable \fIVar\fR\& other than \fI$ROOT\fR\&, this variable is expanded to \fIDir\fR\&\&. Used when applications are installed in another directory than \fI$ROOT/lib\fR\&; see \fB\fIsystools:make_script/1,2\fR\&\fR\& in SASL\&.
+.TP 2
+.B
+\fI-code_path_cache\fR\&:
+Enables the code path cache of the code server; see \fB\fIcode(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-compile Mod1 Mod2 \&.\&.\&.\fR\&:
+Compiles the specified modules and then terminates (with non-zero exit code if the compilation of some file did not succeed)\&. Implies \fI-noinput\fR\&\&.
+.RS 2
+.LP
+Not recommended; use \fB\fIerlc\fR\&\fR\& instead\&.
+.RE
+.TP 2
+.B
+\fI-config Config\fR\&:
+Specifies the name of a configuration file, \fIConfig\&.config\fR\&, which is used to configure applications; see \fB\fIapp(4)\fR\&\fR\& and \fB\fIapplication(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-connect_all false\fR\&:
+If this flag is present, \fIglobal\fR\& does not maintain a fully connected network of distributed Erlang nodes, and then global name registration cannot be used; see \fB\fIglobal(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-cookie Cookie\fR\&:
+Obsolete flag without any effect and common misspelling for \fI-setcookie\fR\&\&. Use \fI-setcookie\fR\& instead\&.
+.TP 2
+.B
+\fI-detached\fR\&:
+Starts the Erlang runtime system detached from the system console\&. Useful for running daemons and backgrounds processes\&. Implies \fI-noinput\fR\&\&.
+.TP 2
+.B
+\fI-emu_args\fR\&:
+Useful for debugging\&. Prints the arguments sent to the emulator\&.
+.TP 2
+.B
+\fI-env Variable Value\fR\&:
+Sets the host OS environment variable \fIVariable\fR\& to the value \fIValue\fR\& for the Erlang runtime system\&. Example:
+.LP
+.nf
+
+% erl -env DISPLAY gin:0
+.fi
+.RS 2
+.LP
+In this example, an Erlang runtime system is started with environment variable \fIDISPLAY\fR\& set to \fIgin:0\fR\&\&.
+.RE
+.TP 2
+.B
+\fI-epmd_module Module\fR\& (init flag):
+Configures the module responsible to communicate to \fBepmd\fR\&\&. Defaults to \fIerl_epmd\fR\&\&.
+.TP 2
+.B
+\fI-eval Expr\fR\& (init flag):
+Makes \fIinit\fR\& evaluate the expression \fIExpr\fR\&; see \fB\fIinit(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-extra\fR\& (init flag):
+Everything following \fI-extra\fR\& is considered plain arguments and can be retrieved using \fIinit:get_plain_arguments/0\fR\&\&.
+.TP 2
+.B
+\fI-heart\fR\&:
+Starts heartbeat monitoring of the Erlang runtime system; see \fB\fIheart(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-hidden\fR\&:
+Starts the Erlang runtime system as a hidden node, if it is run as a distributed node\&. Hidden nodes always establish hidden connections to all other nodes except for nodes in the same global group\&. Hidden connections are not published on any of the connected nodes, that is, none of the connected nodes are part of the result from \fInodes/0\fR\& on the other node\&. See also hidden global groups; \fB\fIglobal_group(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-hosts Hosts\fR\&:
+Specifies the IP addresses for the hosts on which Erlang boot servers are running, see \fB\fIerl_boot_server(3)\fR\&\fR\&\&. This flag is mandatory if flag \fI-loader inet\fR\& is present\&.
+.RS 2
+.LP
+The IP addresses must be specified in the standard form (four decimal numbers separated by periods, for example, \fI"150\&.236\&.20\&.74"\fR\&\&. Hosts names are not acceptable, but a broadcast address (preferably limited to the local network) is\&.
+.RE
+.TP 2
+.B
+\fI-id Id\fR\&:
+Specifies the identity of the Erlang runtime system\&. If it is run as a distributed node, \fIId\fR\& must be identical to the name supplied together with flag \fI-sname\fR\& or \fI-name\fR\&\&.
+.TP 2
+.B
+\fI-init_debug\fR\&:
+Makes \fIinit\fR\& write some debug information while interpreting the boot script\&.
+.TP 2
+.B
+\fI-instr\fR\& (emulator flag):
+Selects an instrumented Erlang runtime system (virtual machine) to run, instead of the ordinary one\&. When running an instrumented runtime system, some resource usage data can be obtained and analyzed using the \fIinstrument\fR\& module\&. Functionally, it behaves exactly like an ordinary Erlang runtime system\&.
+.TP 2
+.B
+\fI-loader Loader\fR\&:
+Specifies the method used by \fIerl_prim_loader\fR\& to load Erlang modules into the system; see \fB\fIerl_prim_loader(3)\fR\&\fR\&\&. Two \fILoader\fR\& methods are supported:
+.RS 2
+.TP 2
+*
+\fIefile\fR\&, which means use the local file system, this is the default\&.
+.LP
+.TP 2
+*
+\fIinet\fR\&, which means use a boot server on another machine\&. The flags \fI-id\fR\&, \fI-hosts\fR\& and \fI-setcookie\fR\& must also be specified\&.
+.LP
+.RE
+
+.RS 2
+.LP
+If \fILoader\fR\& is something else, the user-supplied \fILoader\fR\& port program is started\&.
+.RE
+.TP 2
+.B
+\fI-make\fR\&:
+Makes the Erlang runtime system invoke \fImake:all()\fR\& in the current working directory and then terminate; see \fB\fImake(3)\fR\&\fR\&\&. Implies \fI-noinput\fR\&\&.
+.TP 2
+.B
+\fI-man Module\fR\&:
+Displays the manual page for the Erlang module \fIModule\fR\&\&. Only supported on Unix\&.
+.TP 2
+.B
+\fI-mode interactive | embedded\fR\&:
+Indicates if the system is to load code dynamically (\fIinteractive\fR\&), or if all code is to be loaded during system initialization (\fIembedded\fR\&); see \fB\fIcode(3)\fR\&\fR\&\&. Defaults to \fIinteractive\fR\&\&.
+.TP 2
+.B
+\fI-name Name\fR\&:
+Makes the Erlang runtime system into a distributed node\&. This flag invokes all network servers necessary for a node to become distributed; see \fB\fInet_kernel(3)\fR\&\fR\&\&. It is also ensured that \fIepmd\fR\& runs on the current host before Erlang is started; see \fB\fIepmd(1)\fR\&\fR\&\&.and the \fB\fI-start_epmd\fR\&\fR\& option\&.
+.RS 2
+.LP
+The node name will be \fIName@Host\fR\&, where \fIHost\fR\& is the fully qualified host name of the current host\&. For short names, use flag \fI-sname\fR\& instead\&.
+.RE
+.TP 2
+.B
+\fI-noinput\fR\&:
+Ensures that the Erlang runtime system never tries to read any input\&. Implies \fI-noshell\fR\&\&.
+.TP 2
+.B
+\fI-noshell\fR\&:
+Starts an Erlang runtime system with no shell\&. This flag makes it possible to have the Erlang runtime system as a component in a series of Unix pipes\&.
+.TP 2
+.B
+\fI-nostick\fR\&:
+Disables the sticky directory facility of the Erlang code server; see \fB\fIcode(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-oldshell\fR\&:
+Invokes the old Erlang shell from Erlang/OTP 3\&.3\&. The old shell can still be used\&.
+.TP 2
+.B
+\fI-pa Dir1 Dir2 \&.\&.\&.\fR\&:
+Adds the specified directories to the beginning of the code path, similar to \fB\fIcode:add_pathsa/1\fR\&\fR\&\&. Note that the order of the given directories will be reversed in the resulting path\&.
+.RS 2
+.LP
+As an alternative to \fI-pa\fR\&, if several directories are to be prepended to the code path and the directories have a common parent directory, that parent directory can be specified in environment variable \fIERL_LIBS\fR\&; see \fB\fIcode(3)\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fI-pz Dir1 Dir2 \&.\&.\&.\fR\&:
+Adds the specified directories to the end of the code path, similar to \fIcode:add_pathsz/1\fR\&; see \fB\fIcode(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-path Dir1 Dir2 \&.\&.\&.\fR\&:
+Replaces the path specified in the boot script; see \fB\fIscript(4)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-proto_dist Proto\fR\&:
+Specifies a protocol for Erlang distribution:
+.RS 2
+.TP 2
+.B
+\fIinet_tcp\fR\&:
+TCP over IPv4 (the default)
+.TP 2
+.B
+\fIinet_tls\fR\&:
+Distribution over TLS/SSL
+.TP 2
+.B
+\fIinet6_tcp\fR\&:
+TCP over IPv6
+.RE
+.RS 2
+.LP
+For example, to start up IPv6 distributed nodes:
+.RE
+.LP
+.nf
+
+% erl -name test@ipv6node\&.example\&.com -proto_dist inet6_tcp
+.fi
+.TP 2
+.B
+\fI-remsh Node\fR\&:
+Starts Erlang with a remote shell connected to \fINode\fR\&\&.
+.TP 2
+.B
+\fI-rsh Program\fR\&:
+Specifies an alternative to \fIrsh\fR\& for starting a slave node on a remote host; see \fB\fIslave(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-run Mod [Func [Arg1, Arg2, \&.\&.\&.]]\fR\& (init flag):
+Makes \fIinit\fR\& call the specified function\&. \fIFunc\fR\& defaults to \fIstart\fR\&\&. If no arguments are provided, the function is assumed to be of arity 0\&. Otherwise it is assumed to be of arity 1, taking the list \fI[Arg1,Arg2,\&.\&.\&.]\fR\& as argument\&. All arguments are passed as strings\&. See \fB\fIinit(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-s Mod [Func [Arg1, Arg2, \&.\&.\&.]]\fR\& (init flag):
+Makes \fIinit\fR\& call the specified function\&. \fIFunc\fR\& defaults to \fIstart\fR\&\&. If no arguments are provided, the function is assumed to be of arity 0\&. Otherwise it is assumed to be of arity 1, taking the list \fI[Arg1,Arg2,\&.\&.\&.]\fR\& as argument\&. All arguments are passed as atoms\&. See \fB\fIinit(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-setcookie Cookie\fR\&:
+Sets the magic cookie of the node to \fICookie\fR\&; see \fB\fIerlang:set_cookie/2\fR\&\fR\&\&.
+.TP 2
+.B
+\fI-shutdown_time Time\fR\&:
+Specifies how long time (in milliseconds) the \fIinit\fR\& process is allowed to spend shutting down the system\&. If \fITime\fR\& milliseconds have elapsed, all processes still existing are killed\&. Defaults to \fIinfinity\fR\&\&.
+.TP 2
+.B
+\fI-sname Name\fR\&:
+Makes the Erlang runtime system into a distributed node, similar to \fI-name\fR\&, but the host name portion of the node name \fIName@Host\fR\& will be the short name, not fully qualified\&.
+.RS 2
+.LP
+This is sometimes the only way to run distributed Erlang if the Domain Name System (DNS) is not running\&. No communication can exist between nodes running with flag \fI-sname\fR\& and those running with flag \fI-name\fR\&, as node names must be unique in distributed Erlang systems\&.
+.RE
+.TP 2
+.B
+\fI-start_epmd true | false\fR\&:
+Specifies whether Erlang should start \fBepmd\fR\& on startup\&. By default this is \fItrue\fR\&, but if you prefer to start epmd manually, set this to \fIfalse\fR\&\&.
+.RS 2
+.LP
+This only applies if Erlang is started as a distributed node, i\&.e\&. if \fI-name\fR\& or \fI-sname\fR\& is specified\&. Otherwise, epmd is not started even if \fI-start_epmd true\fR\& is given\&.
+.RE
+.RS 2
+.LP
+Note that a distributed node will fail to start if epmd is not running\&.
+.RE
+.TP 2
+.B
+\fI-smp [enable|auto|disable]\fR\&:
+\fI-smp enable\fR\& and \fI-smp\fR\& start the Erlang runtime system with SMP support enabled\&. This can fail if no runtime system with SMP support is available\&. \fI-smp auto\fR\& starts the Erlang runtime system with SMP support enabled if it is available and more than one logical processor is detected\&. \fI-smp disable\fR\& starts a runtime system without SMP support\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The runtime system with SMP support is not available on all supported platforms\&. See also flag \fB\fI+S\fR\&\fR\&\&.
+
+.TP 2
+.B
+\fI-version\fR\& (emulator flag):
+Makes the emulator print its version number\&. The same as \fIerl +V\fR\&\&.
+.RE
+.SH "EMULATOR FLAGS"
+
+.LP
+\fIerl\fR\& invokes the code for the Erlang emulator (virtual machine), which supports the following flags:
+.RS 2
+.TP 2
+.B
+\fI+a size\fR\&:
+Suggested stack size, in kilowords, for threads in the async thread pool\&. Valid range is 16-8192 kilowords\&. The default suggested stack size is 16 kilowords, that is, 64 kilobyte on 32-bit architectures\&. This small default size has been chosen because the number of async threads can be large\&. The default size is enough for drivers delivered with Erlang/OTP, but might not be large enough for other dynamically linked-in drivers that use the \fB\fIdriver_async()\fR\&\fR\& functionality\&. Notice that the value passed is only a suggestion, and it can even be ignored on some platforms\&.
+.TP 2
+.B
+\fI+A size\fR\&:
+Sets the number of threads in async thread pool\&. Valid range is 0-1024\&. Defaults to 10 if thread support is available\&.
+.TP 2
+.B
+\fI+B [c | d | i]\fR\&:
+Option \fIc\fR\& makes \fICtrl-C\fR\& interrupt the current shell instead of invoking the emulator break handler\&. Option \fId\fR\& (same as specifying \fI+B\fR\& without an extra option) disables the break handler\&. Option \fIi\fR\& makes the emulator ignore any break signal\&.
+.RS 2
+.LP
+If option \fIc\fR\& is used with \fIoldshell\fR\& on Unix, \fICtrl-C\fR\& will restart the shell process rather than interrupt it\&.
+.RE
+.RS 2
+.LP
+Notice that on Windows, this flag is only applicable for \fIwerl\fR\&, not \fIerl\fR\& (\fIoldshell\fR\&)\&. Notice also that \fICtrl-Break\fR\& is used instead of \fICtrl-C\fR\& on Windows\&.
+.RE
+.TP 2
+.B
+\fI+c true | false\fR\&:
+Enables or disables \fBtime correction\fR\&:
+.RS 2
+.TP 2
+.B
+\fItrue\fR\&:
+Enables time correction\&. This is the default if time correction is supported on the specific platform\&.
+.TP 2
+.B
+\fIfalse\fR\&:
+Disables time correction\&.
+.RE
+.RS 2
+.LP
+For backward compatibility, the boolean value can be omitted\&. This is interpreted as \fI+c false\fR\&\&.
+.RE
+.TP 2
+.B
+\fI+C no_time_warp | single_time_warp | multi_time_warp\fR\&:
+Sets \fBtime warp mode\fR\&:
+.RS 2
+.TP 2
+.B
+\fIno_time_warp\fR\&:
+\fB No time warp mode\fR\& (the default)
+.TP 2
+.B
+\fIsingle_time_warp\fR\&:
+\fB Single time warp mode\fR\&
+.TP 2
+.B
+\fImulti_time_warp\fR\&:
+\fB Multi-time warp mode\fR\&
+.RE
+.TP 2
+.B
+\fI+d\fR\&:
+If the emulator detects an internal error (or runs out of memory), it, by default, generates both a crash dump and a core dump\&. The core dump is, however, not very useful as the content of process heaps is destroyed by the crash dump generation\&.
+.RS 2
+.LP
+Option \fI+d\fR\& instructs the emulator to produce only a core dump and no crash dump if an internal error is detected\&.
+.RE
+.RS 2
+.LP
+Calling \fB\fIerlang:halt/1\fR\&\fR\& with a string argument still produces a crash dump\&. On Unix systems, sending an emulator process a \fISIGUSR1\fR\& signal also forces a crash dump\&.
+.RE
+.TP 2
+.B
+\fI+e Number\fR\&:
+Sets the maximum number of ETS tables\&.
+.TP 2
+.B
+\fI+ec\fR\&:
+Forces option \fIcompressed\fR\& on all ETS tables\&. Only intended for test and evaluation\&.
+.TP 2
+.B
+\fI+fnl\fR\&:
+The virtual machine works with filenames as if they are encoded using the ISO Latin-1 encoding, disallowing Unicode characters with code points > 255\&.
+.RS 2
+.LP
+For more information about Unicode filenames, see section \fBUnicode Filenames\fR\& in the STDLIB User\&'s Guide\&. Notice that this value also applies to command-line parameters and environment variables (see section \fB Unicode in Enviroment and Parameters\fR\& in the STDLIB User\&'s Guide)\&.
+.RE
+.TP 2
+.B
+\fI+fnu[{w|i|e}]\fR\&:
+The virtual machine works with filenames as if they are encoded using UTF-8 (or some other system-specific Unicode encoding)\&. This is the default on operating systems that enforce Unicode encoding, that is, Windows and MacOS X\&.
+.RS 2
+.LP
+The \fI+fnu\fR\& switch can be followed by \fIw\fR\&, \fIi\fR\&, or \fIe\fR\& to control how wrongly encoded filenames are to be reported:
+.RE
+.RS 2
+.TP 2
+*
+\fIw\fR\& means that a warning is sent to the \fIerror_logger\fR\& whenever a wrongly encoded filename is "skipped" in directory listings\&. This is the default\&.
+.LP
+.TP 2
+*
+\fIi\fR\& means that those wrongly encoded filenames are silently ignored\&.
+.LP
+.TP 2
+*
+\fIe\fR\& means that the API function returns an error whenever a wrongly encoded filename (or directory name) is encountered\&.
+.LP
+.RE
+
+.RS 2
+.LP
+Notice that \fB\fIfile:read_link/1\fR\&\fR\& always returns an error if the link points to an invalid filename\&.
+.RE
+.RS 2
+.LP
+For more information about Unicode filenames, see section \fBUnicode Filenames\fR\& in the STDLIB User\&'s Guide\&. Notice that this value also applies to command-line parameters and environment variables (see section \fB Unicode in Enviroment and Parameters\fR\& in the STDLIB User\&'s Guide)\&.
+.RE
+.TP 2
+.B
+\fI+fna[{w|i|e}]\fR\&:
+Selection between \fI+fnl\fR\& and \fI+fnu\fR\& is done based on the current locale settings in the OS\&. This means that if you have set your terminal for UTF-8 encoding, the filesystem is expected to use the same encoding for filenames\&. This is default on all operating systems, except MacOS X and Windows\&.
+.RS 2
+.LP
+The \fI+fna\fR\& switch can be followed by \fIw\fR\&, \fIi\fR\&, or \fIe\fR\&\&. This has effect if the locale settings cause the behavior of \fI+fnu\fR\& to be selected; see the description of \fI+fnu\fR\& above\&. If the locale settings cause the behavior of \fI+fnl\fR\& to be selected, then \fIw\fR\&, \fIi\fR\&, or \fIe\fR\& have no effect\&.
+.RE
+.RS 2
+.LP
+For more information about Unicode filenames, see section \fBUnicode Filenames\fR\& in the STDLIB User\&'s Guide\&. Notice that this value also applies to command-line parameters and environment variables (see section \fB Unicode in Enviroment and Parameters\fR\& in the STDLIB User\&'s Guide)\&.
+.RE
+.TP 2
+.B
+\fI+hms Size\fR\&:
+Sets the default heap size of processes to the size \fISize\fR\&\&.
+.TP 2
+.B
+\fI+hmbs Size\fR\&:
+Sets the default binary virtual heap size of processes to the size \fISize\fR\&\&.
+.TP 2
+.B
+\fI+hmax Size\fR\&:
+Sets the default maximum heap size of processes to the size \fISize\fR\&\&. Defaults to \fI0\fR\&, which means that no maximum heap size is used\&. For more information, see \fB\fIprocess_flag(max_heap_size, MaxHeapSize)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI+hmaxel true|false\fR\&:
+Sets whether to send an error logger message or not for processes reaching the maximum heap size\&. Defaults to \fItrue\fR\&\&. For more information, see \fB\fIprocess_flag(max_heap_size, MaxHeapSize)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI+hmaxk true|false\fR\&:
+Sets whether to kill processes reaching the maximum heap size or not\&. Default to \fItrue\fR\&\&. For more information, see \fB\fIprocess_flag(max_heap_size, MaxHeapSize)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI+hpds Size\fR\&:
+Sets the initial process dictionary size of processes to the size \fISize\fR\&\&.
+.TP 2
+.B
+\fI+hmqd off_heap|on_heap\fR\&:
+Sets the default value for process flag \fImessage_queue_data\fR\&\&. Defaults to \fIon_heap\fR\&\&. If \fI+hmqd\fR\& is not passed, \fIon_heap\fR\& will be the default\&. For more information, see \fB\fIprocess_flag(message_queue_data, MQD)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI+K true | false\fR\&:
+Enables or disables the kernel poll functionality if supported by the emulator\&. Defaults to \fIfalse\fR\& (disabled)\&. If the emulator does not support kernel poll, and flag \fI+K\fR\& is passed to the emulator, a warning is issued at startup\&.
+.TP 2
+.B
+\fI+l\fR\&:
+Enables autoload tracing, displaying information while loading code\&.
+.TP 2
+.B
+\fI+L\fR\&:
+Prevents loading information about source filenames and line numbers\&. This saves some memory, but exceptions do not contain information about the filenames and line numbers\&.
+.TP 2
+.B
+\fI+MFlag Value\fR\&:
+Memory allocator-specific flags\&. For more information, see \fB\fIerts_alloc(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI+pc Range\fR\&:
+Sets the range of characters that the system considers printable in heuristic detection of strings\&. This typically affects the shell, debugger, and \fIio:format\fR\& functions (when \fI~tp\fR\& is used in the format string)\&.
+.RS 2
+.LP
+Two values are supported for \fIRange\fR\&:
+.RE
+.RS 2
+.TP 2
+.B
+\fIlatin1\fR\&:
+The default\&. Only characters in the ISO Latin-1 range can be considered printable\&. This means that a character with a code point > 255 is never considered printable and that lists containing such characters are displayed as lists of integers rather than text strings by tools\&.
+.TP 2
+.B
+\fIunicode\fR\&:
+All printable Unicode characters are considered when determining if a list of integers is to be displayed in string syntax\&. This can give unexpected results if, for example, your font does not cover all Unicode characters\&.
+.RE
+.RS 2
+.LP
+See also \fB\fIio:printable_range/0\fR\&\fR\& in STDLIB\&.
+.RE
+.TP 2
+.B
+\fI+P Number\fR\&:
+Sets the maximum number of simultaneously existing processes for this system if a \fINumber\fR\& is passed as value\&. Valid range for \fINumber\fR\& is \fI[1024-134217727]\fR\&
+.RS 2
+.LP
+\fINOTE\fR\&: The actual maximum chosen may be much larger than the \fINumber\fR\& passed\&. Currently the runtime system often, but not always, chooses a value that is a power of 2\&. This might, however, be changed in the future\&. The actual value chosen can be checked by calling \fBerlang:system_info(process_limit)\fR\&\&.
+.RE
+.RS 2
+.LP
+The default value is \fI262144\fR\&
+.RE
+.TP 2
+.B
+\fI+Q Number\fR\&:
+Sets the maximum number of simultaneously existing ports for this system if a Number is passed as value\&. Valid range for \fINumber\fR\& is \fI[1024-134217727]\fR\&
+.RS 2
+.LP
+\fINOTE\fR\&: The actual maximum chosen may be much larger than the actual \fINumber\fR\& passed\&. Currently the runtime system often, but not always, chooses a value that is a power of 2\&. This might, however, be changed in the future\&. The actual value chosen can be checked by calling \fBerlang:system_info(port_limit)\fR\&\&.
+.RE
+.RS 2
+.LP
+The default value used is normally \fI65536\fR\&\&. However, if the runtime system is able to determine maximum amount of file descriptors that it is allowed to open and this value is larger than \fI65536\fR\&, the chosen value will increased to a value larger or equal to the maximum amount of file descriptors that can be opened\&.
+.RE
+.RS 2
+.LP
+On Windows the default value is set to \fI8196\fR\& because the normal OS limitations are set higher than most machines can handle\&.
+.RE
+.TP 2
+.B
+\fI+R ReleaseNumber\fR\&:
+Sets the compatibility mode\&.
+.RS 2
+.LP
+The distribution mechanism is not backward compatible by default\&. This flag sets the emulator in compatibility mode with an earlier Erlang/OTP release \fIReleaseNumber\fR\&\&. The release number must be in the range \fI<current release>-2\&.\&.<current release>\fR\&\&. This limits the emulator, making it possible for it to communicate with Erlang nodes (as well as C- and Java nodes) running that earlier release\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Ensure that all nodes (Erlang-, C-, and Java nodes) of a distributed Erlang system is of the same Erlang/OTP release, or from two different Erlang/OTP releases X and Y, where \fIall\fR\& Y nodes have compatibility mode X\&.
+
+.TP 2
+.B
+\fI+r\fR\&:
+Forces ETS memory block to be moved on realloc\&.
+.TP 2
+.B
+\fI+rg ReaderGroupsLimit\fR\&:
+Limits the number of reader groups used by read/write locks optimized for read operations in the Erlang runtime system\&. By default the reader groups limit is 64\&.
+.RS 2
+.LP
+When the number of schedulers is less than or equal to the reader groups limit, each scheduler has its own reader group\&. When the number of schedulers is larger than the reader groups limit, schedulers share reader groups\&. Shared reader groups degrade read lock and read unlock performance while many reader groups degrade write lock performance\&. So, the limit is a tradeoff between performance for read operations and performance for write operations\&. Each reader group consumes 64 byte in each read/write lock\&.
+.RE
+.RS 2
+.LP
+Notice that a runtime system using shared reader groups benefits from \fBbinding schedulers to logical processors\fR\&, as the reader groups are distributed better between schedulers\&.
+.RE
+.TP 2
+.B
+\fI+S Schedulers:SchedulerOnline\fR\&:
+Sets the number of scheduler threads to create and scheduler threads to set online when SMP support has been enabled\&. The maximum for both values is 1024\&. If the Erlang runtime system is able to determine the number of logical processors configured and logical processors available, \fISchedulers\fR\& defaults to logical processors configured, and \fISchedulersOnline\fR\& defaults to logical processors available; otherwise the default values are 1\&. \fISchedulers\fR\& can be omitted if \fI:SchedulerOnline\fR\& is not and conversely\&. The number of schedulers online can be changed at runtime through \fB\fIerlang:system_flag(schedulers_online, SchedulersOnline)\fR\&\fR\&\&.
+.RS 2
+.LP
+If \fISchedulers\fR\& or \fISchedulersOnline\fR\& is specified as a negative number, the value is subtracted from the default number of logical processors configured or logical processors available, respectively\&.
+.RE
+.RS 2
+.LP
+Specifying value \fI0\fR\& for \fISchedulers\fR\& or \fISchedulersOnline\fR\& resets the number of scheduler threads or scheduler threads online, respectively, to its default value\&.
+.RE
+.RS 2
+.LP
+This option is ignored if the emulator does not have SMP support enabled (see flag \fB\fI-smp\fR\&\fR\&)\&.
+.RE
+.TP 2
+.B
+\fI+SP SchedulersPercentage:SchedulersOnlinePercentage\fR\&:
+Similar to \fB\fI+S\fR\&\fR\& but uses percentages to set the number of scheduler threads to create, based on logical processors configured, and scheduler threads to set online, based on logical processors available, when SMP support has been enabled\&. Specified values must be > 0\&. For example, \fI+SP 50:25\fR\& sets the number of scheduler threads to 50% of the logical processors configured, and the number of scheduler threads online to 25% of the logical processors available\&. \fISchedulersPercentage\fR\& can be omitted if \fI:SchedulersOnlinePercentage\fR\& is not and conversely\&. The number of schedulers online can be changed at runtime through \fB\fIerlang:system_flag(schedulers_online, SchedulersOnline)\fR\&\fR\&\&.
+.RS 2
+.LP
+This option interacts with \fB\fI+S\fR\&\fR\& settings\&. For example, on a system with 8 logical cores configured and 8 logical cores available, the combination of the options \fI+S 4:4 +SP 50:25\fR\& (in either order) results in 2 scheduler threads (50% of 4) and 1 scheduler thread online (25% of 4)\&.
+.RE
+.RS 2
+.LP
+This option is ignored if the emulator does not have SMP support enabled (see flag \fB\fI-smp\fR\&\fR\&)\&.
+.RE
+.TP 2
+.B
+\fI+SDcpu DirtyCPUSchedulers:DirtyCPUSchedulersOnline\fR\&:
+Sets the number of dirty CPU scheduler threads to create and dirty CPU scheduler threads to set online when threading support has been enabled\&. The maximum for both values is 1024, and each value is further limited by the settings for normal schedulers:
+.RS 2
+.TP 2
+*
+The number of dirty CPU scheduler threads created cannot exceed the number of normal scheduler threads created\&.
+.LP
+.TP 2
+*
+The number of dirty CPU scheduler threads online cannot exceed the number of normal scheduler threads online\&.
+.LP
+.RE
+
+.RS 2
+.LP
+For details, see the \fB\fI+S\fR\&\fR\& and \fB\fI+SP\fR\&\fR\&\&. By default, the number of dirty CPU scheduler threads created equals the number of normal scheduler threads created, and the number of dirty CPU scheduler threads online equals the number of normal scheduler threads online\&. \fIDirtyCPUSchedulers\fR\& can be omitted if \fI:DirtyCPUSchedulersOnline\fR\& is not and conversely\&. The number of dirty CPU schedulers online can be changed at runtime through \fB\fIerlang:system_flag(dirty_cpu_schedulers_online, DirtyCPUSchedulersOnline)\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+The amount of dirty CPU schedulers is limited by the amount of normal schedulers in order to limit the effect on processes executing on ordinary schedulers\&. If the amount of dirty CPU schedulers was allowed to be unlimited, dirty CPU bound jobs would potentially starve normal jobs\&.
+.RE
+.RS 2
+.LP
+This option is ignored if the emulator does not have threading support enabled\&. \fIThis option is experimental\fR\& and is supported only if the emulator was configured and built with support for dirty schedulers enabled (it is disabled by default)\&.
+.RE
+.TP 2
+.B
+\fI+SDPcpu DirtyCPUSchedulersPercentage:DirtyCPUSchedulersOnlinePercentage\fR\&:
+Similar to \fB\fI+SDcpu\fR\&\fR\& but uses percentages to set the number of dirty CPU scheduler threads to create and the number of dirty CPU scheduler threads to set online when threading support has been enabled\&. Specified values must be > 0\&. For example, \fI+SDPcpu 50:25\fR\& sets the number of dirty CPU scheduler threads to 50% of the logical processors configured and the number of dirty CPU scheduler threads online to 25% of the logical processors available\&. \fIDirtyCPUSchedulersPercentage\fR\& can be omitted if \fI:DirtyCPUSchedulersOnlinePercentage\fR\& is not and conversely\&. The number of dirty CPU schedulers online can be changed at runtime through \fB\fIerlang:system_flag(dirty_cpu_schedulers_online, DirtyCPUSchedulersOnline)\fR\&\fR\&\&.
+.RS 2
+.LP
+This option interacts with \fB\fI+SDcpu\fR\&\fR\& settings\&. For example, on a system with 8 logical cores configured and 8 logical cores available, the combination of the options \fI+SDcpu 4:4 +SDPcpu 50:25\fR\& (in either order) results in 2 dirty CPU scheduler threads (50% of 4) and 1 dirty CPU scheduler thread online (25% of 4)\&.
+.RE
+.RS 2
+.LP
+This option is ignored if the emulator does not have threading support enabled\&. \fIThis option is experimental\fR\& and is supported only if the emulator was configured and built with support for dirty schedulers enabled (it is disabled by default)\&.
+.RE
+.TP 2
+.B
+\fI+SDio DirtyIOSchedulers\fR\&:
+Sets the number of dirty I/O scheduler threads to create when threading support has been enabled\&. Valid range is 0-1024\&. By default, the number of dirty I/O scheduler threads created is 10, same as the default number of threads in the \fBasync thread pool\fR\&\&.
+.RS 2
+.LP
+The amount of dirty IO schedulers is not limited by the amount of normal schedulers \fBlike the amount of dirty CPU schedulers\fR\&\&. This since only I/O bound work is expected to execute on dirty I/O schedulers\&. If the user should schedule CPU bound jobs on dirty I/O schedulers, these jobs might starve ordinary jobs executing on ordinary schedulers\&.
+.RE
+.RS 2
+.LP
+This option is ignored if the emulator does not have threading support enabled\&. \fIThis option is experimental\fR\& and is supported only if the emulator was configured and built with support for dirty schedulers enabled (it is disabled by default)\&.
+.RE
+.TP 2
+.B
+\fI+sFlag Value\fR\&:
+Scheduling specific flags\&.
+.RS 2
+.TP 2
+.B
+\fI+sbt BindType\fR\&:
+Sets scheduler bind type\&.
+.RS 2
+.LP
+Schedulers can also be bound using flag \fB\fI+stbt\fR\&\fR\&\&. The only difference between these two flags is how the following errors are handled:
+.RE
+.RS 2
+.TP 2
+*
+Binding of schedulers is not supported on the specific platform\&.
+.LP
+.TP 2
+*
+No available CPU topology\&. That is, the runtime system was not able to detect the CPU topology automatically, and no \fBuser-defined CPU topology\fR\& was set\&.
+.LP
+.RE
+
+.RS 2
+.LP
+If any of these errors occur when \fI+sbt\fR\& has been passed, the runtime system prints an error message, and refuses to start\&. If any of these errors occur when \fI+stbt\fR\& has been passed, the runtime system silently ignores the error, and start up using unbound schedulers\&.
+.RE
+.RS 2
+.LP
+Valid \fIBindType\fR\&s:
+.RE
+.RS 2
+.TP 2
+.B
+\fIu\fR\&:
+\fIunbound\fR\& - Schedulers are not bound to logical processors, that is, the operating system decides where the scheduler threads execute, and when to migrate them\&. This is the default\&. 
+.TP 2
+.B
+\fIns\fR\&:
+\fIno_spread\fR\& - Schedulers with close scheduler identifiers are bound as close as possible in hardware\&. 
+.TP 2
+.B
+\fIts\fR\&:
+\fIthread_spread\fR\& - Thread refers to hardware threads (such as Intel\&'s hyper-threads)\&. Schedulers with low scheduler identifiers, are bound to the first hardware thread of each core, then schedulers with higher scheduler identifiers are bound to the second hardware thread of each core,and so on\&. 
+.TP 2
+.B
+\fIps\fR\&:
+\fIprocessor_spread\fR\& - Schedulers are spread like \fIthread_spread\fR\&, but also over physical processor chips\&. 
+.TP 2
+.B
+\fIs\fR\&:
+\fIspread\fR\& - Schedulers are spread as much as possible\&. 
+.TP 2
+.B
+\fInnts\fR\&:
+\fIno_node_thread_spread\fR\& - Like \fIthread_spread\fR\&, but if multiple Non-Uniform Memory Access (NUMA) nodes exist, schedulers are spread over one NUMA node at a time, that is, all logical processors of one NUMA node are bound to schedulers in sequence\&. 
+.TP 2
+.B
+\fInnps\fR\&:
+\fIno_node_processor_spread\fR\& - Like \fIprocessor_spread\fR\&, but if multiple NUMA nodes exist, schedulers are spread over one NUMA node at a time, that is, all logical processors of one NUMA node are bound to schedulers in sequence\&. 
+.TP 2
+.B
+\fItnnps\fR\&:
+\fIthread_no_node_processor_spread\fR\& - A combination of \fIthread_spread\fR\&, and \fIno_node_processor_spread\fR\&\&. Schedulers are spread over hardware threads across NUMA nodes, but schedulers are only spread over processors internally in one NUMA node at a time\&. 
+.TP 2
+.B
+\fIdb\fR\&:
+\fIdefault_bind\fR\& - Binds schedulers the default way\&. Defaults to \fIthread_no_node_processor_spread\fR\& (which can change in the future)\&. 
+.RE
+.RS 2
+.LP
+Binding of schedulers is only supported on newer Linux, Solaris, FreeBSD, and Windows systems\&.
+.RE
+.RS 2
+.LP
+If no CPU topology is available when flag \fI+sbt\fR\& is processed and \fIBindType\fR\& is any other type than \fIu\fR\&, the runtime system fails to start\&. CPU topology can be defined using flag \fB\fI+sct\fR\&\fR\&\&. Notice that flag \fI+sct\fR\& can have to be passed before flag \fI+sbt\fR\& on the command line (if no CPU topology has been automatically detected)\&.
+.RE
+.RS 2
+.LP
+The runtime system does by default \fInot\fR\& bind schedulers to logical processors\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If the Erlang runtime system is the only operating system process that binds threads to logical processors, this improves the performance of the runtime system\&. However, if other operating system processes (for example another Erlang runtime system) also bind threads to logical processors, there can be a performance penalty instead\&. This performance penalty can sometimes be severe\&. If so, you are advised not to bind the schedulers\&.
+
+.RS 2
+.LP
+How schedulers are bound matters\&. For example, in situations when there are fewer running processes than schedulers online, the runtime system tries to migrate processes to schedulers with low scheduler identifiers\&. The more the schedulers are spread over the hardware, the more resources are available to the runtime system in such situations\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If a scheduler fails to bind, this is often silently ignored, as it is not always possible to verify valid logical processor identifiers\&. If an error is reported, it is reported to the \fIerror_logger\fR\&\&. If you want to verify that the schedulers have bound as requested, call \fB\fIerlang:system_info(scheduler_bindings)\fR\&\fR\&\&.
+
+.TP 2
+.B
+\fI+sbwt none|very_short|short|medium|long|very_long\fR\&:
+Sets scheduler busy wait threshold\&. Defaults to \fImedium\fR\&\&. The threshold determines how long schedulers are to busy wait when running out of work before going to sleep\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This flag can be removed or changed at any time without prior notice\&.
+
+.TP 2
+.B
+\fI+scl true|false\fR\&:
+Enables or disables scheduler compaction of load\&. By default scheduler compaction of load is enabled\&. When enabled, load balancing strives for a load distribution, which causes as many scheduler threads as possible to be fully loaded (that is, not run out of work)\&. This is accomplished by migrating load (for example, runnable processes) into a smaller set of schedulers when schedulers frequently run out of work\&. When disabled, the frequency with which schedulers run out of work is not taken into account by the load balancing logic\&.
+.RS 2
+.LP
+\fI+scl false\fR\& is similar to \fB\fI+sub true\fR\&\fR\&, but \fI+sub true\fR\& also balances scheduler utilization between schedulers\&.
+.RE
+.TP 2
+.B
+\fI+sct CpuTopology\fR\&:
+
+.RS 2
+.TP 2
+*
+\fI<Id> = integer(); when 0 =< <Id> =< 65535\fR\&
+.LP
+.TP 2
+*
+\fI<IdRange> = <Id>-<Id>\fR\&
+.LP
+.TP 2
+*
+\fI<IdOrIdRange> = <Id> | <IdRange>\fR\&
+.LP
+.TP 2
+*
+\fI<IdList> = <IdOrIdRange>,<IdOrIdRange> | <IdOrIdRange>\fR\&
+.LP
+.TP 2
+*
+\fI<LogicalIds> = L<IdList>\fR\&
+.LP
+.TP 2
+*
+\fI<ThreadIds> = T<IdList> | t<IdList>\fR\&
+.LP
+.TP 2
+*
+\fI<CoreIds> = C<IdList> | c<IdList>\fR\&
+.LP
+.TP 2
+*
+\fI<ProcessorIds> = P<IdList> | p<IdList>\fR\&
+.LP
+.TP 2
+*
+\fI<NodeIds> = N<IdList> | n<IdList>\fR\&
+.LP
+.TP 2
+*
+\fI<IdDefs> = <LogicalIds><ThreadIds><CoreIds><ProcessorIds><NodeIds> | <LogicalIds><ThreadIds><CoreIds><NodeIds><ProcessorIds>\fR\&
+.LP
+.TP 2
+*
+\fICpuTopology = <IdDefs>:<IdDefs> | <IdDefs>\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Sets a user-defined CPU topology\&. The user-defined CPU topology overrides any automatically detected CPU topology\&. The CPU topology is used when \fBbinding schedulers to logical processors\fR\&\&.
+.RE
+.RS 2
+.LP
+Uppercase letters signify real identifiers and lowercase letters signify fake identifiers only used for description of the topology\&. Identifiers passed as real identifiers can be used by the runtime system when trying to access specific hardware; if they are incorrect the behavior is undefined\&. Faked logical CPU identifiers are not accepted, as there is no point in defining the CPU topology without real logical CPU identifiers\&. Thread, core, processor, and node identifiers can be omitted\&. If omitted, the thread ID defaults to \fIt0\fR\&, the core ID defaults to \fIc0\fR\&, the processor ID defaults to \fIp0\fR\&, and the node ID is left undefined\&. Either each logical processor must belong to only one NUMA node, or no logical processors must belong to any NUMA nodes\&.
+.RE
+.RS 2
+.LP
+Both increasing and decreasing \fI<IdRange>\fR\&s are allowed\&.
+.RE
+.RS 2
+.LP
+NUMA node identifiers are system wide\&. That is, each NUMA node on the system must have a unique identifier\&. Processor identifiers are also system wide\&. Core identifiers are processor wide\&. Thread identifiers are core wide\&.
+.RE
+.RS 2
+.LP
+The order of the identifier types implies the hierarchy of the CPU topology\&. The valid orders are as follows:
+.RE
+.RS 2
+.TP 2
+*
+\fI<LogicalIds><ThreadIds><CoreIds><ProcessorIds><NodeIds>\fR\&, that is, thread is part of a core that is part of a processor, which is part of a NUMA node\&.
+.LP
+.TP 2
+*
+\fI<LogicalIds><ThreadIds><CoreIds><NodeIds><ProcessorIds>\fR\&, that is, thread is part of a core that is part of a NUMA node, which is part of a processor\&.
+.LP
+.RE
+
+.RS 2
+.LP
+A CPU topology can consist of both processor external, and processor internal NUMA nodes as long as each logical processor belongs to only one NUMA node\&. If \fI<ProcessorIds>\fR\& is omitted, its default position is before \fI<NodeIds>\fR\&\&. That is, the default is processor external NUMA nodes\&.
+.RE
+.RS 2
+.LP
+If a list of identifiers is used in an \fI<IdDefs>\fR\&:
+.RE
+.RS 2
+.TP 2
+*
+\fI<LogicalIds>\fR\& must be a list of identifiers\&.
+.LP
+.TP 2
+*
+At least one other identifier type besides \fI<LogicalIds>\fR\& must also have a list of identifiers\&.
+.LP
+.TP 2
+*
+All lists of identifiers must produce the same number of identifiers\&.
+.LP
+.RE
+
+.RS 2
+.LP
+A simple example\&. A single quad core processor can be described as follows:
+.RE
+.LP
+.nf
+
+% erl +sct L0-3c0-3
+1> erlang:system_info(cpu_topology)\&.
+[{processor,[{core,{logical,0}},
+             {core,{logical,1}},
+             {core,{logical,2}},
+             {core,{logical,3}}]}]
+.fi
+.RS 2
+.LP
+A more complicated example with two quad core processors, each processor in its own NUMA node\&. The ordering of logical processors is a bit weird\&. This to give a better example of identifier lists:
+.RE
+.LP
+.nf
+
+% erl +sct L0-1,3-2c0-3p0N0:L7,4,6-5c0-3p1N1
+1> erlang:system_info(cpu_topology)\&.
+[{node,[{processor,[{core,{logical,0}},
+                    {core,{logical,1}},
+                    {core,{logical,3}},
+                    {core,{logical,2}}]}]},
+ {node,[{processor,[{core,{logical,7}},
+                    {core,{logical,4}},
+                    {core,{logical,6}},
+                    {core,{logical,5}}]}]}]
+.fi
+.RS 2
+.LP
+As long as real identifiers are correct, it is OK to pass a CPU topology that is not a correct description of the CPU topology\&. When used with care this can be very useful\&. This to trick the emulator to bind its schedulers as you want\&. For example, if you want to run multiple Erlang runtime systems on the same machine, you want to reduce the number of schedulers used and manipulate the CPU topology so that they bind to different logical CPUs\&. An example, with two Erlang runtime systems on a quad core machine:
+.RE
+.LP
+.nf
+
+% erl +sct L0-3c0-3 +sbt db +S3:2 -detached -noinput -noshell -sname one
+% erl +sct L3-0c0-3 +sbt db +S3:2 -detached -noinput -noshell -sname two
+.fi
+.RS 2
+.LP
+In this example, each runtime system have two schedulers each online, and all schedulers online will run on different cores\&. If we change to one scheduler online on one runtime system, and three schedulers online on the other, all schedulers online will still run on different cores\&.
+.RE
+.RS 2
+.LP
+Notice that a faked CPU topology that does not reflect how the real CPU topology looks like is likely to decrease the performance of the runtime system\&.
+.RE
+.RS 2
+.LP
+For more information, see \fB\fIerlang:system_info(cpu_topology)\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fI+secio true|false\fR\&:
+Enables or disables eager check I/O scheduling\&. Defaults to \fItrue\fR\&\&. The default was changed from \fIfalse\fR\& as from ERTS 7\&.0\&. The behavior before this flag was introduced corresponds to \fI+secio false\fR\&\&.
+.RS 2
+.LP
+The flag effects when schedulers will check for I/O operations possible to execute, and when such I/O operations will execute\&. As the parameter name implies, schedulers are more eager to check for I/O when \fItrue\fR\& is passed\&. This, however, also implies that execution of outstanding I/O operation is not prioritized to the same extent as when \fIfalse\fR\& is passed\&.
+.RE
+.RS 2
+.LP
+\fB\fIerlang:system_info(eager_check_io)\fR\&\fR\& returns the value of this parameter used when starting the virtual machine\&.
+.RE
+.TP 2
+.B
+\fI+sfwi Interval\fR\&:
+Sets scheduler-forced wakeup interval\&. All run queues are scanned each \fIInterval\fR\& milliseconds\&. While there are sleeping schedulers in the system, one scheduler is woken for each non-empty run queue found\&. \fIInterval\fR\& default to \fI0\fR\&, meaning this feature is disabled\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This feature has been introduced as a temporary workaround for long-executing native code, and native code that does not bump reductions properly in OTP\&. When these bugs have be fixed, this flag will be removed\&.
+
+.TP 2
+.B
+\fI+spp Bool\fR\&:
+Sets default scheduler hint for port parallelism\&. If set to \fItrue\fR\&, the virtual machine schedules port tasks when it improves parallelism in the system\&. If set to \fIfalse\fR\&, the virtual machine tries to perform port tasks immediately, improving latency at the expense of parallelism\&. Default to \fIfalse\fR\&\&. The default used can be inspected in runtime by calling \fB\fIerlang:system_info(port_parallelism)\fR\&\fR\&\&. The default can be overridden on port creation by passing option \fB\fIparallelism\fR\&\fR\& to \fB\fIerlang:open_port/2\fR\&\fR\&\&. 
+.TP 2
+.B
+\fI+sss size\fR\&:
+Suggested stack size, in kilowords, for scheduler threads\&. Valid range is 4-8192 kilowords\&. The default stack size is OS-dependent\&.
+.TP 2
+.B
+\fI+stbt BindType\fR\&:
+Tries to set the scheduler bind type\&. The same as flag \fB\fI+sbt\fR\&\fR\& except how some errors are handled\&. For more information, see \fB\fI+sbt\fR\&\fR\&\&.
+.TP 2
+.B
+\fI+sub true|false\fR\&:
+Enables or disables \fB scheduler utilization\fR\& balancing of load\&. By default scheduler utilization balancing is disabled and instead scheduler compaction of load is enabled, which strives for a load distribution that causes as many scheduler threads as possible to be fully loaded (that is, not run out of work)\&. When scheduler utilization balancing is enabled, the system instead tries to balance scheduler utilization between schedulers\&. That is, strive for equal scheduler utilization on all schedulers\&.
+.RS 2
+.LP
+\fI+sub true\fR\& is only supported on systems where the runtime system detects and uses a monotonically increasing high-resolution clock\&. On other systems, the runtime system fails to start\&.
+.RE
+.RS 2
+.LP
+\fI+sub true\fR\& implies \fB\fI+scl false\fR\&\fR\&\&. The difference between \fI+sub true\fR\& and \fI+scl false\fR\& is that \fI+scl false\fR\& does not try to balance the scheduler utilization\&.
+.RE
+.TP 2
+.B
+\fI+swct very_eager|eager|medium|lazy|very_lazy\fR\&:
+Sets scheduler wake cleanup threshold\&. Defaults to \fImedium\fR\&\&. Controls how eager schedulers are to be requesting wakeup because of certain cleanup operations\&. When a lazy setting is used, more outstanding cleanup operations can be left undone while a scheduler is idling\&. When an eager setting is used, schedulers are more frequently woken, potentially increasing CPU-utilization\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This flag can be removed or changed at any time without prior notice\&.
+
+.TP 2
+.B
+\fI+sws default|legacy\fR\&:
+Sets scheduler wakeup strategy\&. Default strategy changed in ERTS 5\&.10 (Erlang/OTP R16A)\&. This strategy was known as \fIproposal\fR\& in Erlang/OTP R15\&. The \fIlegacy\fR\& strategy was used as default from R13 up to and including R15\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This flag can be removed or changed at any time without prior notice\&.
+
+.TP 2
+.B
+\fI+swt very_low|low|medium|high|very_high\fR\&:
+Sets scheduler wakeup threshold\&. Defaults to \fImedium\fR\&\&. The threshold determines when to wake up sleeping schedulers when more work than can be handled by currently awake schedulers exists\&. A low threshold causes earlier wakeups, and a high threshold causes later wakeups\&. Early wakeups distribute work over multiple schedulers faster, but work does more easily bounce between schedulers\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This flag can be removed or changed at any time without prior notice\&.
+
+.RE
+.TP 2
+.B
+\fI+t size\fR\&:
+Sets the maximum number of atoms the virtual machine can handle\&. Defaults to 1,048,576\&.
+.TP 2
+.B
+\fI+T Level\fR\&:
+Enables modified timing and sets the modified timing level\&. Valid range is 0-9\&. The timing of the runtime system is changed\&. A high level usually means a greater change than a low level\&. Changing the timing can be very useful for finding timing-related bugs\&.
+.RS 2
+.LP
+Modified timing affects the following:
+.RE
+.RS 2
+.TP 2
+.B
+Process spawning:
+A process calling \fIspawn\fR\&, \fIspawn_link\fR\&, \fIspawn_monitor\fR\&, or \fIspawn_opt\fR\& is scheduled out immediately after completing the call\&. When higher modified timing levels are used, the caller also sleeps for a while after it is scheduled out\&. 
+.TP 2
+.B
+Context reductions:
+The number of reductions a process is allowed to use before it is scheduled out is increased or reduced\&. 
+.TP 2
+.B
+Input reductions:
+The number of reductions performed before checking I/O is increased or reduced\&. 
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Performance suffers when modified timing is enabled\&. This flag is \fIonly\fR\& intended for testing and debugging\&.
+.LP
+\fIreturn_to\fR\& and \fIreturn_from\fR\& trace messages are lost when tracing on the spawn BIFs\&.
+.LP
+This flag can be removed or changed at any time without prior notice\&.
+
+.TP 2
+.B
+\fI+v\fR\&:
+Verbose\&.
+.TP 2
+.B
+\fI+V\fR\&:
+Makes the emulator print its version number\&.
+.TP 2
+.B
+\fI+W w | i | e\fR\&:
+Sets the mapping of warning messages for \fIerror_logger\fR\&\&. Messages sent to the error logger using one of the warning routines can be mapped to errors (\fI+W e\fR\&), warnings (\fI+W w\fR\&), or information reports (\fI+W i\fR\&)\&. Defaults to warnings\&. The current mapping can be retrieved using \fIerror_logger:warning_map/0\fR\&\&. For more information, see \fB\fIerror_logger:warning_map/0\fR\&\fR\& in Kernel\&.
+.TP 2
+.B
+\fI+zFlag Value\fR\&:
+Miscellaneous flags:
+.RS 2
+.TP 2
+.B
+\fI+zdbbl size\fR\&:
+Sets the distribution buffer busy limit (\fB\fIdist_buf_busy_limit\fR\&\fR\&) in kilobytes\&. Valid range is 1-2097151\&. Defaults to 1024\&.
+.RS 2
+.LP
+A larger buffer limit allows processes to buffer more outgoing messages over the distribution\&. When the buffer limit has been reached, sending processes will be suspended until the buffer size has shrunk\&. The buffer limit is per distribution channel\&. A higher limit gives lower latency and higher throughput at the expense of higher memory use\&.
+.RE
+.TP 2
+.B
+\fI+zdntgc time\fR\&:
+Sets the delayed node table garbage collection time (\fB\fIdelayed_node_table_gc\fR\&\fR\&) in seconds\&. Valid values are either \fIinfinity\fR\& or an integer in the range 0-100000000\&. Defaults to 60\&.
+.RS 2
+.LP
+Node table entries that are not referred linger in the table for at least the amount of time that this parameter determines\&. The lingering prevents repeated deletions and insertions in the tables from occurring\&.
+.RE
+.RE
+.RE
+.SH "ENVIRONMENT VARIABLES"
+
+.RS 2
+.TP 2
+.B
+\fIERL_CRASH_DUMP\fR\&:
+If the emulator needs to write a crash dump, the value of this variable is the filename of the crash dump file\&. If the variable is not set, the name of the crash dump file is \fIerl_crash\&.dump\fR\& in the current directory\&.
+.TP 2
+.B
+\fIERL_CRASH_DUMP_NICE\fR\&:
+\fIUnix systems\fR\&: If the emulator needs to write a crash dump, it uses the value of this variable to set the nice value for the process, thus lowering its priority\&. Valid range is 1-39 (higher values are replaced with 39)\&. The highest value, 39, gives the process the lowest priority\&.
+.TP 2
+.B
+\fIERL_CRASH_DUMP_SECONDS\fR\&:
+\fIUnix systems\fR\&: This variable gives the number of seconds that the emulator is allowed to spend writing a crash dump\&. When the given number of seconds have elapsed, the emulator is terminated by a \fISIGALRM\fR\& signal\&.
+.RS 2
+.LP
+If the variable is \fInot\fR\& set or set to \fI0\fR\& seconds (\fIERL_CRASH_DUMP_SECONDS=0\fR\&), the runtime system does not even attempt to write the crash dump file\&. It only terminates\&.
+.RE
+.RS 2
+.LP
+If the variable is set to negative value, such as \fIERL_CRASH_DUMP_SECONDS=-1\fR\&, the runtime system waits indefinitely for the crash dump file to be written\&.
+.RE
+.RS 2
+.LP
+This variable is used with \fB\fIheart(3)\fR\&\fR\& if \fIheart\fR\& is running:
+.RE
+.RS 2
+.TP 2
+.B
+\fIERL_CRASH_DUMP_SECONDS=0\fR\&:
+Suppresses the writing a crash dump file entirely, thus rebooting the runtime system immediately\&. This is the same as not setting the environment variable\&. 
+.TP 2
+.B
+\fIERL_CRASH_DUMP_SECONDS=-1\fR\&:
+Setting the environment variable to a negative value causes the termination of the runtime system to wait until the crash dump file has been completly written\&. 
+.TP 2
+.B
+\fIERL_CRASH_DUMP_SECONDS=S\fR\&:
+Waits for \fIS\fR\& seconds to complete the crash dump file and then terminates the runtime system\&. 
+.RE
+.TP 2
+.B
+\fIERL_CRASH_DUMP_BYTES\fR\&:
+This variable sets the maximum size of a crash dump file in bytes\&. The crash dump will be truncated if this limit is exceeded\&. If the variable is not set, no size limit is enforced by default\&. If the variable is set to \fI0\fR\&, the runtime system does not even attempt to write a crash dump file\&.
+.RS 2
+.LP
+Introduced in ERTS 8\&.1\&.2 (Erlang/OTP 19\&.2)\&.
+.RE
+.TP 2
+.B
+\fIERL_AFLAGS\fR\&:
+The content of this variable is added to the beginning of the command line for \fIerl\fR\&\&.
+.RS 2
+.LP
+Flag \fI-extra\fR\& is treated in a special way\&. Its scope ends at the end of the environment variable content\&. Arguments following an \fI-extra\fR\& flag are moved on the command line into section \fI-extra\fR\&, that is, the end of the command line following an \fI-extra\fR\& flag\&.
+.RE
+.TP 2
+.B
+\fIERL_ZFLAGS\fR\& and \fIERL_FLAGS\fR\&:
+The content of these variables are added to the end of the command line for \fIerl\fR\&\&.
+.RS 2
+.LP
+Flag \fI-extra\fR\& is treated in a special way\&. Its scope ends at the end of the environment variable content\&. Arguments following an \fI-extra\fR\& flag are moved on the command line into section \fI-extra\fR\&, that is, the end of the command line following an \fI-extra\fR\& flag\&.
+.RE
+.TP 2
+.B
+\fIERL_LIBS\fR\&:
+Contains a list of additional library directories that the code server searches for applications and adds to the code path; see \fB\fIcode(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fIERL_EPMD_ADDRESS\fR\&:
+Can be set to a comma-separated list of IP addresses, in which case the \fB\fIepmd\fR\&\fR\& daemon listens only on the specified address(es) and on the loopback address (which is implicitly added to the list if it has not been specified)\&.
+.TP 2
+.B
+\fIERL_EPMD_PORT\fR\&:
+Can contain the port number to use when communicating with \fB\fIepmd\fR\&\fR\&\&. The default port works fine in most cases\&. A different port can be specified to allow nodes of independent clusters to co-exist on the same host\&. All nodes in a cluster must use the same \fIepmd\fR\& port number\&.
+.RE
+.SH "SIGNALS"
+
+.LP
+On Unix systems, the Erlang runtime will interpret two types of signals\&.
+.RS 2
+.TP 2
+.B
+\fISIGUSR1\fR\&:
+A \fISIGUSR1\fR\& signal forces a crash dump\&.
+.TP 2
+.B
+\fISIGTERM\fR\&:
+A \fISIGTERM\fR\& will produce a \fIstop\fR\& message to the \fIinit\fR\& process\&. This is equivalent to a \fIinit:stop/0\fR\& call\&.
+.RS 2
+.LP
+Introduced in ERTS 8\&.3 (Erlang/OTP 19\&.3)
+.RE
+.RE
+.LP
+The signal \fISIGUSR2\fR\& is reserved for internal usage\&. No other signals are handled\&.
+.SH "CONFIGURATION"
+
+.LP
+The standard Erlang/OTP system can be reconfigured to change the default behavior on startup\&.
+.RS 2
+.TP 2
+.B
+The \fI\&.erlang\fR\& startup file:
+When Erlang/OTP is started, the system searches for a file named \fI\&.erlang\fR\& in the directory where Erlang/OTP is started\&. If not found, the user\&'s home directory is searched for an \fI\&.erlang\fR\& file\&.
+.RS 2
+.LP
+If an \fI\&.erlang\fR\& file is found, it is assumed to contain valid Erlang expressions\&. These expressions are evaluated as if they were input to the shell\&.
+.RE
+.RS 2
+.LP
+A typical \fI\&.erlang\fR\& file contains a set of search paths, for example:
+.RE
+.LP
+.nf
+
+io:format("executing user profile in HOME/.erlang\\n",[]).
+code:add_path("/home/calvin/test/ebin").
+code:add_path("/home/hobbes/bigappl-1.2/ebin").
+io:format(".erlang rc finished\\n",[]).    
+.fi
+.TP 2
+.B
+user_default and shell_default:
+Functions in the shell that are not prefixed by a module name are assumed to be functional objects (funs), built-in functions (BIFs), or belong to the module \fIuser_default\fR\& or \fIshell_default\fR\&\&.
+.RS 2
+.LP
+To include private shell commands, define them in a module \fIuser_default\fR\& and add the following argument as the first line in the \fI\&.erlang\fR\& file:
+.RE
+.LP
+.nf
+
+code:load_abs("..../user_default").    
+.fi
+.TP 2
+.B
+erl:
+If the contents of \fI\&.erlang\fR\& are changed and a private version of \fIuser_default\fR\& is defined, the Erlang/OTP environment can be customized\&. More powerful changes can be made by supplying command-line arguments in the startup script \fIerl\fR\&\&. For more information, see \fB\fIinit(3)\fR\&\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIepmd(1)\fR\&\fR\&, \fB\fIerl_prim_loader(3)\fR\&\fR\&, \fB\fIerts_alloc(3)\fR\&\fR\&, \fB\fIinit(3)\fR\&\fR\&, \fB\fIapplication(3)\fR\&\fR\&, \fB\fIauth(3)\fR\&\fR\&, \fB\fIcode(3)\fR\&\fR\&, \fB\fIerl_boot_server(3)\fR\&\fR\&, \fB\fIheart(3)\fR\&\fR\&, \fB\fInet_kernel(3)\fR\&\fR\&, \fB\fImake(3)\fR\&\fR\&

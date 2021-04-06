@@ -1,0 +1,2712 @@
+.TH cerl 3 "compiler 7.6.5" "" "Erlang Module Definition"
+.SH NAME
+cerl \- Core Erlang abstract syntax trees.
+.SH DESCRIPTION
+.LP
+Core Erlang abstract syntax trees\&.
+.LP
+This module defines an abstract data type for representing Core Erlang source code as syntax trees\&.
+.LP
+A recommended starting point for the first-time user is the documentation of the function type/1\&.
+.LP
+\fINOTES:\fR\&
+.LP
+This module deals with the composition and decomposition of \fIsyntactic\fR\& entities (as opposed to semantic ones); its purpose is to hide all direct references to the data structures used to represent these entities\&. With few exceptions, the functions in this module perform no semantic interpretation of their inputs, and in general, the user is assumed to pass type-correct arguments - if this is not done, the effects are not defined\&.
+.LP
+Currently, the internal data structure used is the same as the record-based data structures used traditionally in the Beam compiler\&.
+.LP
+The internal representations of abstract syntax trees are subject to change without notice, and should not be documented outside this module\&. Furthermore, we do not give any guarantees on how an abstract syntax tree may or may not be represented, \fIwith the following exceptions\fR\&: no syntax tree is represented by a single atom, such as \fInone\fR\&, by a list constructor \fI[X | Y]\fR\&, or by the empty list \fI[]\fR\&\&. This can be relied on when writing functions that operate on syntax trees\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+c_binary() = #c_binary{}:
+
+.TP 2
+.B
+c_bitstr() = #c_bitstr{}:
+
+.TP 2
+.B
+c_call() = #c_call{}:
+
+.TP 2
+.B
+c_clause() = #c_clause{}:
+
+.TP 2
+.B
+c_cons() = #c_cons{}:
+
+.TP 2
+.B
+c_fun() = #c_fun{}:
+
+.TP 2
+.B
+c_let() = #c_let{}:
+
+.TP 2
+.B
+c_literal() = #c_literal{}:
+
+.TP 2
+.B
+c_map() = #c_map{}:
+
+.TP 2
+.B
+c_map_pair() = #c_map_pair{}:
+
+.TP 2
+.B
+c_module() = #c_module{}:
+
+.TP 2
+.B
+c_tuple() = #c_tuple{}:
+
+.TP 2
+.B
+c_values() = #c_values{}:
+
+.TP 2
+.B
+c_var() = #c_var{}:
+
+.TP 2
+.B
+cerl():
+
+.RS 2
+.LP
+An abstract Core Erlang syntax tree\&.
+.RE
+.RS 2
+.LP
+Every abstract syntax tree has a \fItype\fR\&, given by the function type/1\&. In addition, each syntax tree has a list of \fIuser annotations\fR\& (cf\&. get_ann/1), which are included in the Core Erlang syntax\&.
+.RE
+.TP 2
+.B
+map_op() = #c_literal{val=assoc} | #c_literal{val=exact}:
+
+.TP 2
+.B
+var_name() = integer() | atom() | {atom(), integer()}:
+
+.RE
+.SH EXPORTS
+.LP
+.B
+abstract(Term::term()) -> cerl()
+.br
+.RS
+.LP
+Creates a syntax tree corresponding to an Erlang term\&. \fITerm\fR\& must be a literal term, i\&.e\&., one that can be represented as a source code literal\&. Thus, it may not contain a process identifier, port, reference, binary or function value as a subterm\&.
+.LP
+Note: This is a constant time operation\&.
+.LP
+\fISee also:\fR\& ann_abstract/2, concrete/1, is_literal/1, is_literal_term/1\&.
+.RE
+.LP
+.B
+add_ann(Annotations::[term()], Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Appends \fIAnnotations\fR\& to the list of user annotations of \fINode\fR\&\&.
+.LP
+Note: this is equivalent to \fIset_ann(Node, Annotations ++ get_ann(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& get_ann/1, set_ann/2\&.
+.RE
+.LP
+.B
+alias_pat(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the pattern subtree of an abstract pattern alias\&.
+.LP
+\fISee also:\fR\& c_alias/2\&.
+.RE
+.LP
+.B
+alias_var(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the variable subtree of an abstract pattern alias\&.
+.LP
+\fISee also:\fR\& c_alias/2\&.
+.RE
+.LP
+.B
+ann_abstract(Annotations::[term()], Term::term()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& abstract/1\&.
+.RE
+.LP
+.B
+ann_c_alias(As::[term()], Variable::cerl(), Pattern::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_alias/2\&.
+.RE
+.LP
+.B
+ann_c_apply(As::[term()], Operator::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_apply/2\&.
+.RE
+.LP
+.B
+ann_c_atom(As::[term()], Name) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom() | string()
+.br
+.RE
+.RE
+.RS
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+ann_c_binary(As::[term()], Segments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_binary/1\&.
+.RE
+.LP
+.B
+ann_c_bitstr(As::[term()], Value::cerl(), Size::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to ann_c_bitstr(As, Value, Size, abstract(1), Type, Flags)\&.
+.RE
+.LP
+.B
+ann_c_bitstr(As::[term()], Value::cerl(), Size::cerl(), Unit::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& ann_c_bitstr/5, c_bitstr/5\&.
+.RE
+.LP
+.B
+ann_c_call(As::[term()], Module::cerl(), Name::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_call/3\&.
+.RE
+.LP
+.B
+ann_c_case(As::[term()], Argument::cerl(), Clauses::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_case/2\&.
+.RE
+.LP
+.B
+ann_c_catch(As::[term()], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_catch/1\&.
+.RE
+.LP
+.B
+ann_c_char(As::[term()], Value::char()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_char/1\&.
+.RE
+.LP
+.B
+ann_c_clause(As::[term()], Patterns::[cerl()], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to ann_c_clause(As, Patterns, c_atom(true), Body)\&.
+.LP
+\fISee also:\fR\& c_clause/3\&.
+.RE
+.LP
+.B
+ann_c_clause(As::[term()], Patterns::[cerl()], Guard::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& ann_c_clause/3, c_clause/3\&.
+.RE
+.LP
+.B
+ann_c_cons(As::[term()], Head::cerl(), Tail::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_cons/2\&.
+.RE
+.LP
+.B
+ann_c_cons_skel(As::[term()], Head::cerl(), Tail::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_cons_skel/2\&.
+.RE
+.LP
+.B
+ann_c_float(As::[term()], Value::float()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_float/1\&.
+.RE
+.LP
+.B
+ann_c_fname(As::[term()], Name::atom(), Arity::arity()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to ann_c_var(As, {Atom, Arity})\&.
+.LP
+\fISee also:\fR\& c_fname/2\&.
+.RE
+.LP
+.B
+ann_c_fun(As::[term()], Variables::[cerl()], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_fun/2\&.
+.RE
+.LP
+.B
+ann_c_int(As::[term()], Value::integer()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_int/1\&.
+.RE
+.LP
+.B
+ann_c_let(As::[term()], Variables::[cerl()], Argument::cerl(), Body::cerl()) -> c_let()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_let/3\&.
+.RE
+.LP
+.B
+ann_c_letrec(As::[term()], Definitions::[{cerl(), cerl()}], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_letrec/2\&.
+.RE
+.LP
+.B
+ann_c_map(As::[term()], Es::[c_map_pair()]) -> c_map() | c_literal()
+.br
+.RS
+.RE
+.LP
+.B
+ann_c_map(As::[term()], C_literal::c_map() | c_literal(), Es::[c_map_pair()]) -> c_map() | c_literal()
+.br
+.RS
+.RE
+.LP
+.B
+ann_c_map_pair(As::[term()], Op::cerl(), K::cerl(), V::cerl()) -> c_map_pair()
+.br
+.RS
+.RE
+.LP
+.B
+ann_c_map_pattern(As::[term()], Pairs::[c_map_pair()]) -> c_map()
+.br
+.RS
+.RE
+.LP
+.B
+ann_c_module(As::[term()], Name::cerl(), Exports, Es::Definitions) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Exports = [cerl()]
+.br
+Definitions = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+\fISee also:\fR\& ann_c_module/5, c_module/3\&.
+.RE
+.LP
+.B
+ann_c_module(As::[term()], Name::cerl(), Exports, Attrs::Attributes, Es::Definitions) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Exports = [cerl()]
+.br
+Attributes = [{cerl(), cerl()}]
+.br
+Definitions = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+\fISee also:\fR\& ann_c_module/4, c_module/4\&.
+.RE
+.LP
+.B
+ann_c_nil(As::[term()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_nil/0\&.
+.RE
+.LP
+.B
+ann_c_primop(As::[term()], Name::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_primop/2\&.
+.RE
+.LP
+.B
+ann_c_receive(As::[term()], Clauses::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Equivalent to ann_c_receive(As, Clauses, c_atom(infinity), c_atom(true))\&.
+.LP
+\fISee also:\fR\& c_atom/1, c_receive/3\&.
+.RE
+.LP
+.B
+ann_c_receive(As::[term()], Clauses::[cerl()], Timeout::cerl(), Action::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& ann_c_receive/2, c_receive/3\&.
+.RE
+.LP
+.B
+ann_c_seq(As::[term()], Argument::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_seq/2\&.
+.RE
+.LP
+.B
+ann_c_string(As::[term()], Value::string()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_string/1\&.
+.RE
+.LP
+.B
+ann_c_try(As::[term()], Expression::cerl(), Variables::[cerl()], Body::cerl(), EVars::[cerl()], Handler::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+ann_c_tuple(As::[term()], Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_tuple/1\&.
+.RE
+.LP
+.B
+ann_c_tuple_skel(As::[term()], Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_tuple_skel/1\&.
+.RE
+.LP
+.B
+ann_c_values(As::[term()], Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_values/1\&.
+.RE
+.LP
+.B
+ann_c_var(As::[term()], Name::var_name()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_var/1\&.
+.RE
+.LP
+.B
+ann_make_data(As::[term()], Type::dtype(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& make_data/2\&.
+.RE
+.LP
+.B
+ann_make_data_skel(As::[term()], Type::dtype(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& make_data_skel/2\&.
+.RE
+.LP
+.B
+ann_make_list(As::[term()], List::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Equivalent to ann_make_list(As, List, none)\&.
+.RE
+.LP
+.B
+ann_make_list(As::[term()], List::[cerl()], Tail) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tail = cerl() | none
+.br
+.RE
+.RE
+.RS
+.LP
+\fISee also:\fR\& ann_make_list/2, make_list/2\&.
+.RE
+.LP
+.B
+ann_make_tree(As::[term()], Type::ctype(), Groups::[[cerl()]]) -> cerl()
+.br
+.RS
+.LP
+Creates a syntax tree with the given annotations, type and subtrees\&. See \fImake_tree/2\fR\& for details\&.
+.LP
+\fISee also:\fR\& make_tree/2\&.
+.RE
+.LP
+.B
+apply_args(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of argument subtrees of an abstract function application\&.
+.LP
+\fISee also:\fR\& apply_arity/1, c_apply/2\&.
+.RE
+.LP
+.B
+apply_arity(Node::cerl()) -> arity()
+.br
+.RS
+.LP
+Returns the number of argument subtrees of an abstract function application\&.
+.LP
+Note: this is equivalent to \fIlength(apply_args(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& apply_args/1, c_apply/2\&.
+.RE
+.LP
+.B
+apply_op(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the operator subtree of an abstract function application\&.
+.LP
+\fISee also:\fR\& c_apply/2\&.
+.RE
+.LP
+.B
+atom_lit(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the literal string represented by an abstract atom\&. This always includes surrounding single-quote characters\&.
+.LP
+Note that an abstract atom may have several literal representations, and that the representation yielded by this function is not fixed; e\&.g\&., \fIatom_lit(c_atom("a\\012b"))\fR\& could yield the string \fI"\\\&'a\\\\nb\\\&'"\fR\&\&.
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+atom_name(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the printname of an abstract atom\&.
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+atom_val(Node::cerl()) -> atom()
+.br
+.RS
+.LP
+Returns the value represented by an abstract atom\&.
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+binary_segments(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of segment subtrees of an abstract binary-template\&.
+.LP
+\fISee also:\fR\& c_binary/1, c_bitstr/5\&.
+.RE
+.LP
+.B
+bitstr_bitsize(Node::cerl()) -> any | all | utf | integer()
+.br
+.RS
+.LP
+Returns the total size in bits of an abstract bit-string template\&. If the size field is an integer literal, the result is the product of the size and unit values; if the size field is the atom literal \fIall\fR\&, the atom \fIall\fR\& is returned\&. If the size is not a literal, the atom \fIany\fR\& is returned\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+bitstr_flags(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the flags subtree of an abstract bit-string template\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+bitstr_size(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the size subtree of an abstract bit-string template\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+bitstr_type(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the type subtree of an abstract bit-string template\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+bitstr_unit(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the unit subtree of an abstract bit-string template\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+bitstr_val(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the value subtree of an abstract bit-string template\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+c_alias(Variable::cerl(), Pattern::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract pattern alias\&. The result represents "\fIVariable = Pattern\fR\&"\&.
+.LP
+\fISee also:\fR\& alias_pat/1, alias_var/1, ann_c_alias/3, c_clause/3, is_c_alias/1, update_c_alias/3\&.
+.RE
+.LP
+.B
+c_apply(Operator::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract function application\&. If \fIArguments\fR\& is \fI[A1, \&.\&.\&., An]\fR\&, the result represents "\fIapply Operator(A1, \&.\&.\&., An)\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_c_apply/3, apply_args/1, apply_arity/1, apply_op/1, c_call/3, c_primop/2, is_c_apply/1, update_c_apply/3\&.
+.RE
+.LP
+.B
+c_atom(Name) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom() | string()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an abstract atom literal\&. The print name of the atom is the character sequence represented by \fIName\fR\&\&.
+.LP
+Note: passing a string as argument to this function causes a corresponding atom to be created for the internal representation\&.
+.LP
+\fISee also:\fR\& ann_c_atom/2, atom_lit/1, atom_name/1, atom_val/1, is_c_atom/1\&.
+.RE
+.LP
+.B
+c_binary(Segments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract binary-template\&. A binary object is in this context a sequence of an arbitrary number of bits\&. (The number of bits used to be evenly divisible by 8, but after the introduction of bit strings in the Erlang language, the choice was made to use the binary template for all bit strings\&.) It is specified by zero or more bit-string template \fIsegments\fR\& of arbitrary lengths (in number of bits)\&. If \fISegments\fR\& is \fI[S1, \&.\&.\&., Sn]\fR\&, the result represents "\fI#{S1, \&.\&.\&., Sn}#\fR\&"\&. All the \fISi\fR\& must have type \fIbitstr\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_binary/2, binary_segments/1, c_bitstr/5, is_c_binary/1, update_c_binary/2\&.
+.RE
+.LP
+.B
+c_bitstr(Value::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to c_bitstr(Value, abstract(all), abstract(1), Type, Flags)\&.
+.RE
+.LP
+.B
+c_bitstr(Value::cerl(), Size::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to c_bitstr(Value, Size, abstract(1), Type, Flags)\&.
+.RE
+.LP
+.B
+c_bitstr(Value::cerl(), Size::cerl(), Unit::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract bit-string template\&. These can only occur as components of an abstract binary-template (see c_binary/1)\&. The result represents "\fI#<Value>(Size, Unit, Type, Flags)\fR\&", where \fIUnit\fR\& must represent a positive integer constant, \fIType\fR\& must represent a constant atom (one of \fI\&'integer\&'\fR\&, \fI\&'float\&'\fR\&, or \fI\&'binary\&'\fR\&), and \fIFlags\fR\& must represent a constant list \fI"[F1, \&.\&.\&., Fn]"\fR\& where all the \fIFi\fR\& are atoms\&.
+.LP
+\fISee also:\fR\& ann_c_bitstr/6, bitstr_flags/1, bitstr_size/1, bitstr_type/1, bitstr_unit/1, bitstr_val/1, c_binary/1, is_c_bitstr/1, update_c_bitstr/6\&.
+.RE
+.LP
+.B
+c_call(Module::cerl(), Name::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract inter-module call\&. If \fIArguments\fR\& is \fI[A1, \&.\&.\&., An]\fR\&, the result represents "\fIcall Module:Name(A1, \&.\&.\&., An)\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_c_call/4, c_apply/2, c_primop/2, call_args/1, call_arity/1, call_module/1, call_name/1, is_c_call/1, update_c_call/4\&.
+.RE
+.LP
+.B
+c_case(Argument::cerl(), Clauses::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract case-expression\&. If \fIClauses\fR\& is \fI[C1, \&.\&.\&., Cn]\fR\&, the result represents "\fIcase Argument of C1 \&.\&.\&. Cn end\fR\&"\&. \fIClauses\fR\& must not be empty\&.
+.LP
+\fISee also:\fR\& ann_c_case/3, c_clause/3, case_arg/1, case_arity/1, case_clauses/1, is_c_case/1, update_c_case/3\&.
+.RE
+.LP
+.B
+c_catch(Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract catch-expression\&. The result represents "\fIcatch Body\fR\&"\&.
+.LP
+Note: catch-expressions can be rewritten as try-expressions, and will eventually be removed from Core Erlang\&.
+.LP
+\fISee also:\fR\& ann_c_catch/2, c_try/5, catch_body/1, is_c_catch/1, update_c_catch/2\&.
+.RE
+.LP
+.B
+c_char(Value) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Value = char() | integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an abstract character literal\&. If the local implementation of Erlang defines \fIchar()\fR\& as a subset of \fIinteger()\fR\&, this function is equivalent to \fIc_int/1\fR\&\&. Otherwise, if the given value is an integer, it will be converted to the character with the corresponding code\&. The lexical representation of a character is "\fI$Char\fR\&", where \fIChar\fR\& is a single printing character or an escape sequence\&.
+.LP
+\fISee also:\fR\& ann_c_char/2, c_int/1, c_string/1, char_lit/1, char_val/1, is_c_char/1, is_print_char/1\&.
+.RE
+.LP
+.B
+c_clause(Patterns::[cerl()], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to c_clause(Patterns, c_atom(true), Body)\&.
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+c_clause(Patterns::[cerl()], Guard::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an an abstract clause\&. If \fIPatterns\fR\& is \fI[P1, \&.\&.\&., Pn]\fR\&, the result represents "\fI<P1, \&.\&.\&., Pn> when Guard -> Body\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_c_clause/4, c_case/2, c_clause/2, c_receive/3, clause_arity/1, clause_body/1, clause_guard/1, clause_pats/1, clause_vars/1, is_c_clause/1, update_c_clause/4\&.
+.RE
+.LP
+.B
+c_cons(Head::cerl(), Tail::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract list constructor\&. The result represents "\fI[Head | Tail]\fR\&"\&. Note that if both \fIHead\fR\& and \fITail\fR\& have type \fIliteral\fR\&, then the result will also have type \fIliteral\fR\&, and annotations on \fIHead\fR\& and \fITail\fR\& are lost\&.
+.LP
+Recall that in Erlang, the tail element of a list constructor is not necessarily a list\&.
+.LP
+\fISee also:\fR\& ann_c_cons/3, c_cons_skel/2, c_nil/0, cons_hd/1, cons_tl/1, is_c_cons/1, is_c_list/1, list_elements/1, list_length/1, make_list/2, update_c_cons/3\&.
+.RE
+.LP
+.B
+c_cons_skel(Head::cerl(), Tail::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract list constructor skeleton\&. Does not fold constant literals, i\&.e\&., the result always has type \fIcons\fR\&, representing "\fI[Head | Tail]\fR\&"\&.
+.LP
+This function is occasionally useful when it is necessary to have annotations on the subnodes of a list constructor node, even when the subnodes are constant literals\&. Note however that \fIis_literal/1\fR\& will yield \fIfalse\fR\& and \fIconcrete/1\fR\& will fail if passed the result from this function\&.
+.LP
+\fIfold_literal/1\fR\& can be used to revert a node to the normal-form representation\&.
+.LP
+\fISee also:\fR\& ann_c_cons_skel/3, c_cons/2, c_nil/0, concrete/1, fold_literal/1, is_c_cons/1, is_c_list/1, is_literal/1, update_c_cons_skel/3\&.
+.RE
+.LP
+.B
+c_float(Value::float()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract floating-point literal\&. The lexical representation is the decimal floating-point numeral of \fIValue\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_float/2, float_lit/1, float_val/1, is_c_float/1\&.
+.RE
+.LP
+.B
+c_fname(Name::atom(), Arity::arity()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to c_var({Name, Arity})\&.
+.LP
+\fISee also:\fR\& ann_c_fname/3, fname_arity/1, fname_id/1, is_c_fname/1, update_c_fname/3\&.
+.RE
+.LP
+.B
+c_fun(Variables::[cerl()], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract fun-expression\&. If \fIVariables\fR\& is \fI[V1, \&.\&.\&., Vn]\fR\&, the result represents "\fIfun (V1, \&.\&.\&., Vn) -> Body\fR\&"\&. All the \fIVi\fR\& must have type \fIvar\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_fun/3, fun_arity/1, fun_body/1, fun_vars/1, is_c_fun/1, update_c_fun/3\&.
+.RE
+.LP
+.B
+c_int(Value::integer()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract integer literal\&. The lexical representation is the canonical decimal numeral of \fIValue\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_int/2, c_char/1, int_lit/1, int_val/1, is_c_int/1\&.
+.RE
+.LP
+.B
+c_let(Variables::[cerl()], Argument::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract let-expression\&. If \fIVariables\fR\& is \fI[V1, \&.\&.\&., Vn]\fR\&, the result represents "\fIlet <V1, \&.\&.\&., Vn> = Argument in Body\fR\&"\&. All the \fIVi\fR\& must have type \fIvar\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_let/4, is_c_let/1, let_arg/1, let_arity/1, let_body/1, let_vars/1, update_c_let/4\&.
+.RE
+.LP
+.B
+c_letrec(Definitions::[{cerl(), cerl()}], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract letrec-expression\&. If \fIDefinitions\fR\& is \fI[{V1, F1}, \&.\&.\&., {Vn, Fn}]\fR\&, the result represents "\fIletrec V1 = F1 \&.\&.\&. Vn = Fn in Body\fR\&\&. All the \fIVi\fR\& must have type \fIvar\fR\& and represent function names\&. All the \fIFi\fR\& must have type \fI\&'fun\&'\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_letrec/3, is_c_letrec/1, letrec_body/1, letrec_defs/1, letrec_vars/1, update_c_letrec/3\&.
+.RE
+.LP
+.B
+c_map(Pairs::[c_map_pair()]) -> c_map()
+.br
+.RS
+.RE
+.LP
+.B
+c_map_pair(Key::cerl(), Val::cerl()) -> c_map_pair()
+.br
+.RS
+.RE
+.LP
+.B
+c_map_pair_exact(Key::cerl(), Val::cerl()) -> c_map_pair()
+.br
+.RS
+.RE
+.LP
+.B
+c_map_pattern(Pairs::[c_map_pair()]) -> c_map()
+.br
+.RS
+.RE
+.LP
+.B
+c_module(Name::cerl(), Exports, Es::Definitions) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Exports = [cerl()]
+.br
+Definitions = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to c_module(Name, Exports, [], Definitions)\&.
+.RE
+.LP
+.B
+c_module(Name::cerl(), Exports, Attrs::Attributes, Es::Definitions) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Exports = [cerl()]
+.br
+Attributes = [{cerl(), cerl()}]
+.br
+Definitions = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an abstract module definition\&. The result represents
+.LP
+.nf
+
+    module Name [E1, ..., Ek]
+      attributes [K1 = T1, ...,
+                  Km = Tm]
+      V1 = F1
+      ...
+      Vn = Fn
+    end
+.fi
+.LP
+
+.LP
+if \fIExports\fR\& = \fI[E1, \&.\&.\&., Ek]\fR\&, \fIAttributes\fR\& = \fI[{K1, T1}, \&.\&.\&., {Km, Tm}]\fR\&, and \fIDefinitions\fR\& = \fI[{V1, F1}, \&.\&.\&., {Vn, Fn}]\fR\&\&.
+.LP
+\fIName\fR\& and all the \fIKi\fR\& must be atom literals, and all the \fITi\fR\& must be constant literals\&. All the \fIVi\fR\& and \fIEi\fR\& must have type \fIvar\fR\& and represent function names\&. All the \fIFi\fR\& must have type \fI\&'fun\&'\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_module/4, ann_c_module/5, c_atom/1, c_fun/2, c_module/3, c_var/1, is_literal/1, module_attrs/1, module_defs/1, module_exports/1, module_name/1, module_vars/1, update_c_module/5\&.
+.RE
+.LP
+.B
+c_nil() -> cerl()
+.br
+.RS
+.LP
+Creates an abstract empty list\&. The result represents "\fI[]\fR\&"\&. The empty list is traditionally called "nil"\&.
+.LP
+\fISee also:\fR\& ann_c_nil/1, c_cons/2, is_c_list/1\&.
+.RE
+.LP
+.B
+c_primop(Name::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract primitive operation call\&. If \fIArguments\fR\& is \fI[A1, \&.\&.\&., An]\fR\&, the result represents "\fIprimop Name(A1, \&.\&.\&., An)\fR\&"\&. \fIName\fR\& must be an atom literal\&.
+.LP
+\fISee also:\fR\& ann_c_primop/3, c_apply/2, c_call/3, is_c_primop/1, primop_args/1, primop_arity/1, primop_name/1, update_c_primop/3\&.
+.RE
+.LP
+.B
+c_receive(Clauses::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Equivalent to c_receive(Clauses, c_atom(infinity), c_atom(true))\&.
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+c_receive(Clauses::[cerl()], Timeout::cerl(), Action::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract receive-expression\&. If \fIClauses\fR\& is \fI[C1, \&.\&.\&., Cn]\fR\&, the result represents "\fIreceive C1 \&.\&.\&. Cn after Timeout -> Action end\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_c_receive/4, c_receive/1, is_c_receive/1, receive_action/1, receive_clauses/1, receive_timeout/1, update_c_receive/4\&.
+.RE
+.LP
+.B
+c_seq(Argument::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract sequencing expression\&. The result represents "\fIdo Argument Body\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_c_seq/3, is_c_seq/1, seq_arg/1, seq_body/1, update_c_seq/3\&.
+.RE
+.LP
+.B
+c_string(Value::string()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract string literal\&. Equivalent to creating an abstract list of the corresponding character literals (cf\&. \fIis_c_string/1\fR\&), but is typically more efficient\&. The lexical representation of a string is "\fI"Chars"\fR\&", where \fIChars\fR\& is a sequence of printing characters or spaces\&.
+.LP
+\fISee also:\fR\& ann_c_string/2, c_char/1, is_c_string/1, is_print_string/1, string_lit/1, string_val/1\&.
+.RE
+.LP
+.B
+c_try(Argument::cerl(), Variables::[cerl()], Body::cerl(), ExceptionVars::[cerl()], Handler::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract try-expression\&. If \fIVariables\fR\& is \fI[V1, \&.\&.\&., Vn]\fR\& and \fIExceptionVars\fR\& is \fI[X1, \&.\&.\&., Xm]\fR\&, the result represents "\fItry Argument of <V1, \&.\&.\&., Vn> -> Body catch <X1, \&.\&.\&., Xm> -> Handler\fR\&"\&. All the \fIVi\fR\& and \fIXi\fR\& must have type \fIvar\fR\&\&.
+.LP
+\fISee also:\fR\& ann_c_try/6, c_catch/1, is_c_try/1, try_arg/1, try_body/1, try_vars/1, update_c_try/6\&.
+.RE
+.LP
+.B
+c_tuple(Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract tuple\&. If \fIElements\fR\& is \fI[E1, \&.\&.\&., En]\fR\&, the result represents "\fI{E1, \&.\&.\&., En}\fR\&"\&. Note that if all nodes in \fIElements\fR\& have type \fIliteral\fR\&, or if \fIElements\fR\& is empty, then the result will also have type \fIliteral\fR\& and annotations on nodes in \fIElements\fR\& are lost\&.
+.LP
+Recall that Erlang has distinct 1-tuples, i\&.e\&., \fI{X}\fR\& is always distinct from \fIX\fR\& itself\&.
+.LP
+\fISee also:\fR\& ann_c_tuple/2, c_tuple_skel/1, is_c_tuple/1, tuple_arity/1, tuple_es/1, update_c_tuple/2\&.
+.RE
+.LP
+.B
+c_tuple_skel(Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract tuple skeleton\&. Does not fold constant literals, i\&.e\&., the result always has type \fItuple\fR\&, representing "\fI{E1, \&.\&.\&., En}\fR\&", if \fIElements\fR\& is \fI[E1, \&.\&.\&., En]\fR\&\&.
+.LP
+This function is occasionally useful when it is necessary to have annotations on the subnodes of a tuple node, even when all the subnodes are constant literals\&. Note however that \fIis_literal/1\fR\& will yield \fIfalse\fR\& and \fIconcrete/1\fR\& will fail if passed the result from this function\&.
+.LP
+\fIfold_literal/1\fR\& can be used to revert a node to the normal-form representation\&.
+.LP
+\fISee also:\fR\& ann_c_tuple_skel/2, c_tuple/1, concrete/1, fold_literal/1, is_c_tuple/1, is_literal/1, tuple_es/1, update_c_tuple_skel/2\&.
+.RE
+.LP
+.B
+c_values(Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates an abstract value list\&. If \fIElements\fR\& is \fI[E1, \&.\&.\&., En]\fR\&, the result represents "\fI<E1, \&.\&.\&., En>\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_c_values/2, is_c_values/1, update_c_values/2, values_arity/1, values_es/1\&.
+.RE
+.LP
+.B
+c_var(Name::var_name()) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+var_name() = integer() | atom() | {atom(), integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an abstract variable\&. A variable is identified by its name, given by the \fIName\fR\& parameter\&.
+.LP
+If a name is given by a single atom, it should either be a "simple" atom which does not need to be single-quoted in Erlang, or otherwise its print name should correspond to a proper Erlang variable, i\&.e\&., begin with an uppercase character or an underscore\&. Names on the form \fI{A, N}\fR\& represent function name variables "\fIA/N\fR\&"; these are special variables which may be bound only in the function definitions of a module or a \fIletrec\fR\&\&. They may not be bound in \fIlet\fR\& expressions and cannot occur in clause patterns\&. The atom \fIA\fR\& in a function name may be any atom; the integer \fIN\fR\& must be nonnegative\&. The functions \fIc_fname/2\fR\& etc\&. are utilities for handling function name variables\&.
+.LP
+When printing variable names, they must have the form of proper Core Erlang variables and function names\&. E\&.g\&., a name represented by an integer such as \fI42\fR\& could be formatted as "\fI_42\fR\&", an atom \fI\&'Xxx\&'\fR\& simply as "\fIXxx\fR\&", and an atom \fIfoo\fR\& as "\fI_foo\fR\&"\&. However, one must assure that any two valid distinct names are never mapped to the same strings\&. Tuples such as \fI{foo, 2}\fR\& representing function names can simply by formatted as "\fI\&'foo\&'/2\fR\&", with no risk of conflicts\&.
+.LP
+\fISee also:\fR\& ann_c_var/2, c_fname/2, c_letrec/2, c_module/4, is_c_var/1, update_c_var/2, var_name/1\&.
+.RE
+.LP
+.B
+call_args(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of argument subtrees of an abstract inter-module call\&.
+.LP
+\fISee also:\fR\& c_call/3, call_arity/1\&.
+.RE
+.LP
+.B
+call_arity(Node::cerl()) -> arity()
+.br
+.RS
+.LP
+Returns the number of argument subtrees of an abstract inter-module call\&.
+.LP
+Note: this is equivalent to \fIlength(call_args(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_call/3, call_args/1\&.
+.RE
+.LP
+.B
+call_module(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the module subtree of an abstract inter-module call\&.
+.LP
+\fISee also:\fR\& c_call/3\&.
+.RE
+.LP
+.B
+call_name(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the name subtree of an abstract inter-module call\&.
+.LP
+\fISee also:\fR\& c_call/3\&.
+.RE
+.LP
+.B
+case_arg(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the argument subtree of an abstract case-expression\&.
+.LP
+\fISee also:\fR\& c_case/2\&.
+.RE
+.LP
+.B
+case_arity(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Equivalent to \fIclause_arity(hd(case_clauses(Node)))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_case/2, case_clauses/1, clause_arity/1\&.
+.RE
+.LP
+.B
+case_clauses(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of clause subtrees of an abstract case-expression\&.
+.LP
+\fISee also:\fR\& c_case/2, case_arity/1\&.
+.RE
+.LP
+.B
+catch_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the body subtree of an abstract catch-expression\&.
+.LP
+\fISee also:\fR\& c_catch/1\&.
+.RE
+.LP
+.B
+char_lit(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the literal string represented by an abstract character\&. This includes a leading \fI$\fR\& character\&. Currently, all characters that are not in the set of ISO 8859-1 (Latin-1) "printing" characters will be escaped\&.
+.LP
+\fISee also:\fR\& c_char/1\&.
+.RE
+.LP
+.B
+char_val(Node::cerl()) -> char()
+.br
+.RS
+.LP
+Returns the value represented by an abstract character literal\&.
+.LP
+\fISee also:\fR\& c_char/1\&.
+.RE
+.LP
+.B
+clause_arity(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the number of pattern subtrees of an abstract clause\&.
+.LP
+Note: this is equivalent to \fIlength(clause_pats(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_clause/3, clause_pats/1\&.
+.RE
+.LP
+.B
+clause_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the body subtree of an abstract clause\&.
+.LP
+\fISee also:\fR\& c_clause/3\&.
+.RE
+.LP
+.B
+clause_guard(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the guard subtree of an abstract clause\&.
+.LP
+\fISee also:\fR\& c_clause/3\&.
+.RE
+.LP
+.B
+clause_pats(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of pattern subtrees of an abstract clause\&.
+.LP
+\fISee also:\fR\& c_clause/3, clause_arity/1\&.
+.RE
+.LP
+.B
+clause_vars(Clause::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of all abstract variables in the patterns of an abstract clause\&. The order of listing is not defined\&.
+.LP
+\fISee also:\fR\& c_clause/3, pat_list_vars/1\&.
+.RE
+.LP
+.B
+concrete(Node::cerl()) -> term()
+.br
+.RS
+.LP
+Returns the Erlang term represented by a syntax tree\&. An exception is thrown if \fINode\fR\& does not represent a literal term\&.
+.LP
+Note: This is a constant time operation\&.
+.LP
+\fISee also:\fR\& abstract/1, is_literal/1\&.
+.RE
+.LP
+.B
+cons_hd(C_cons::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the head subtree of an abstract list constructor\&.
+.LP
+\fISee also:\fR\& c_cons/2\&.
+.RE
+.LP
+.B
+cons_tl(C_cons::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the tail subtree of an abstract list constructor\&.
+.LP
+Recall that the tail does not necessarily represent a proper list\&.
+.LP
+\fISee also:\fR\& c_cons/2\&.
+.RE
+.LP
+.B
+copy_ann(Source::cerl(), Target::cerl()) -> cerl()
+.br
+.RS
+.LP
+Copies the list of user annotations from \fISource\fR\& to \fITarget\fR\&\&.
+.LP
+Note: this is equivalent to \fIset_ann(Target, get_ann(Source))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& get_ann/1, set_ann/2\&.
+.RE
+.LP
+.B
+data_arity(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the number of subtrees of a data constructor node\&. This is equivalent to \fIlength(data_es(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& data_es/1, is_data/1\&.
+.RE
+.LP
+.B
+data_es(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of subtrees of a data constructor node\&. If the arity of the constructor is zero, the result is the empty list\&.
+.LP
+Note: if \fIdata_type(Node)\fR\& is \fIcons\fR\&, the number of subtrees is exactly two\&. If \fIdata_type(Node)\fR\& is \fI{atomic, Value}\fR\&, the number of subtrees is zero\&.
+.LP
+\fISee also:\fR\& data_arity/1, data_type/1, is_data/1, make_data/2\&.
+.RE
+.LP
+.B
+data_type(Node::cerl()) -> dtype()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+dtype() = cons | tuple | {atomic, Value}
+.br
+Value = integer() | float() | atom() | []
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a type descriptor for a data constructor node\&. (Cf\&. \fIis_data/1\fR\&\&.) This is mainly useful for comparing types and for constructing new nodes of the same type (cf\&. \fImake_data/2\fR\&)\&. If \fINode\fR\& represents an integer, floating-point number, atom or empty list, the result is \fI{atomic, Value}\fR\&, where \fIValue\fR\& is the value of \fIconcrete(Node)\fR\&, otherwise the result is either \fIcons\fR\& or \fItuple\fR\&\&.
+.LP
+Type descriptors can be compared for equality or order (in the Erlang term order), but remember that floating-point values should in general never be tested for equality\&.
+.LP
+\fISee also:\fR\& concrete/1, is_data/1, make_data/2, type/1\&.
+.RE
+.LP
+.B
+float_lit(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the numeral string represented by a floating-point literal node\&.
+.LP
+\fISee also:\fR\& c_float/1\&.
+.RE
+.LP
+.B
+float_val(Node::cerl()) -> float()
+.br
+.RS
+.LP
+Returns the value represented by a floating-point literal node\&.
+.LP
+\fISee also:\fR\& c_float/1\&.
+.RE
+.LP
+.B
+fname_arity(C_var::cerl()) -> arity()
+.br
+.RS
+.LP
+Returns the arity part of an abstract function name variable\&.
+.LP
+\fISee also:\fR\& c_fname/2, fname_id/1\&.
+.RE
+.LP
+.B
+fname_id(C_var::cerl()) -> atom()
+.br
+.RS
+.LP
+Returns the identifier part of an abstract function name variable\&.
+.LP
+\fISee also:\fR\& c_fname/2, fname_arity/1\&.
+.RE
+.LP
+.B
+fold_literal(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Assures that literals have a compact representation\&. This is occasionally useful if \fIc_cons_skel/2\fR\&, \fIc_tuple_skel/1\fR\& or \fIunfold_literal/1\fR\& were used in the construction of \fINode\fR\&, and you want to revert to the normal "folded" representation of literals\&. If \fINode\fR\& represents a tuple or list constructor, its elements are rewritten recursively, and the node is reconstructed using \fIc_cons/2\fR\& or \fIc_tuple/1\fR\&, respectively; otherwise, \fINode\fR\& is not changed\&.
+.LP
+\fISee also:\fR\& c_cons/2, c_cons_skel/2, c_tuple/1, c_tuple_skel/1, is_literal/1, unfold_literal/1\&.
+.RE
+.LP
+.B
+from_records(Tree::record(record_types())) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+record_types() = c_alias | c_apply | c_call | c_case | c_catch | c_clause | c_cons | c_fun | c_let | c_letrec | c_lit | c_module | c_primop | c_receive | c_seq | c_try | c_tuple | c_values | c_var
+.br
+.RE
+.RE
+.RS
+.LP
+Translates an explicit record representation to a corresponding abstract syntax tree\&. The records are defined in the file "\fIcore_parse\&.hrl\fR\&"\&.
+.LP
+\fISee also:\fR\& to_records/1, type/1\&.
+.RE
+.LP
+.B
+fun_arity(Node::cerl()) -> arity()
+.br
+.RS
+.LP
+Returns the number of parameter subtrees of an abstract fun-expression\&.
+.LP
+Note: this is equivalent to \fIlength(fun_vars(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_fun/2, fun_vars/1\&.
+.RE
+.LP
+.B
+fun_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the body subtree of an abstract fun-expression\&.
+.LP
+\fISee also:\fR\& c_fun/2\&.
+.RE
+.LP
+.B
+fun_vars(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of parameter subtrees of an abstract fun-expression\&.
+.LP
+\fISee also:\fR\& c_fun/2, fun_arity/1\&.
+.RE
+.LP
+.B
+get_ann(Node::cerl()) -> [term()]
+.br
+.RS
+.LP
+Returns the list of user annotations associated with a syntax tree node\&. For a newly created node, this is the empty list\&. The annotations may be any terms\&.
+.LP
+\fISee also:\fR\& set_ann/2\&.
+.RE
+.LP
+.B
+int_lit(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the numeral string represented by an integer literal node\&.
+.LP
+\fISee also:\fR\& c_int/1\&.
+.RE
+.LP
+.B
+int_val(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the value represented by an integer literal node\&.
+.LP
+\fISee also:\fR\& c_int/1\&.
+.RE
+.LP
+.B
+is_c_alias(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract pattern alias, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_alias/2\&.
+.RE
+.LP
+.B
+is_c_apply(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract function application, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_apply/2\&.
+.RE
+.LP
+.B
+is_c_atom(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& represents an atom literal, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_atom/1\&.
+.RE
+.LP
+.B
+is_c_binary(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract binary-template; otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_binary/1\&.
+.RE
+.LP
+.B
+is_c_bitstr(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract bit-string template; otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_bitstr/5\&.
+.RE
+.LP
+.B
+is_c_call(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract inter-module call expression; otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_call/3\&.
+.RE
+.LP
+.B
+is_c_case(C_case::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract case-expression; otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_case/2\&.
+.RE
+.LP
+.B
+is_c_catch(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract catch-expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_catch/1\&.
+.RE
+.LP
+.B
+is_c_char(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& may represent a character literal, otherwise \fIfalse\fR\&\&.
+.LP
+If the local implementation of Erlang defines \fIchar()\fR\& as a subset of \fIinteger()\fR\&, then \fIis_c_int(Node)\fR\& will also yield \fItrue\fR\&\&.
+.LP
+\fISee also:\fR\& c_char/1, is_print_char/1\&.
+.RE
+.LP
+.B
+is_c_clause(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract clause, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_clause/3\&.
+.RE
+.LP
+.B
+is_c_cons(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract list constructor, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.B
+is_c_float(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& represents a floating-point literal, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_float/1\&.
+.RE
+.LP
+.B
+is_c_fname(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract function name variable, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_fname/2, c_var/1, var_name/1\&.
+.RE
+.LP
+.B
+is_c_fun(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract fun-expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_fun/2\&.
+.RE
+.LP
+.B
+is_c_int(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& represents an integer literal, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_int/1\&.
+.RE
+.LP
+.B
+is_c_let(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract let-expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_let/3\&.
+.RE
+.LP
+.B
+is_c_letrec(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract letrec-expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_letrec/2\&.
+.RE
+.LP
+.B
+is_c_list(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& represents a proper list, otherwise \fIfalse\fR\&\&. A proper list is either the empty list \fI[]\fR\&, or a cons cell \fI[Head | Tail]\fR\&, where recursively \fITail\fR\& is a proper list\&.
+.LP
+Note: Because \fINode\fR\& is a syntax tree, the actual run-time values corresponding to its subtrees may often be partially or completely unknown\&. Thus, if \fINode\fR\& represents e\&.g\&. "\fI[\&.\&.\&. | Ns]\fR\&" (where \fINs\fR\& is a variable), then the function will return \fIfalse\fR\&, because it is not known whether \fINs\fR\& will be bound to a list at run-time\&. If \fINode\fR\& instead represents e\&.g\&. "\fI[1, 2, 3]\fR\&" or "\fI[A | []]\fR\&", then the function will return \fItrue\fR\&\&.
+.LP
+\fISee also:\fR\& c_cons/2, c_nil/0, list_elements/1, list_length/1\&.
+.RE
+.LP
+.B
+is_c_map(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract map constructor, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.B
+is_c_map_empty(C_map::c_map() | c_literal()) -> boolean()
+.br
+.RS
+.RE
+.LP
+.B
+is_c_map_pattern(C_map::c_map()) -> boolean()
+.br
+.RS
+.RE
+.LP
+.B
+is_c_module(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract module definition, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& type/1\&.
+.RE
+.LP
+.B
+is_c_nil(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract empty list, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.B
+is_c_primop(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract primitive operation call, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_primop/2\&.
+.RE
+.LP
+.B
+is_c_receive(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract receive-expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_receive/3\&.
+.RE
+.LP
+.B
+is_c_seq(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract sequencing expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_seq/2\&.
+.RE
+.LP
+.B
+is_c_string(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& may represent a string literal, otherwise \fIfalse\fR\&\&. Strings are defined as lists of characters; see \fIis_c_char/1\fR\& for details\&.
+.LP
+\fISee also:\fR\& c_string/1, is_c_char/1, is_print_string/1\&.
+.RE
+.LP
+.B
+is_c_try(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract try-expression, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+is_c_tuple(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract tuple, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_tuple/1\&.
+.RE
+.LP
+.B
+is_c_values(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract value list; otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_values/1\&.
+.RE
+.LP
+.B
+is_c_var(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is an abstract variable, otherwise \fIfalse\fR\&\&.
+.LP
+\fISee also:\fR\& c_var/1\&.
+.RE
+.LP
+.B
+is_data(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& represents a data constructor, otherwise \fIfalse\fR\&\&. Data constructors are cons cells, tuples, and atomic literals\&.
+.LP
+\fISee also:\fR\& data_arity/1, data_es/1, data_type/1\&.
+.RE
+.LP
+.B
+is_leaf(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& is a leaf node, otherwise \fIfalse\fR\&\&. The current leaf node types are \fIliteral\fR\& and \fIvar\fR\&\&.
+.LP
+Note: all literals (cf\&. \fIis_literal/1\fR\&) are leaf nodes, even if they represent structured (constant) values such as \fI{foo, [bar, baz]}\fR\&\&. Also note that variables are leaf nodes but not literals\&.
+.LP
+\fISee also:\fR\& is_literal/1, type/1\&.
+.RE
+.LP
+.B
+is_literal(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& represents a literal term, otherwise \fIfalse\fR\&\&. This function returns \fItrue\fR\& if and only if the value of \fIconcrete(Node)\fR\& is defined\&.
+.LP
+Note: This is a constant time operation\&.
+.LP
+\fISee also:\fR\& abstract/1, concrete/1, fold_literal/1\&.
+.RE
+.LP
+.B
+is_literal_term(Term::term()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fITerm\fR\& can be represented as a literal, otherwise \fIfalse\fR\&\&. This function takes time proportional to the size of \fITerm\fR\&\&.
+.LP
+\fISee also:\fR\& abstract/1\&.
+.RE
+.LP
+.B
+is_print_char(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& may represent a "printing" character, otherwise \fIfalse\fR\&\&. (Cf\&. \fIis_c_char/1\fR\&\&.) A "printing" character has either a given graphical representation, or a "named" escape sequence such as "\fI\\n\fR\&"\&. Currently, only ISO 8859-1 (Latin-1) character values are recognized\&.
+.LP
+\fISee also:\fR\& c_char/1, is_c_char/1\&.
+.RE
+.LP
+.B
+is_print_string(Node::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fINode\fR\& may represent a string literal containing only "printing" characters, otherwise \fIfalse\fR\&\&. See \fIis_c_string/1\fR\& and \fIis_print_char/1\fR\& for details\&. Currently, only ISO 8859-1 (Latin-1) character values are recognized\&.
+.LP
+\fISee also:\fR\& c_string/1, is_c_string/1, is_print_char/1\&.
+.RE
+.LP
+.B
+let_arg(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the argument subtree of an abstract let-expression\&.
+.LP
+\fISee also:\fR\& c_let/3\&.
+.RE
+.LP
+.B
+let_arity(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the number of left-hand side variables of an abstract let-expression\&.
+.LP
+Note: this is equivalent to \fIlength(let_vars(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_let/3, let_vars/1\&.
+.RE
+.LP
+.B
+let_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the body subtree of an abstract let-expression\&.
+.LP
+\fISee also:\fR\& c_let/3\&.
+.RE
+.LP
+.B
+let_vars(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of left-hand side variables of an abstract let-expression\&.
+.LP
+\fISee also:\fR\& c_let/3, let_arity/1\&.
+.RE
+.LP
+.B
+letrec_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the body subtree of an abstract letrec-expression\&.
+.LP
+\fISee also:\fR\& c_letrec/2\&.
+.RE
+.LP
+.B
+letrec_defs(Node::cerl()) -> [{cerl(), cerl()}]
+.br
+.RS
+.LP
+Returns the list of definitions of an abstract letrec-expression\&. If \fINode\fR\& represents "\fIletrec V1 = F1 \&.\&.\&. Vn = Fn in Body\fR\&", the returned value is \fI[{V1, F1}, \&.\&.\&., {Vn, Fn}]\fR\&\&.
+.LP
+\fISee also:\fR\& c_letrec/2\&.
+.RE
+.LP
+.B
+letrec_vars(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of left-hand side function variable subtrees of a letrec-expression\&. If \fINode\fR\& represents "\fIletrec V1 = F1 \&.\&.\&. Vn = Fn in Body\fR\&", the returned value is \fI[V1, \&.\&.\&., Vn]\fR\&\&.
+.LP
+\fISee also:\fR\& c_letrec/2\&.
+.RE
+.LP
+.B
+list_elements(C_cons::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of element subtrees of an abstract list\&. \fINode\fR\& must represent a proper list\&. E\&.g\&., if \fINode\fR\& represents "\fI[X1, X2 | [X3, X4 | []]\fR\&", then \fIlist_elements(Node)\fR\& yields the list \fI[X1, X2, X3, X4]\fR\&\&.
+.LP
+\fISee also:\fR\& c_cons/2, c_nil/0, is_c_list/1, list_length/1, make_list/2\&.
+.RE
+.LP
+.B
+list_length(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the number of element subtrees of an abstract list\&. \fINode\fR\& must represent a proper list\&. E\&.g\&., if \fINode\fR\& represents "\fI[X1 | [X2, X3 | [X4, X5, X6]]]\fR\&", then \fIlist_length(Node)\fR\& returns the integer 6\&.
+.LP
+Note: this is equivalent to \fIlength(list_elements(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_cons/2, c_nil/0, is_c_list/1, list_elements/1\&.
+.RE
+.LP
+.B
+make_data(Type::dtype(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Creates a data constructor node with the specified type and subtrees\&. (Cf\&. \fIdata_type/1\fR\&\&.) An exception is thrown if the length of \fIElements\fR\& is invalid for the given \fIType\fR\&; see \fIdata_es/1\fR\& for arity constraints on constructor types\&.
+.LP
+\fISee also:\fR\& ann_make_data/3, data_es/1, data_type/1, make_data_skel/2, update_data/3\&.
+.RE
+.LP
+.B
+make_data_skel(Type::dtype(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Like \fImake_data/2\fR\&, but analogous to \fIc_tuple_skel/1\fR\& and \fIc_cons_skel/2\fR\&\&.
+.LP
+\fISee also:\fR\& ann_make_data_skel/3, c_cons_skel/2, c_tuple_skel/1, make_data/2, update_data_skel/3\&.
+.RE
+.LP
+.B
+make_list(List) -> Node
+.br
+.RS
+.LP
+Equivalent to make_list(List, none)\&.
+.RE
+.LP
+.B
+make_list(List::[cerl()], Tail) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tail = cerl() | none
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an abstract list from the elements in \fIList\fR\& and the optional \fITail\fR\&\&. If \fITail\fR\& is \fInone\fR\&, the result will represent a nil-terminated list, otherwise it represents "\fI[\&.\&.\&. | Tail]\fR\&"\&.
+.LP
+\fISee also:\fR\& ann_make_list/3, c_cons/2, c_nil/0, list_elements/1, update_list/3\&.
+.RE
+.LP
+.B
+make_tree(Type::ctype(), Groups::[[cerl()]]) -> cerl()
+.br
+.RS
+.LP
+Creates a syntax tree with the given type and subtrees\&. \fIType\fR\& must be a node type name (cf\&. \fItype/1\fR\&) that does not denote a leaf node type (cf\&. \fIis_leaf/1\fR\&)\&. \fIGroups\fR\& must be a \fInonempty\fR\& list of groups of syntax trees, representing the subtrees of a node of the given type, in left-to-right order as they would occur in the printed program text, grouped by category as done by \fIsubtrees/1\fR\&\&.
+.LP
+The result of \fIann_make_tree(get_ann(Node), type(Node), subtrees(Node))\fR\& (cf\&. \fIupdate_tree/2\fR\&) represents the same source code text as the original \fINode\fR\&, assuming that \fIsubtrees(Node)\fR\& yields a nonempty list\&. However, it does not necessarily have the exact same data representation as \fINode\fR\&\&.
+.LP
+\fISee also:\fR\& ann_make_tree/3, is_leaf/1, subtrees/1, type/1, update_tree/2\&.
+.RE
+.LP
+.B
+map_arg(C_literal::c_map() | c_literal()) -> c_map() | c_literal()
+.br
+.RS
+.RE
+.LP
+.B
+map_es(C_literal::c_map() | c_literal()) -> [c_map_pair()]
+.br
+.RS
+.RE
+.LP
+.B
+map_pair_key(C_map_pair::c_map_pair()) -> cerl()
+.br
+.RS
+.RE
+.LP
+.B
+map_pair_op(C_map_pair::c_map_pair()) -> map_op()
+.br
+.RS
+.RE
+.LP
+.B
+map_pair_val(C_map_pair::c_map_pair()) -> cerl()
+.br
+.RS
+.RE
+.LP
+.B
+meta(Tree::cerl()) -> cerl()
+.br
+.RS
+.LP
+Creates a meta-representation of a syntax tree\&. The result represents an Erlang expression "\fIMetaTree\fR\&" which, if evaluated, will yield a new syntax tree representing the same source code text as \fITree\fR\& (although the actual data representation may be different)\&. The expression represented by \fIMetaTree\fR\& is \fIimplementation independent\fR\& with regard to the data structures used by the abstract syntax tree implementation\&.
+.LP
+Any node in \fITree\fR\& whose node type is \fIvar\fR\& (cf\&. \fItype/1\fR\&), and whose list of annotations (cf\&. \fIget_ann/1\fR\&) contains the atom \fImeta_var\fR\&, will remain unchanged in the resulting tree, except that exactly one occurrence of \fImeta_var\fR\& is removed from its annotation list\&.
+.LP
+The main use of the function \fImeta/1\fR\& is to transform a data structure \fITree\fR\&, which represents a piece of program code, into a form that is \fIrepresentation independent when printed\fR\&\&. E\&.g\&., suppose \fITree\fR\& represents a variable named "V"\&. Then (assuming a function \fIprint/1\fR\& for printing syntax trees), evaluating \fIprint(abstract(Tree))\fR\& - simply using \fIabstract/1\fR\& to map the actual data structure onto a syntax tree representation - would output a string that might look something like "\fI{var, \&.\&.\&., \&'V\&'}\fR\&", which is obviously dependent on the implementation of the abstract syntax trees\&. This could e\&.g\&. be useful for caching a syntax tree in a file\&. However, in some situations like in a program generator generator (with two "generator"), it may be unacceptable\&. Using \fIprint(meta(Tree))\fR\& instead would output a \fIrepresentation independent\fR\& syntax tree generating expression; in the above case, something like "\fIcerl:c_var(\&'V\&')\fR\&"\&.
+.LP
+The implementation tries to generate compact code with respect to literals and lists\&.
+.LP
+\fISee also:\fR\& abstract/1, get_ann/1, type/1\&.
+.RE
+.LP
+.B
+module_attrs(Node::cerl()) -> [{cerl(), cerl()}]
+.br
+.RS
+.LP
+Returns the list of pairs of attribute key/value subtrees of an abstract module definition\&.
+.LP
+\fISee also:\fR\& c_module/4\&.
+.RE
+.LP
+.B
+module_defs(Node::cerl()) -> [{cerl(), cerl()}]
+.br
+.RS
+.LP
+Returns the list of function definitions of an abstract module definition\&.
+.LP
+\fISee also:\fR\& c_module/4\&.
+.RE
+.LP
+.B
+module_exports(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of exports subtrees of an abstract module definition\&.
+.LP
+\fISee also:\fR\& c_module/4\&.
+.RE
+.LP
+.B
+module_name(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the name subtree of an abstract module definition\&.
+.LP
+\fISee also:\fR\& c_module/4\&.
+.RE
+.LP
+.B
+module_vars(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of left-hand side function variable subtrees of an abstract module definition\&.
+.LP
+\fISee also:\fR\& c_module/4\&.
+.RE
+.LP
+.B
+pat_list_vars(Patterns::[cerl()]) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of all abstract variables in the given patterns\&. An exception is thrown if some element in \fIPatterns\fR\& does not represent a well-formed Core Erlang clause pattern\&. The order of listing is not defined\&.
+.LP
+\fISee also:\fR\& clause_vars/1, pat_vars/1\&.
+.RE
+.LP
+.B
+pat_vars(Pattern::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of all abstract variables in a pattern\&. An exception is thrown if \fINode\fR\& does not represent a well-formed Core Erlang clause pattern\&. The order of listing is not defined\&.
+.LP
+\fISee also:\fR\& clause_vars/1, pat_list_vars/1\&.
+.RE
+.LP
+.B
+primop_args(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of argument subtrees of an abstract primitive operation call\&.
+.LP
+\fISee also:\fR\& c_primop/2, primop_arity/1\&.
+.RE
+.LP
+.B
+primop_arity(Node::cerl()) -> arity()
+.br
+.RS
+.LP
+Returns the number of argument subtrees of an abstract primitive operation call\&.
+.LP
+Note: this is equivalent to \fIlength(primop_args(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_primop/2, primop_args/1\&.
+.RE
+.LP
+.B
+primop_name(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the name subtree of an abstract primitive operation call\&.
+.LP
+\fISee also:\fR\& c_primop/2\&.
+.RE
+.LP
+.B
+receive_action(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the action subtree of an abstract receive-expression\&.
+.LP
+\fISee also:\fR\& c_receive/3\&.
+.RE
+.LP
+.B
+receive_clauses(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of clause subtrees of an abstract receive-expression\&.
+.LP
+\fISee also:\fR\& c_receive/3\&.
+.RE
+.LP
+.B
+receive_timeout(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the timeout subtree of an abstract receive-expression\&.
+.LP
+\fISee also:\fR\& c_receive/3\&.
+.RE
+.LP
+.B
+seq_arg(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the argument subtree of an abstract sequencing expression\&.
+.LP
+\fISee also:\fR\& c_seq/2\&.
+.RE
+.LP
+.B
+seq_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the body subtree of an abstract sequencing expression\&.
+.LP
+\fISee also:\fR\& c_seq/2\&.
+.RE
+.LP
+.B
+set_ann(Node::cerl(), Annotations::[term()]) -> cerl()
+.br
+.RS
+.LP
+Sets the list of user annotations of \fINode\fR\& to \fIAnnotations\fR\&\&.
+.LP
+\fISee also:\fR\& add_ann/2, copy_ann/2, get_ann/1\&.
+.RE
+.LP
+.B
+string_lit(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the literal string represented by an abstract string\&. This includes surrounding double-quote characters \fI"\&.\&.\&."\fR\&\&. Currently, characters that are not in the set of ISO 8859-1 (Latin-1) "printing" characters will be escaped, except for spaces\&.
+.LP
+\fISee also:\fR\& c_string/1\&.
+.RE
+.LP
+.B
+string_val(Node::cerl()) -> string()
+.br
+.RS
+.LP
+Returns the value represented by an abstract string literal\&.
+.LP
+\fISee also:\fR\& c_string/1\&.
+.RE
+.LP
+.B
+subtrees(Node::cerl()) -> [[cerl()]]
+.br
+.RS
+.LP
+Returns the grouped list of all subtrees of a node\&. If \fINode\fR\& is a leaf node (cf\&. \fIis_leaf/1\fR\&), this is the empty list, otherwise the result is always a nonempty list, containing the lists of subtrees of \fINode\fR\&, in left-to-right order as they occur in the printed program text, and grouped by category\&. Often, each group contains only a single subtree\&.
+.LP
+Depending on the type of \fINode\fR\&, the size of some groups may be variable (e\&.g\&., the group consisting of all the elements of a tuple), while others always contain the same number of elements - usually exactly one (e\&.g\&., the group containing the argument expression of a case-expression)\&. Note, however, that the exact structure of the returned list (for a given node type) should in general not be depended upon, since it might be subject to change without notice\&.
+.LP
+The function \fIsubtrees/1\fR\& and the constructor functions \fImake_tree/2\fR\& and \fIupdate_tree/2\fR\& can be a great help if one wants to traverse a syntax tree, visiting all its subtrees, but treat nodes of the tree in a uniform way in most or all cases\&. Using these functions makes this simple, and also assures that your code is not overly sensitive to extensions of the syntax tree data type, because any node types not explicitly handled by your code can be left to a default case\&.
+.LP
+For example:
+.LP
+.nf
+
+    postorder(F, Tree) ->
+        F(case subtrees(Tree) of
+            [] -> Tree;
+            List -> update_tree(Tree,
+                                [[postorder(F, Subtree)
+                                  || Subtree <- Group]
+                                 || Group <- List])
+          end).
+  
+.fi
+.LP
+maps the function \fIF\fR\& on \fITree\fR\& and all its subtrees, doing a post-order traversal of the syntax tree\&. (Note the use of \fIupdate_tree/2\fR\& to preserve annotations\&.) For a simple function like:
+.LP
+.nf
+
+    f(Node) ->
+        case type(Node) of
+            atom -> atom("a_" ++ atom_name(Node));
+            _ -> Node
+        end.
+  
+.fi
+.LP
+the call \fIpostorder(fun f/1, Tree)\fR\& will yield a new representation of \fITree\fR\& in which all atom names have been extended with the prefix "a_", but nothing else (including annotations) has been changed\&.
+.LP
+\fISee also:\fR\& is_leaf/1, make_tree/2, update_tree/2\&.
+.RE
+.LP
+.B
+to_records(Tree::cerl()) -> record(record_types())
+.br
+.RS
+.LP
+Translates an abstract syntax tree to a corresponding explicit record representation\&. The records are defined in the file "\fIcerl\&.hrl\fR\&"\&.
+.LP
+\fISee also:\fR\& from_records/1, type/1\&.
+.RE
+.LP
+.B
+try_arg(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the expression subtree of an abstract try-expression\&.
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+try_body(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the success body subtree of an abstract try-expression\&.
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+try_evars(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of exception variable subtrees of an abstract try-expression\&.
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+try_handler(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Returns the exception body subtree of an abstract try-expression\&.
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+try_vars(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of success variable subtrees of an abstract try-expression\&.
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+tuple_arity(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the number of element subtrees of an abstract tuple\&.
+.LP
+Note: this is equivalent to \fIlength(tuple_es(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_tuple/1, tuple_es/1\&.
+.RE
+.LP
+.B
+tuple_es(C_tuple::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of element subtrees of an abstract tuple\&.
+.LP
+\fISee also:\fR\& c_tuple/1\&.
+.RE
+.LP
+.B
+type(Node::cerl()) -> atom()
+.br
+.RS
+.LP
+Returns the type tag of \fINode\fR\&\&. Current node types are:
+.LP
+alias apply binary bitstr call case catch clause 
+.br
+cons fun let letrec literal map map_pair module 
+.br
+primop receive seq try tuple values var 
+.br
+
+.LP
+Note: The name of the primary constructor function for a node type is always the name of the type itself, prefixed by "\fIc_\fR\&"; recognizer predicates are correspondingly prefixed by "\fIis_c_\fR\&"\&. Furthermore, to simplify preservation of annotations (cf\&. \fIget_ann/1\fR\&), there are analogous constructor functions prefixed by "\fIann_c_\fR\&" and "\fIupdate_c_\fR\&", for setting the annotation list of the new node to either a specific value or to the annotations of an existing node, respectively\&.
+.LP
+\fISee also:\fR\& abstract/1, c_alias/2, c_apply/2, c_binary/1, c_bitstr/5, c_call/3, c_case/2, c_catch/1, c_clause/3, c_cons/2, c_fun/2, c_let/3, c_letrec/2, c_module/3, c_primop/2, c_receive/1, c_seq/2, c_try/5, c_tuple/1, c_values/1, c_var/1, data_type/1, from_records/1, get_ann/1, meta/1, subtrees/1, to_records/1\&.
+.RE
+.LP
+.B
+unfold_literal(Node::cerl()) -> cerl()
+.br
+.RS
+.LP
+Assures that literals have a fully expanded representation\&. If \fINode\fR\& represents a literal tuple or list constructor, its elements are rewritten recursively, and the node is reconstructed using \fIc_cons_skel/2\fR\& or \fIc_tuple_skel/1\fR\&, respectively; otherwise, \fINode\fR\& is not changed\&. The fold_literal/1 can be used to revert to the normal compact representation\&.
+.LP
+\fISee also:\fR\& c_cons/2, c_cons_skel/2, c_tuple/1, c_tuple_skel/1, fold_literal/1, is_literal/1\&.
+.RE
+.LP
+.B
+update_c_alias(Old::cerl(), Variable::cerl(), Pattern::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_alias/2\&.
+.RE
+.LP
+.B
+update_c_apply(Old::cerl(), Operator::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_apply/2\&.
+.RE
+.LP
+.B
+update_c_binary(Old::cerl(), Segments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_binary/1\&.
+.RE
+.LP
+.B
+update_c_bitstr(Old::cerl(), Value::cerl(), Size::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to update_c_bitstr(Node, Value, Size, abstract(1), Type, Flags)\&.
+.RE
+.LP
+.B
+update_c_bitstr(Old::cerl(), Value::cerl(), Size::cerl(), Unit::cerl(), Type::cerl(), Flags::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_bitstr/5, update_c_bitstr/5\&.
+.RE
+.LP
+.B
+update_c_call(Old::cerl(), Module::cerl(), Name::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_call/3\&.
+.RE
+.LP
+.B
+update_c_case(Old::cerl(), Argument::cerl(), Clauses::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_case/2\&.
+.RE
+.LP
+.B
+update_c_catch(Old::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_catch/1\&.
+.RE
+.LP
+.B
+update_c_clause(Old::cerl(), Patterns::[cerl()], Guard::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_clause/3\&.
+.RE
+.LP
+.B
+update_c_cons(Old::cerl(), Head::cerl(), Tail::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_cons/2\&.
+.RE
+.LP
+.B
+update_c_cons_skel(Old::cerl(), Head::cerl(), Tail::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_cons_skel/2\&.
+.RE
+.LP
+.B
+update_c_fname(Old::cerl(), Name::atom()) -> cerl()
+.br
+.RS
+.LP
+Like \fIupdate_c_fname/3\fR\&, but takes the arity from \fINode\fR\&\&.
+.LP
+\fISee also:\fR\& c_fname/2, update_c_fname/3\&.
+.RE
+.LP
+.B
+update_c_fname(Old::cerl(), Name::atom(), Arity::arity()) -> cerl()
+.br
+.RS
+.LP
+Equivalent to update_c_var(Old, {Atom, Arity})\&.
+.LP
+\fISee also:\fR\& c_fname/2, update_c_fname/2\&.
+.RE
+.LP
+.B
+update_c_fun(Old::cerl(), Variables::[cerl()], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_fun/2\&.
+.RE
+.LP
+.B
+update_c_let(Node::c_let(), Variables::[cerl()], Argument::cerl(), Body::cerl()) -> c_let()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_let/3\&.
+.RE
+.LP
+.B
+update_c_letrec(Old::cerl(), Definitions::[{cerl(), cerl()}], Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_letrec/2\&.
+.RE
+.LP
+.B
+update_c_map(C_map::c_map(), M::cerl(), Es::[cerl()]) -> c_map() | c_literal()
+.br
+.RS
+.RE
+.LP
+.B
+update_c_map_pair(Old::c_map_pair(), Op::map_op(), K::cerl(), V::cerl()) -> c_map_pair()
+.br
+.RS
+.RE
+.LP
+.B
+update_c_module(Old::cerl(), Name::cerl(), Exports, Attrs::Attributes, Es::Definitions) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Exports = [cerl()]
+.br
+Attributes = [{cerl(), cerl()}]
+.br
+Definitions = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+\fISee also:\fR\& c_module/4\&.
+.RE
+.LP
+.B
+update_c_primop(Old::cerl(), Name::cerl(), Arguments::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_primop/2\&.
+.RE
+.LP
+.B
+update_c_receive(Old::cerl(), Clauses::[cerl()], Timeout::cerl(), Action::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_receive/3\&.
+.RE
+.LP
+.B
+update_c_seq(Old::cerl(), Argument::cerl(), Body::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_seq/2\&.
+.RE
+.LP
+.B
+update_c_try(Old::cerl(), Expression::cerl(), Variables::[cerl()], Body::cerl(), EVars::[cerl()], Handler::cerl()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_try/5\&.
+.RE
+.LP
+.B
+update_c_tuple(Old::cerl(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_tuple/1\&.
+.RE
+.LP
+.B
+update_c_tuple_skel(Old::cerl(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_tuple_skel/1\&.
+.RE
+.LP
+.B
+update_c_values(Old::cerl(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_values/1\&.
+.RE
+.LP
+.B
+update_c_var(Old::cerl(), Name::var_name()) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& c_var/1\&.
+.RE
+.LP
+.B
+update_data(Old::cerl(), Type::dtype(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& make_data/2\&.
+.RE
+.LP
+.B
+update_data_skel(Old::cerl(), Type::dtype(), Elements::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+\fISee also:\fR\& make_data_skel/2\&.
+.RE
+.LP
+.B
+update_list(Old::cerl(), List::[cerl()]) -> cerl()
+.br
+.RS
+.LP
+Equivalent to update_list(Old, List, none)\&.
+.RE
+.LP
+.B
+update_list(Old::cerl(), List::[cerl()], Tail) -> cerl()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tail = cerl() | none
+.br
+.RE
+.RE
+.RS
+.LP
+\fISee also:\fR\& make_list/2, update_list/2\&.
+.RE
+.LP
+.B
+update_tree(Old::cerl(), Groups::[[cerl()]]) -> cerl()
+.br
+.RS
+.LP
+Creates a syntax tree with the given subtrees, and the same type and annotations as the \fIOld\fR\& node\&. This is equivalent to \fIann_make_tree(get_ann(Node), type(Node), Groups)\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& ann_make_tree/3, get_ann/1, type/1, update_tree/3\&.
+.RE
+.LP
+.B
+update_tree(Old::cerl(), Type::ctype(), Groups::[[cerl()]]) -> cerl()
+.br
+.RS
+.LP
+Creates a syntax tree with the given type and subtrees, and the same annotations as the \fIOld\fR\& node\&. This is equivalent to \fIann_make_tree(get_ann(Node), Type, Groups)\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& ann_make_tree/3, get_ann/1, update_tree/2\&.
+.RE
+.LP
+.B
+values_arity(Node::cerl()) -> integer()
+.br
+.RS
+.LP
+Returns the number of element subtrees of an abstract value list\&.
+.LP
+Note: This is equivalent to \fIlength(values_es(Node))\fR\&, but potentially more efficient\&.
+.LP
+\fISee also:\fR\& c_values/1, values_es/1\&.
+.RE
+.LP
+.B
+values_es(Node::cerl()) -> [cerl()]
+.br
+.RS
+.LP
+Returns the list of element subtrees of an abstract value list\&.
+.LP
+\fISee also:\fR\& c_values/1, values_arity/1\&.
+.RE
+.LP
+.B
+var_name(Node::cerl()) -> var_name()
+.br
+.RS
+.LP
+Returns the name of an abstract variable\&.
+.LP
+\fISee also:\fR\& c_var/1\&.
+.RE
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

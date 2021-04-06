@@ -1,0 +1,302 @@
+.TH instrument 3 "tools 3.3.1.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+instrument \- Analysis and Utility Functions for Instrumentation
+.SH DESCRIPTION
+.LP
+The module \fIinstrument\fR\& contains support for studying the resource usage in an Erlang runtime system\&. Currently, only the allocation of memory can be studied\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Note that this whole module is experimental, and the representations used as well as the functionality is likely to change in the future\&.
+
+.SH DATA TYPES
+.nf
+
+\fBblock_histogram()\fR\& = tuple()
+.br
+.fi
+.RS
+.LP
+A histogram of block sizes where each interval\&'s upper bound is twice as high as the one before it\&.
+.LP
+The upper bound of the first interval is provided by the function that returned the histogram, and the last interval has no upper bound\&.
+.RE
+.nf
+
+\fBallocation_summary()\fR\& = 
+.br
+    {HistogramStart :: integer() >= 0,
+.br
+     UnscannedSize :: integer() >= 0,
+.br
+     Allocations ::
+.br
+         #{Origin :: atom() =>
+.br
+               #{Type :: atom() => \fBblock_histogram()\fR\&}}}
+.br
+.fi
+.RS
+.LP
+A summary of allocated block sizes (including their headers) grouped by their \fIOrigin\fR\& and \fIType\fR\&\&.
+.LP
+\fIOrigin\fR\& is generally which NIF or driver that allocated the blocks, or \&'system\&' if it could not be determined\&.
+.LP
+\fIType\fR\& is the allocation category that the blocks belong to, e\&.g\&. \fIdb_term\fR\&, \fImessage\fR\& or \fIbinary\fR\&\&.
+.LP
+If one or more carriers could not be scanned in full without harming the responsiveness of the system, \fIUnscannedSize\fR\& is the number of bytes that had to be skipped\&.
+.RE
+.nf
+
+\fBcarrier_info_list()\fR\& = 
+.br
+    {HistogramStart :: integer() >= 0,
+.br
+     Carriers ::
+.br
+         [{AllocatorType :: atom(),
+.br
+           TotalSize :: integer() >= 0,
+.br
+           UnscannedSize :: integer() >= 0,
+.br
+           AllocatedSize :: integer() >= 0,
+.br
+           AllocatedCount :: integer() >= 0,
+.br
+           InPool :: boolean(),
+.br
+           FreeBlocks :: \fBblock_histogram()\fR\&}]}
+.br
+.fi
+.RS
+.LP
+\fIAllocatorType\fR\& is the type of the allocator that employs this carrier\&.
+.LP
+\fITotalSize\fR\& is the total size of the carrier, including its header\&.
+.LP
+\fIAllocatedSize\fR\& is the combined size of the carrier\&'s allocated blocks, including their headers\&.
+.LP
+\fIAllocatedCount\fR\& is the number of allocated blocks in the carrier\&.
+.LP
+\fIInPool\fR\& is whether the carrier is in the migration pool\&.
+.LP
+\fIFreeBlocks\fR\& is a histogram of the free block sizes in the carrier\&.
+.LP
+If the carrier could not be scanned in full without harming the responsiveness of the system, \fIUnscannedSize\fR\& is the number of bytes that had to be skipped\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+allocations() -> {ok, Result} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = \fBallocation_summary()\fR\&
+.br
+Reason = not_enabled
+.br
+.RE
+.RE
+.RS
+.LP
+Shorthand for \fB\fIallocations(#{})\fR\&\&.\fR\&
+.RE
+.LP
+.nf
+
+.B
+allocations(Options) -> {ok, Result} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = \fBallocation_summary()\fR\&
+.br
+Reason = not_enabled
+.br
+Options = 
+.br
+    #{scheduler_ids => [integer() >= 0],
+.br
+      allocator_types => [atom()],
+.br
+      histogram_start => integer() >= 1,
+.br
+      histogram_width => integer() >= 1}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a summary of all tagged allocations in the system, optionally filtered by allocator type and scheduler id\&.
+.LP
+Only binaries and allocations made by NIFs and drivers are tagged by default, but this can be configured an a per-allocator basis with the \fB\fI+M<S>atags\fR\&\fR\& emulator option\&.
+.LP
+If the specified allocator types are not enabled, the call will fail with \fI{error, not_enabled}\fR\&\&.
+.LP
+The following options can be used:
+.RS 2
+.TP 2
+.B
+\fIallocator_types\fR\&:
+The allocator types that will be searched\&. Note that blocks can move freely between allocator types, so restricting the search to certain allocators may return unexpected types (e\&.g\&. process heaps when searching binary_alloc), or hide blocks that were migrated out\&.
+.RS 2
+.LP
+Defaults to all \fIalloc_util\fR\& allocators\&.
+.RE
+.TP 2
+.B
+\fIscheduler_ids\fR\&:
+The scheduler ids whose allocator instances will be searched\&. A scheduler id of 0 will refer to the global instance that is not tied to any particular scheduler\&. Defaults to all schedulers and the global instance\&.
+.TP 2
+.B
+\fIhistogram_start\fR\&:
+The upper bound of the first interval in the allocated block size histograms\&. Defaults to 128\&.
+.TP 2
+.B
+\fIhistogram_width\fR\&:
+The number of intervals in the allocated block size histograms\&. Defaults to 18\&.
+.RE
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+> instrument:allocations(#{ histogram_start => 128, histogram_width => 15 }).
+{ok,{128,0,
+     #{udp_inet =>
+           #{driver_event_state => {0,0,0,0,0,0,0,0,0,1,0,0,0,0,0}},
+       system =>
+           #{heap => {0,0,0,0,20,4,2,2,2,3,0,1,0,0,1},
+             db_term => {271,3,1,52,80,1,0,0,0,0,0,0,0,0,0},
+             code => {0,0,0,5,3,6,11,22,19,20,10,2,1,0,0},
+             binary => {18,0,0,0,7,0,0,1,0,0,0,0,0,0,0},
+             message => {0,40,78,2,2,0,0,0,0,0,0,0,0,0,0},
+             ... }
+       spawn_forker =>
+           #{driver_select_data_state =>
+                 {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0}},
+       ram_file_drv => #{drv_binary => {0,0,0,0,0,0,1,0,0,0,0,0,0,0,0}},
+       prim_file =>
+           #{process_specific_data => {2,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+             nif_trap_export_entry => {0,4,0,0,0,0,0,0,0,0,0,0,0,0,0},
+             monitor_extended => {0,1,0,0,0,0,0,0,0,0,0,0,0,0,0},
+             drv_binary => {0,0,0,0,0,0,1,0,3,5,0,0,0,1,0},
+             binary => {0,4,0,0,0,0,0,0,0,0,0,0,0,0,0}},
+       prim_buffer =>
+           #{nif_internal => {0,4,0,0,0,0,0,0,0,0,0,0,0,0,0},
+             binary => {0,4,0,0,0,0,0,0,0,0,0,0,0,0,0}}}}}
+     
+.fi
+.RE
+.LP
+.nf
+
+.B
+carriers() -> {ok, Result} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = \fBcarrier_info_list()\fR\&
+.br
+Reason = not_enabled
+.br
+.RE
+.RE
+.RS
+.LP
+Shorthand for \fB\fIcarriers(#{})\fR\&\&.\fR\&
+.RE
+.LP
+.nf
+
+.B
+carriers(Options) -> {ok, Result} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = \fBcarrier_info_list()\fR\&
+.br
+Reason = not_enabled
+.br
+Options = 
+.br
+    #{scheduler_ids => [integer() >= 0],
+.br
+      allocator_types => [atom()],
+.br
+      histogram_start => integer() >= 1,
+.br
+      histogram_width => integer() >= 1}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a summary of all carriers in the system, optionally filtered by allocator type and scheduler id\&.
+.LP
+If the specified allocator types are not enabled, the call will fail with \fI{error, not_enabled}\fR\&\&.
+.LP
+The following options can be used:
+.RS 2
+.TP 2
+.B
+\fIallocator_types\fR\&:
+The allocator types that will be searched\&. Defaults to all \fIalloc_util\fR\& allocators\&.
+.TP 2
+.B
+\fIscheduler_ids\fR\&:
+The scheduler ids whose allocator instances will be searched\&. A scheduler id of 0 will refer to the global instance that is not tied to any particular scheduler\&. Defaults to all schedulers and the global instance\&.
+.TP 2
+.B
+\fIhistogram_start\fR\&:
+The upper bound of the first interval in the free block size histograms\&. Defaults to 512\&.
+.TP 2
+.B
+\fIhistogram_width\fR\&:
+The number of intervals in the free block size histograms\&. Defaults to 14\&.
+.RE
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+> instrument:carriers(#{ histogram_start => 512, histogram_width => 8 }).
+{ok,{512,
+     [{ll_alloc,1048576,0,1048344,71,false,{0,0,0,0,0,0,0,0}},
+      {binary_alloc,1048576,0,324640,13,false,{3,0,0,1,0,0,0,2}},
+      {eheap_alloc,2097152,0,1037200,45,false,{2,1,1,3,4,3,2,2}},
+      {fix_alloc,32768,0,29544,82,false,{22,0,0,0,0,0,0,0}},
+      {...}|...]}}
+     
+.fi
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fBerts_alloc(3)\fR\&, \fBerl(1)\fR\&

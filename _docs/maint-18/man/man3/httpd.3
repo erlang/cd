@@ -1,0 +1,1001 @@
+.TH httpd 3 "inets 6.2.4.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+httpd \- 
+    HTTP server API
+  
+.SH DESCRIPTION
+.LP
+An implementation of an HTTP 1\&.1 compliant web server, as defined in RFC 2616\&. Provides web server start options, administrative functions, and an Erlang callback API\&.
+.SH "DATA TYPES"
+
+.LP
+Type definitions that are used more than once in this module:
+.LP
+\fIboolean() = true | false\fR\&
+.LP
+\fIstring()\fR\& = list of ASCII characters
+.LP
+\fIpath() = string()\fR\& representing a file or a directory path
+.LP
+\fI ip_address() = {N1,N2,N3,N4} % IPv4 | {K1,K2,K3,K4,K5,K6,K7,K8} % IPv6\fR\&
+.LP
+\fIhostname() = string()\fR\& representing a host, for example, "foo\&.bar\&.com"
+.LP
+\fIproperty() = atom()\fR\&
+.SH "ERLANG HTTP SERVER SERVICE START/STOP"
+
+.LP
+A web server can be configured to start when starting the \fIInets\fR\& application, or dynamically in runtime by calling the \fIInets\fR\& application API \fIinets:start(httpd, ServiceConfig)\fR\& or \fIinets:start(httpd, ServiceConfig, How)\fR\&, see \fBinets(3)\fR\&\&. The configuration options, also called properties, are as follows:
+.LP
+\fIFile Properties\fR\&
+.LP
+When the web server is started at application start time, the properties are to be fetched from a configuration file that can consist of a regular Erlang property list, that is, \fI[{Option, Value}]\fR\&, where \fI Option = property() \fR\& and \fIValue = term()\fR\&, followed by a full stop, or for backwards compatibility, an Apache-like configuration file\&. If the web server is started dynamically at runtime, a file can still be specified but also the complete property list\&.
+.RS 2
+.TP 2
+.B
+{proplist_file, path()}:
+If this property is defined, \fIInets\fR\& expects to find all other properties defined in this file\&. The file must include all properties listed under mandatory properties\&.
+.TP 2
+.B
+{file, path()}:
+If this property is defined, \fIInets\fR\& expects to find all other properties defined in this file, which uses Apache-like syntax\&. The file must include all properties listed under mandatory properties\&. The Apache-like syntax is the property, written as one word where each new word begins with a capital, followed by a white-space, followed by the value, followed by a new line\&.
+.RS 2
+.LP
+Example:
+.RE
+.LP
+.nf
+
+{server_root, "/urs/local/www"} -> ServerRoot /usr/local/www
+.fi
+.RS 2
+.LP
+A few exceptions are documented for each property that behaves differently, and the special cases \fI{directory, {path(), PropertyList}}\fR\& and \fI{security_directory, {Dir, PropertyList}}\fR\&, are represented as:
+.RE
+.LP
+.nf
+
+	  
+<Directory Dir>
+ <Properties handled as described above> 
+</Directory>
+         
+.fi
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The properties \fIproplist_file\fR\& and \fIfile\fR\& are mutually exclusive\&. Also newer properties may not be supported as Apache-like options, this is a legacy feature\&.
+
+.LP
+\fIMandatory Properties\fR\&
+.RS 2
+.TP 2
+.B
+{port, integer()} :
+The port that the HTTP server listen to\&. If zero is specified as port, an arbitrary available port is picked and function \fIhttpd:info/2\fR\& can be used to determine which port was picked\&.
+.TP 2
+.B
+{server_name, string()}:
+The name of your server, normally a fully qualified domain name\&.
+.TP 2
+.B
+{server_root, path()}:
+Defines the home directory of the server, where log files, and so on, can be stored\&. Relative paths specified in other properties refer to this directory\&.
+.TP 2
+.B
+{document_root, path()}:
+Defines the top directory for the documents that are available on the HTTP server\&.
+.RE
+.LP
+\fICommunication Properties\fR\&
+.RS 2
+.TP 2
+.B
+{bind_address, ip_address() | hostname() | any}:
+Default is \fIany\fR\&\&. \fIany\fR\& is denoted \fI*\fR\& in the Apache-like configuration file\&.
+.TP 2
+.B
+{profile, atom()}:
+Used together with \fB\fIbind_address\fR\&\fR\& and \fB\fIport\fR\&\fR\& to uniquely identify a HTTP server\&. This can be useful in a virtualized environment, where there can be more that one server that has the same bind_address and port\&. If this property is not explicitly set, it is assumed that the \fB\fIbind_address\fR\&\fR\& and \fB\fIport\fR\&\fR\&uniquely identifies the HTTP server\&.
+.TP 2
+.B
+{socket_type, ip_comm | {ip_comm, Config::proplist()} | {essl, Config::proplist()}}:
+For \fIip_comm\fR\& configuration options, see \fBgen_tcp:listen/2\fR\&, some options that are used internally by httpd can not be set\&.
+.RS 2
+.LP
+For \fISSL\fR\& configuration options, see \fBssl:listen/2\fR\&\&.
+.RE
+.RS 2
+.LP
+Default is \fIip_comm\fR\&\&.
+.RE
+.TP 2
+.B
+{ipfamily, inet | inet6}:
+Default is \fIinet\fR\&, legacy option \fIinet6fb4\fR\& no longer makes sense and will be translated to inet\&.
+.TP 2
+.B
+{minimum_bytes_per_second, integer()}:
+If given, sets a minimum of bytes per second value for connections\&.
+.RS 2
+.LP
+If the value is unreached, the socket closes for that connection\&.
+.RE
+.RS 2
+.LP
+The option is good for reducing the risk of "slow DoS" attacks\&.
+.RE
+.RE
+.LP
+\fIErlang Web Server API Modules\fR\& 
+.RS 2
+.TP 2
+.B
+{modules, [atom()]} :
+Defines which modules the HTTP server uses when handling requests\&. Default is \fI[mod_alias, mod_auth, mod_esi, mod_actions, mod_cgi, mod_dir, mod_get, mod_head, mod_log, mod_disk_log]\fR\&\&. Notice that some \fImod\fR\&-modules are dependent on others, so the order cannot be entirely arbitrary\&. See the \fBInets Web Server Modules\fR\& in the User\&'s Guide for details\&.
+.RE
+.LP
+\fILimit properties\fR\& 
+.RS 2
+.TP 2
+.B
+{customize, atom()}:
+A callback module to customize the inets HTTP servers behaviour see \fB httpd_custom_api\fR\& 
+.TP 2
+.B
+{disable_chunked_transfer_encoding_send, boolean()}:
+Allows you to disable chunked transfer-encoding when sending a response to an HTTP/1\&.1 client\&. Default is \fIfalse\fR\&\&.
+.TP 2
+.B
+{keep_alive, boolean()}:
+Instructs the server whether to use persistent connections when the client claims to be HTTP/1\&.1 compliant\&. Default is \fItrue\fR\&\&.
+.TP 2
+.B
+{keep_alive_timeout, integer()}:
+The number of seconds the server waits for a subsequent request from the client before closing the connection\&. Default is \fI150\fR\&\&.
+.TP 2
+.B
+{max_body_size, integer()}:
+Limits the size of the message body of an HTTP request\&. Default is no limit\&.
+.TP 2
+.B
+{max_clients, integer()}:
+Limits the number of simultaneous requests that can be supported\&. Default is \fI150\fR\&\&.
+.TP 2
+.B
+{max_header_size, integer()}:
+Limits the size of the message header of an HTTP request\&. Default is \fI10240\fR\&\&.
+.TP 2
+.B
+{max_content_length, integer()}:
+Maximum content-length in an incoming request, in bytes\&. Requests with content larger than this are answered with status 413\&. Default is \fI100000000\fR\& (100 MB)\&.
+.TP 2
+.B
+{max_uri_size, integer()}:
+Limits the size of the HTTP request URI\&. Default is no limit\&.
+.TP 2
+.B
+{max_keep_alive_request, integer()}:
+The number of requests that a client can do on one connection\&. When the server has responded to the number of requests defined by \fImax_keep_alive_requests\fR\&, the server closes the connection\&. The server closes it even if there are queued request\&. Default is no limit\&.
+.RE
+.LP
+\fIAdministrative Properties\fR\&
+.RS 2
+.TP 2
+.B
+{mime_types, [{MimeType, Extension}] | path()}:
+\fIMimeType = string()\fR\& and \fIExtension = string()\fR\&\&. Files delivered to the client are MIME typed according to RFC 1590\&. File suffixes are mapped to MIME types before file delivery\&. The mapping between file suffixes and MIME types can be specified as an Apache-like file or directly in the property list\&. Such a file can look like the follwoing:
+.LP
+.nf
+
+# MIME type	Extension  
+text/html	html htm
+text/plain	asc txt
+.fi
+.RS 2
+.LP
+Default is [{"html","text/html"},{"htm","text/html"}]\&.
+.RE
+.TP 2
+.B
+{mime_type, string()}:
+When the server is asked to provide a document type that cannot be determined by the MIME Type Settings, the server uses this default type\&.
+.TP 2
+.B
+{server_admin, string()}:
+Defines the email-address of the server administrator to be included in any error messages returned by the server\&.
+.TP 2
+.B
+{server_tokens, none|prod|major|minor|minimal|os|full|{private, string()}}:
+Defines the look of the value of the server header\&.
+.RS 2
+.LP
+Example: Assuming the version of \fIInets\fR\& is 5\&.8\&.1, the server header string can look as follows for the different values of server-tokens:
+.RE
+.RS 2
+.TP 2
+.B
+\fInone\fR\&:
+"" % A Server: header will not be generated
+.TP 2
+.B
+\fIprod\fR\&:
+"inets"
+.TP 2
+.B
+\fImajor\fR\&:
+"inets/5"
+.TP 2
+.B
+\fIminor\fR\&:
+"inets/5\&.8"
+.TP 2
+.B
+\fIminimal\fR\&:
+"inets/5\&.8\&.1"
+.TP 2
+.B
+\fIos\fR\&:
+"inets/5\&.8\&.1 (unix)"
+.TP 2
+.B
+\fIfull\fR\&:
+"inets/5\&.8\&.1 (unix/linux) OTP/R15B"
+.TP 2
+.B
+\fI{private, "foo/bar"}\fR\&:
+"foo/bar"
+.RE
+.RS 2
+.LP
+By default, the value is as before, that is, \fIminimal\fR\&\&.
+.RE
+.TP 2
+.B
+{log_format, common | combined}:
+Defines if access logs are to be written according to the \fIcommon\fR\& log format or the extended common log format\&. The \fIcommon\fR\& format is one line looking like this: \fIremotehost rfc931 authuser [date] "request" status bytes\fR\&\&.
+.RS 2
+.LP
+Here:
+.RE
+.RS 2
+.TP 2
+.B
+\fIremotehost\fR\&:
+Remote\&.
+.TP 2
+.B
+\fIrfc931\fR\&:
+The remote username of the client (RFC 931)\&.
+.TP 2
+.B
+\fIauthuser\fR\&:
+The username used for authentication\&.
+.TP 2
+.B
+\fI[date]\fR\&:
+Date and time of the request (RFC 1123)\&.
+.TP 2
+.B
+\fI"request"\fR\&:
+The request line as it came from the client (RFC 1945)\&.
+.TP 2
+.B
+\fIstatus\fR\&:
+The HTTP status code returned to the client (RFC 1945)\&.
+.TP 2
+.B
+\fIbytes\fR\&:
+The content-length of the document transferred\&.
+.RE
+.RS 2
+.LP
+The \fIcombined\fR\& format is one line looking like this: \fIremotehost rfc931 authuser [date] "request" status bytes "referer" "user_agent" \fR\&
+.RE
+.RS 2
+.LP
+In addition to the earlier:
+.RE
+.RS 2
+.TP 2
+.B
+\fI"referer"\fR\&:
+The URL the client was on before requesting the URL (if it could not be determined, a minus sign is placed in this field)\&.
+.TP 2
+.B
+\fI"user_agent"\fR\&:
+The software the client claims to be using (if it could not be determined, a minus sign is placed in this field)\&.
+.RE
+.RS 2
+.LP
+This affects the access logs written by \fImod_log\fR\& and \fImod_disk_log\fR\&\&.
+.RE
+.TP 2
+.B
+{error_log_format, pretty | compact}:
+Default is \fIpretty\fR\&\&. If the error log is meant to be read directly by a human, \fIpretty\fR\& is the best option\&.
+.RS 2
+.LP
+\fIpretty\fR\& has a format corresponding to:
+.RE
+.LP
+.nf
+io:format("[~s] ~s, reason: ~n ~p ~n~n", [Date, Msg, Reason]).
+.fi
+.RS 2
+.LP
+\fIcompact\fR\& has a format corresponding to:
+.RE
+.LP
+.nf
+io:format("[~s] ~s, reason: ~w ~n", [Date, Msg, Reason]).
+.fi
+.RS 2
+.LP
+This affects the error logs written by \fImod_log\fR\& and \fImod_disk_log\fR\&\&.
+.RE
+.RE
+.LP
+\fIURL Aliasing Properties - Requires mod_alias\fR\&
+.RS 2
+.TP 2
+.B
+{alias, {Alias, RealName}}:
+\fIAlias = string()\fR\& and \fIRealName = string()\fR\&\&. \fIalias\fR\& allows documents to be stored in the local file system instead of the \fIdocument_root\fR\& location\&. URLs with a path beginning with url-path is mapped to local files beginning with directory-filename, for example:
+.LP
+.nf
+{alias, {"/image", "/ftp/pub/image"}}
+.fi
+.RS 2
+.LP
+Access to http://your\&.server\&.org/image/foo\&.gif would refer to the file /ftp/pub/image/foo\&.gif\&.
+.RE
+.TP 2
+.B
+{re_write, {Re, Replacement}}:
+\fIRe = string()\fR\& and \fIReplacement = string()\fR\&\&. \fIre_write\fR\& allows documents to be stored in the local file system instead of the \fIdocument_root\fR\& location\&. URLs are rewritten by \fIre:replace/3\fR\& to produce a path in the local file-system, for example:
+.LP
+.nf
+{re_write, {"^/[~]([^/]+)(.*)$", "/home/\\\\1/public\\\\2"}}
+.fi
+.RS 2
+.LP
+Access to http://your\&.server\&.org/~bob/foo\&.gif would refer to the file /home/bob/public/foo\&.gif\&. In an Apache-like configuration file, \fIRe\fR\& is separated from \fIReplacement\fR\& with one single space, and as expected backslashes do not need to be backslash escaped, the same example would become:
+.RE
+.LP
+.nf
+ReWrite ^/[~]([^/]+)(.*)$ /home/\\1/public\\2
+.fi
+.RS 2
+.LP
+Beware of trailing space in \fIReplacement\fR\& to be used\&. If you must have a space in \fIRe\fR\&, use, for example, the character encoding \fI\\040\fR\&, see \fBre(3)\fR\&\&.
+.RE
+.TP 2
+.B
+{directory_index, [string()]}:
+\fIdirectory_index\fR\& specifies a list of resources to look for if a client requests a directory using a \fI/\fR\& at the end of the directory name\&. \fIfile\fR\& depicts the name of a file in the directory\&. Several files can be given, in which case the server returns the first it finds, for example:
+.LP
+.nf
+{directory_index, ["index.hml", "welcome.html"]}
+.fi
+.RS 2
+.LP
+Access to http://your\&.server\&.org/docs/ would return http://your\&.server\&.org/docs/index\&.html or http://your\&.server\&.org/docs/welcome\&.html if index\&.html does not exist\&.
+.RE
+.RE
+.LP
+\fICGI Properties - Requires mod_cgi\fR\&
+.RS 2
+.TP 2
+.B
+{script_alias, {Alias, RealName}}:
+\fIAlias = string()\fR\& and \fIRealName = string()\fR\&\&. Have the same behavior as property \fIalias\fR\&, except that they also mark the target directory as containing CGI scripts\&. URLs with a path beginning with url-path are mapped to scripts beginning with directory-filename, for example:
+.LP
+.nf
+{script_alias, {"/cgi-bin/", "/web/cgi-bin/"}}
+.fi
+.RS 2
+.LP
+Access to http://your\&.server\&.org/cgi-bin/foo would cause the server to run the script /web/cgi-bin/foo\&.
+.RE
+.TP 2
+.B
+{script_re_write, {Re, Replacement}}:
+\fIRe = string()\fR\& and \fIReplacement = string()\fR\&\&. Have the same behavior as property \fIre_write\fR\&, except that they also mark the target directory as containing CGI scripts\&. URLs with a path beginning with url-path are mapped to scripts beginning with directory-filename, for example:
+.LP
+.nf
+{script_re_write, {"^/cgi-bin/(\\\\d+)/", "/web/\\\\1/cgi-bin/"}}
+.fi
+.RS 2
+.LP
+Access to http://your\&.server\&.org/cgi-bin/17/foo would cause the server to run the script /web/17/cgi-bin/foo\&.
+.RE
+.TP 2
+.B
+{script_nocache, boolean()}:
+If \fIscript_nocache\fR\& is set to \fItrue\fR\&, the HTTP server by default adds the header fields necessary to prevent proxies from caching the page\&. Generally this is preferred\&. Default to \fIfalse\fR\&\&.
+.TP 2
+.B
+{script_timeout, integer()}:
+The time in seconds the web server waits between each chunk of data from the script\&. If the CGI script does not deliver any data before the timeout, the connection to the client is closed\&. Default is \fI15\fR\&\&.
+.TP 2
+.B
+{action, {MimeType, CgiScript}} - requires mod_action:
+\fIMimeType = string()\fR\& and \fICgiScript = string()\fR\&\&. \fIaction\fR\& adds an action activating a CGI script whenever a file of a certain MIME type is requested\&. It propagates the URL and file path of the requested document using the standard CGI PATH_INFO and PATH_TRANSLATED environment variables\&.
+.RS 2
+.LP
+Example:
+.RE
+.LP
+.nf
+{action, {"text/plain", "/cgi-bin/log_and_deliver_text"}}
+.fi
+.TP 2
+.B
+{script, {Method, CgiScript}} - requires mod_action:
+\fIMethod = string()\fR\& and \fICgiScript = string()\fR\&\&. \fIscript\fR\& adds an action activating a CGI script whenever a file is requested using a certain HTTP method\&. The method is either GET or POST, as defined in RFC 1945\&. It propagates the URL and file path of the requested document using the standard CGI PATH_INFO and PATH_TRANSLATED environment variables\&.
+.RS 2
+.LP
+Example:
+.RE
+.LP
+.nf
+{script, {"PUT", "/cgi-bin/put"}}
+.fi
+.RE
+.LP
+\fIESI Properties - Requires mod_esi\fR\&
+.RS 2
+.TP 2
+.B
+{erl_script_alias, {URLPath, [AllowedModule]}}:
+\fIURLPath = string()\fR\& and \fIAllowedModule = atom()\fR\&\&. \fIerl_script_alias\fR\& marks all URLs matching url-path as erl scheme scripts\&. A matching URL is mapped into a specific module and function, for example:
+.LP
+.nf
+{erl_script_alias, {"/cgi-bin/example", [httpd_example]}}
+.fi
+.RS 2
+.LP
+A request to http://your\&.server\&.org/cgi-bin/example/httpd_example:yahoo would refer to httpd_example:yahoo/3 or, if that does not exist, httpd_example:yahoo/2 and http://your\&.server\&.org/cgi-bin/example/other:yahoo would not be allowed to execute\&.
+.RE
+.TP 2
+.B
+{erl_script_nocache, boolean()}:
+If \fIerl_script_nocache\fR\& is set to \fItrue\fR\&, the server adds HTTP header fields preventing proxies from caching the page\&. This is generally a good idea for dynamic content, as the content often varies between each request\&. Default is \fIfalse\fR\&\&.
+.TP 2
+.B
+{erl_script_timeout, integer()}:
+If \fIerl_script_timeout\fR\& sets the time in seconds the server waits between each chunk of data to be delivered through \fImod_esi:deliver/2\fR\&\&. Default is \fI15\fR\&\&. This is only relevant for scripts that use the erl scheme\&.
+.TP 2
+.B
+{eval_script_alias, {URLPath, [AllowedModule]}}:
+\fIURLPath = string()\fR\& and \fIAllowedModule = atom()\fR\&\&. Same as \fIerl_script_alias\fR\& but for scripts using the eval scheme\&. This is only supported for backwards compatibility\&. The eval scheme is deprecated\&.
+.RE
+.LP
+\fILog Properties - Requires mod_log\fR\&
+.RS 2
+.TP 2
+.B
+{error_log, path()}:
+Defines the filename of the error log file to be used to log server errors\&. If the filename does not begin with a slash (/), it is assumed to be relative to the \fIserver_root\fR\&\&.
+.TP 2
+.B
+{security_log, path()}:
+Defines the filename of the access log file to be used to log security events\&. If the filename does not begin with a slash (/), it is assumed to be relative to the \fIserver_root\fR\&\&.
+.TP 2
+.B
+{transfer_log, path()}:
+Defines the filename of the access log file to be used to log incoming requests\&. If the filename does not begin with a slash (/), it is assumed to be relative to the \fIserver_root\fR\&\&.
+.RE
+.LP
+\fIDisk Log Properties - Requires mod_disk_log\fR\&
+.RS 2
+.TP 2
+.B
+{disk_log_format, internal | external}:
+Defines the file format of the log files\&. See \fIdisk_log\fR\& for details\&. If the internal file format is used, the log file is repaired after a crash\&. When a log file is repaired, data can disappear\&. When the external file format is used, \fIhttpd\fR\& does not start if the log file is broken\&. Default is \fIexternal\fR\&\&.
+.TP 2
+.B
+{error_disk_log, path()}:
+Defines the filename of the (\fIdisk_log(3)\fR\&) error log file to be used to log server errors\&. If the filename does not begin with a slash (/), it is assumed to be relative to the \fIserver_root\fR\&\&.
+.TP 2
+.B
+{error_disk_log_size, {MaxBytes, MaxFiles}}:
+\fIMaxBytes = integer()\fR\& and \fIMaxFiles = integer()\fR\&\&. Defines the properties of the (\fIdisk_log(3)\fR\&) error log file\&. This file is of type wrap log and max bytes is written to each file and max files is used before the first file is truncated and reused\&.
+.TP 2
+.B
+{security_disk_log, path()}:
+Defines the filename of the (\fIdisk_log(3)\fR\&) access log file logging incoming security events, that is, authenticated requests\&. If the filename does not begin with a slash (/), it is assumed to be relative to the \fIserver_root\fR\&\&.
+.TP 2
+.B
+{security_disk_log_size, {MaxBytes, MaxFiles}}:
+\fIMaxBytes = integer()\fR\& and \fIMaxFiles = integer()\fR\&\&. Defines the properties of the \fIdisk_log(3)\fR\& access log file\&. This file is of type wrap log and max bytes is written to each file and max files is used before the first file is truncated and reused\&.
+.TP 2
+.B
+{transfer_disk_log, path()}:
+Defines the filename of the (\fIdisk_log(3)\fR\&) access log file logging incoming requests\&. If the filename does not begin with a slash (/), it is assumed to be relative to the \fIserver_root\fR\&\&.
+.TP 2
+.B
+{transfer_disk_log_size, {MaxBytes, MaxFiles}}:
+\fIMaxBytes = integer()\fR\& and \fIMaxFiles = integer()\fR\&\&. Defines the properties of the \fIdisk_log(3)\fR\& access log file\&. This file is of type wrap log and max bytes is written to each file and max files is used before the first file is truncated and reused\&.
+.RE
+.LP
+\fIAuthentication Properties - Requires mod_auth\fR\&
+.LP
+\fI{directory, {path(), [{property(), term()}]}}\fR\&
+.LP
+The properties for directories are as follows:
+.RS 2
+.TP 2
+.B
+{allow_from, all | [RegxpHostString]}:
+Defines a set of hosts to be granted access to a given directory, for example:
+.LP
+.nf
+{allow_from, ["123.34.56.11", "150.100.23"]}
+.fi
+.RS 2
+.LP
+The host \fI123\&.34\&.56\&.11\fR\& and all machines on the \fI150\&.100\&.23\fR\& subnet are allowed access\&.
+.RE
+.TP 2
+.B
+{deny_from, all | [RegxpHostString]}:
+Defines a set of hosts to be denied access to a given directory, for example:
+.LP
+.nf
+{deny_from, ["123.34.56.11", "150.100.23"]}
+.fi
+.RS 2
+.LP
+The host \fI123\&.34\&.56\&.11\fR\& and all machines on the \fI150\&.100\&.23\fR\& subnet are not allowed access\&.
+.RE
+.TP 2
+.B
+{auth_type, plain | dets | mnesia}:
+Sets the type of authentication database that is used for the directory\&. The key difference between the different methods is that dynamic data can be saved when \fIMnesia\fR\& and \fIDets\fR\& are used\&. This property is called \fIAuthDbType\fR\& in the Apache-like configuration files\&.
+.TP 2
+.B
+{auth_user_file, path()}:
+Sets the name of a file containing the list of users and passwords for user authentication\&. The filename can be either absolute or relative to the \fIserver_root\fR\&\&. If using the plain storage method, this file is a plain text file where each line contains a username followed by a colon, followed by the non-encrypted password\&. If usernames are duplicated, the behavior is undefined\&.
+.RS 2
+.LP
+Example:
+.RE
+.LP
+.nf
+ ragnar:s7Xxv7
+ edward:wwjau8 
+.fi
+.RS 2
+.LP
+If the \fIDets\fR\& storage method is used, the user database is maintained by \fIDets\fR\& and must not be edited by hand\&. Use the API functions in module \fImod_auth\fR\& to create/edit the user database\&. This directive is ignored if the \fIMnesia\fR\& storage method is used\&. For security reasons, ensure that \fIauth_user_file\fR\& is stored outside the document tree of the web server\&. If it is placed in the directory that it protects, clients can download it\&.
+.RE
+.TP 2
+.B
+{auth_group_file, path()}:
+Sets the name of a file containing the list of user groups for user authentication\&. The filename can be either absolute or relative to the \fIserver_root\fR\&\&. If the plain storage method is used, the group file is a plain text file, where each line contains a group name followed by a colon, followed by the members usernames separated by spaces\&.
+.RS 2
+.LP
+Example:
+.RE
+.LP
+.nf
+group1: bob joe ante
+.fi
+.RS 2
+.LP
+If the \fIDets\fR\& storage method is used, the group database is maintained by \fIDets\fR\& and must not be edited by hand\&. Use the API for module \fImod_auth\fR\& to create/edit the group database\&. This directive is ignored if the \fIMnesia\fR\& storage method is used\&. For security reasons, ensure that the \fIauth_group_file\fR\& is stored outside the document tree of the web server\&. If it is placed in the directory that it protects, clients can download it\&.
+.RE
+.TP 2
+.B
+{auth_name, string()}:
+Sets the name of the authorization realm (auth-domain) for a directory\&. This string informs the client about which username and password to use\&.
+.TP 2
+.B
+{auth_access_password, string()}:
+If set to other than "NoPassword", the password is required for all API calls\&. If the password is set to "DummyPassword", the password must be changed before any other API calls\&. To secure the authenticating data, the password must be changed after the web server is started\&. Otherwise it is written in clear text in the configuration file\&.
+.TP 2
+.B
+{require_user, [string()]}:
+Defines users to grant access to a given directory using a secret password\&.
+.TP 2
+.B
+{require_group, [string()]}:
+Defines users to grant access to a given directory using a secret password\&.
+.RE
+.LP
+\fIHtaccess Authentication Properties - Requires mod_htaccess\fR\&
+.RS 2
+.TP 2
+.B
+{access_files, [path()]}:
+Specifies the filenames that are used for access files\&. When a request comes, every directory in the path to the requested asset are searched after files with the names specified by this parameter\&. If such a file is found, the file is parsed and the restrictions specified in it are applied to the request\&.
+.RE
+.LP
+\fISecurity Properties - Requires mod_security\fR\&
+.LP
+\fI{security_directory, {path(), [{property(), term()}]}}\fR\&
+.LP
+The properties for the security directories are as follows:
+.RS 2
+.TP 2
+.B
+{data_file, path()}:
+Name of the security data file\&. The filename can either be absolute or relative to the \fIserver_root\fR\&\&. This file is used to store persistent data for module \fImod_security\fR\&\&.
+.TP 2
+.B
+{max_retries, integer()}:
+Specifies the maximum number of attempts to authenticate a user before the user is blocked out\&. If a user successfully authenticates while blocked, the user receives a 403 (Forbidden) response from the server\&. If the user makes a failed attempt while blocked, the server returns 401 (Unauthorized), for security reasons\&. Default is \fI3\fR\&\&. Can be set to infinity\&.
+.TP 2
+.B
+{block_time, integer()}:
+Specifies the number of minutes a user is blocked\&. After this timehas passed, the user automatically regains access\&. Default is \fI60\fR\&\&.
+.TP 2
+.B
+{fail_expire_time, integer()}:
+Specifies the number of minutes a failed user authentication is remembered\&. If a user authenticates after this time has passed, the previous failed authentications are forgotten\&. Default is \fI30\fR\&\&.
+.TP 2
+.B
+{auth_timeout, integer()}:
+ Specifies the number of seconds a successful user authentication is remembered\&. After this time has passed, the authentication is no longer reported\&. Default is \fI30\fR\&\&. 
+.RE
+.SH EXPORTS
+.LP
+.B
+info(Pid) ->
+.br
+.B
+info(Pid, Properties) -> [{Option, Value}]
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Properties = [property()]
+.br
+Option = property()
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches information about the HTTP server\&. When called with only the pid, all properties are fetched\&. When called with a list of specific properties, they are fetched\&. The available properties are the same as the start options of the server\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Pid is the pid returned from \fIinets:start/[2,3]\fR\&\&. Can also be retrieved form \fIinets:services/0\fR\& and \fIinets:services_info/0\fR\&, see \fBinets(3)\fR\&\&.
+
+.RE
+.LP
+.B
+info(Address, Port) -> 
+.br
+.B
+info(Address, Port, Profile) -> 
+.br
+.B
+info(Address, Port, Profile, Properties) -> [{Option, Value}] 
+.br
+.B
+info(Address, Port, Properties) -> [{Option, Value}] 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Address = ip_address()
+.br
+Port = integer()
+.br
+Profile = atom()
+.br
+Properties = [property()]
+.br
+Option = property()
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches information about the HTTP server\&. When called with only \fIAddress\fR\& and \fIPort\fR\&, all properties are fetched\&. When called with a list of specific properties, they are fetched\&. The available properties are the same as the start options of the server\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The address must be the IP address and cannot be the hostname\&.
+
+.RE
+.LP
+.B
+reload_config(Config, Mode) -> ok | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = path() | [{Option, Value}]
+.br
+Option = property()
+.br
+Value = term()
+.br
+Mode = non_disturbing | disturbing
+.br
+.RE
+.RE
+.RS
+.LP
+Reloads the HTTP server configuration without restarting the server\&. Incoming requests are answered with a temporary down message during the reload time\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Available properties are the same as the start options of the server, but the properties \fIbind_address\fR\& and \fIport\fR\& cannot be changed\&.
+
+.LP
+If mode is disturbing, the server is blocked forcefully, all ongoing requests terminates, and the reload starts immediately\&. If mode is non-disturbing, no new connections are accepted, but ongoing requests are allowed to complete before the reload is done\&.
+.RE
+.SH "ERLANG WEB SERVER API DATA TYPES"
+
+.LP
+The Erlang web server API data types are as follows:
+.LP
+.nf
+
+      ModData = #mod{}
+
+      -record(mod, {
+		data = [],
+		socket_type = ip_comm,
+		socket, 
+		config_db,
+		method,
+		absolute_uri,
+		request_uri,
+		http_version,
+		request_line,
+		parsed_header = [],
+		entity_body,
+		connection
+	}).
+.fi
+.LP
+To acess the record in your callback-module use:
+.LP
+.nf
+ -include_lib("inets/include/httpd.hrl").
+.fi
+.LP
+The fields of record \fImod\fR\& have the following meaning:
+.RS 2
+.TP 2
+.B
+\fIdata\fR\&:
+Type \fI[{InteractionKey,InteractionValue}]\fR\& is used to propagate data between modules\&. Depicted \fIinteraction_data()\fR\& in function type declarations\&.
+.TP 2
+.B
+\fIsocket_type\fR\&:
+\fIsocket_type()\fR\& indicates whether it is an IP socket or an \fIssl\fR\& socket\&.
+.TP 2
+.B
+\fIsocket\fR\&:
+The socket, in format \fIip_comm\fR\& or \fIssl\fR\&, depending on \fIsocket_type\fR\&\&.
+.TP 2
+.B
+\fIconfig_db\fR\&:
+The config file directives stored as key-value tuples in an ETS table\&. Depicted \fIconfig_db()\fR\& in function type declarations\&.
+.TP 2
+.B
+\fImethod\fR\&:
+Type \fI"GET" | "POST" | "HEAD" | "TRACE"\fR\&, that is, the HTTP method\&.
+.TP 2
+.B
+\fIabsolute_uri\fR\&:
+If the request is an HTTP/1\&.1 request, the URI can be in the absolute URI format\&. In that case, \fIhttpd\fR\& saves the absolute URI in this field\&. An Example of an absolute URI is \fI"http://ServerName:Part/cgi-bin/find\&.pl?person=jocke"\fR\&
+.TP 2
+.B
+\fIrequest_uri\fR\&:
+The \fIRequest-URI\fR\& as defined in RFC 1945, for example, \fI"/cgi-bin/find\&.pl?person=jocke"\fR\&\&.
+.TP 2
+.B
+\fIhttp_version\fR\&:
+The \fIHTTP\fR\& version of the request, that is, "HTTP/0\&.9", "HTTP/1\&.0", or "HTTP/1\&.1"\&.
+.TP 2
+.B
+\fIrequest_line\fR\&:
+The \fIRequest-Line\fR\& as defined inRFC 1945, for example, \fI"GET /cgi-bin/find\&.pl?person=jocke HTTP/1\&.0"\fR\&\&.
+.TP 2
+.B
+\fIparsed_header\fR\&:
+Type \fI[{HeaderKey,HeaderValue}]\fR\&\&. \fIparsed_header\fR\& contains all HTTP header fields from the HTTP request stored in a list as key-value tuples\&. See RFC 2616 for a listing of all header fields\&. For example, the date field is stored as \fI{"date","Wed, 15 Oct 1997 14:35:17 GMT"}\fR\&\&. RFC 2616 defines that HTTP is a case-insensitive protocol and the header fields can be in lower case or upper case\&. \fIhttpd\fR\& ensures that all header field names are in lower case\&. 
+.TP 2
+.B
+\fIentity_body\fR\&:
+The \fIentity-Body\fR\& as defined in RFC 2616, for example, data sent from a CGI script using the POST method\&.
+.TP 2
+.B
+\fIconnection\fR\&:
+\fItrue | false\fR\&\&. If set to \fItrue\fR\&, the connection to the client is a persistent connection and is not closed when the request is served\&.
+.RE
+.SH "ERLANG WEB SERVER API CALLBACK FUNCTIONS"
+
+.SH EXPORTS
+.LP
+.B
+Module:do(ModData)-> {proceed, OldData} | {proceed, NewData} | {break, NewData} | done
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+OldData = list()
+.br
+NewData = [{response,{StatusCode,Body}}]
+.br
+| [{response,{response,Head,Body}}]
+.br
+| [{response,{already_sent,Statuscode,Size}}]
+.br
+StatusCode = integer()
+.br
+Body = io_list() | nobody | {Fun, Arg}
+.br
+Head = [HeaderOption]
+.br
+HeaderOption = {Option, Value} | {code, StatusCode}
+.br
+Option = accept_ranges | allow
+.br
+| cache_control | content_MD5
+.br
+| content_encoding | content_language
+.br
+| content_length | content_location
+.br
+| content_range | content_type | date
+.br
+| etag | expires | last_modified
+.br
+| location | pragma | retry_after
+.br
+| server | trailer | transfer_encoding
+.br
+Value = string()
+.br
+Fun = fun( Arg ) -> sent| close | Body 
+.br
+Arg = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+When a valid request reaches \fIhttpd\fR\&, it calls \fIdo/1\fR\& in each module, defined by the configuration option of \fIModule\fR\&\&. The function can generate data for other modules or a response that can be sent back to the client\&.
+.LP
+The field \fIdata\fR\& in \fIModData\fR\& is a list\&. This list is the list returned from the last call to \fIdo/1\fR\&\&.
+.LP
+\fIBody\fR\& is the body of the HTTP response that is sent back to the client\&. An appropriate header is appended to the message\&. \fIStatusCode\fR\& is the status code of the response, see RFC 2616 for the appropriate values\&.
+.LP
+\fIHead\fR\& is a key value list of HTTP header fields\&. The server constructs an HTTP header from this data\&. See RFC 2616 for the appropriate value for each header field\&. If the client is an HTTP/1\&.0 client, the server filters the list so that only HTTP/1\&.0 header fields are sent back to the client\&.
+.LP
+If \fIBody\fR\& is returned and equal to \fI{Fun,Arg}\fR\&, the web server tries \fIapply/2\fR\& on \fIFun\fR\& with \fIArg\fR\& as argument\&. The web server expects that the fun either returns a list \fI(Body)\fR\& that is an HTTP repsonse, or the atom \fIsent\fR\& if the HTTP response is sent back to the client\&. If \fIclose\fR\& is returned from the fun, something has gone wrong and the server signals this to the client by closing the connection\&.
+.RE
+.LP
+.B
+Module:load(Line, AccIn)-> eof | ok | {ok, AccOut} | {ok, AccOut, {Option, Value}} | {ok, AccOut, [{Option, Value}]} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Line = string()
+.br
+AccIn = [{Option, Value}]
+.br
+AccOut = [{Option, Value}]
+.br
+Option = property()
+.br
+Value = term() 
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Converts a line in an Apache-like configuration file to an \fI{Option, Value}\fR\& tuple\&. Some more complex configuration options, such as \fIdirectory\fR\& and \fIsecurity_directory\fR\&, create an accumulator\&. This function only needs clauses for the options implemented by this particular callback module\&.
+.RE
+.LP
+.B
+Module:remove(ConfigDB) -> ok | {error, Reason} 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConfigDB = ets_table()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+When \fIhttpd\fR\& is shut down, it tries to execute \fIremove/1\fR\& in each Erlang web server callback module\&. The programmer can use this function to clean up resources created in the store function\&.
+.RE
+.LP
+.B
+Module:store({Option, Value}, Config)-> {ok, {Option, NewValue}} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Line = string()
+.br
+Option = property()
+.br
+Config = [{Option, Value}]
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Checks the validity of the configuration options before saving them in the internal database\&. This function can also have a side effect, that is, setup of necessary extra resources implied by the configuration option\&. It can also resolve possible dependencies among configuration options by changing the value of the option\&. This function only needs clauses for the options implemented by this particular callback module\&.
+.RE
+.SH "ERLANG WEB SERVER API HELP FUNCTIONS"
+
+.SH EXPORTS
+.LP
+.B
+parse_query(QueryString) -> [{Key,Value}]
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryString = string()
+.br
+Key = string()
+.br
+Value = string()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIparse_query/1\fR\& parses incoming data to \fIerl\fR\& and \fIeval\fR\& scripts (see \fBmod_esi(3)\fR\&) as defined in the standard URL format, that is, \&'+\&' becomes \&'space\&' and decoding of hexadecimal characters (\fI%xx\fR\&)\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+RFC 2616, \fBinets(3)\fR\&, \fBssl(3)\fR\& 

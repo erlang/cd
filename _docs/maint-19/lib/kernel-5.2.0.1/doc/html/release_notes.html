@@ -1,0 +1,150 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:erl="http://erlang.org" xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- </title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/kernel-5.2.0.1.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>Kernel</strong><br><strong>Release Notes</strong><br><small>Version 5.2.0.1</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu"><li id="no" title="Kernel Release Notes" expanded="false">Kernel Release Notes<ul>
+<li><a href="notes.html">
+              Top of chapter
+            </a></li>
+<li title="Kernel 5.2.0.1"><a href="notes.html#idm5530096">Kernel 5.2.0.1</a></li>
+<li title="Kernel 5.2"><a href="notes.html#idp24278224">Kernel 5.2</a></li>
+<li title="Kernel 5.1.1"><a href="notes.html#idm5693488">Kernel 5.1.1</a></li>
+<li title="Kernel 5.1"><a href="notes.html#idm5686176">Kernel 5.1</a></li>
+<li title="Kernel 5.0.2"><a href="notes.html#idm5878752">Kernel 5.0.2</a></li>
+<li title="Kernel 5.0.1"><a href="notes.html#idm5875040">Kernel 5.0.1</a></li>
+<li title="Kernel 5.0"><a href="notes.html#idm5871280">Kernel 5.0</a></li>
+<li title="Kernel 4.2"><a href="notes.html#idm5611664">Kernel 4.2</a></li>
+<li title="Kernel 4.1.1"><a href="notes.html#idp24799632">Kernel 4.1.1</a></li>
+<li title="Kernel 4.1"><a href="notes.html#idp24812016">Kernel 4.1</a></li>
+<li title="Kernel 4.0"><a href="notes.html#idp24817360">Kernel 4.0</a></li>
+<li title="Kernel 3.2.0.1"><a href="notes.html#idp27944784">Kernel 3.2.0.1</a></li>
+<li title="Kernel 3.2"><a href="notes.html#idp27948496">Kernel 3.2</a></li>
+<li title="Kernel 3.1"><a href="notes.html#idp27957840">Kernel 3.1</a></li>
+<li title="Kernel 3.0.3"><a href="notes.html#idp27968848">Kernel 3.0.3</a></li>
+<li title="Kernel 3.0.2"><a href="notes.html#idp27972432">Kernel 3.0.2</a></li>
+<li title="Kernel 3.0.1"><a href="notes.html#idp27976288">Kernel 3.0.1</a></li>
+<li title="Kernel 3.0"><a href="notes.html#idp26716624">Kernel 3.0</a></li>
+<li title="Kernel 2.16.4.1"><a href="notes.html#idp26230064">Kernel 2.16.4.1</a></li>
+<li title="Kernel 2.16.4"><a href="notes.html#idp26238688">Kernel 2.16.4</a></li>
+<li title="Kernel 2.16.3"><a href="notes.html#idp26254224">Kernel 2.16.3</a></li>
+<li title="Kernel 2.16.2"><a href="notes.html#idp26266624">Kernel 2.16.2</a></li>
+<li title="Kernel 2.16.1"><a href="notes.html#idp27988928">Kernel 2.16.1</a></li>
+<li title="Kernel 2.16"><a href="notes.html#idp28006688">Kernel 2.16</a></li>
+<li title="Kernel 2.15.3"><a href="notes.html#idp29341376">Kernel 2.15.3</a></li>
+<li title="Kernel 2.15.2"><a href="notes.html#idp29348400">Kernel 2.15.2</a></li>
+<li title="Kernel 2.15.1"><a href="notes.html#idp29366592">Kernel 2.15.1</a></li>
+<li title="Kernel 2.15"><a href="notes.html#idp26347728">Kernel 2.15</a></li>
+<li title="Kernel 2.14.5"><a href="notes.html#idp24423440">Kernel 2.14.5</a></li>
+<li title="Kernel 2.14.4"><a href="notes.html#idp24436144">Kernel 2.14.4</a></li>
+<li title="Kernel 2.14.3"><a href="notes.html#idp24449968">Kernel 2.14.3</a></li>
+<li title="Kernel 2.14.2"><a href="notes.html#idp24461056">Kernel 2.14.2</a></li>
+<li title="Kernel 2.14.1.1"><a href="notes.html#idp24467456">Kernel 2.14.1.1</a></li>
+<li title="Kernel 2.14.1"><a href="notes.html#idp24474416">Kernel 2.14.1</a></li>
+<li title="Kernel 2.14"><a href="notes.html#idp29278896">Kernel 2.14</a></li>
+<li title="Kernel 2.13.5.3"><a href="notes.html#idp29296352">Kernel 2.13.5.3</a></li>
+<li title="Kernel 2.13.5.2"><a href="notes.html#idp29299968">Kernel 2.13.5.2</a></li>
+<li title="Kernel 2.13.5.1"><a href="notes.html#idp29303632">Kernel 2.13.5.1</a></li>
+<li title="Kernel 2.13.5"><a href="notes.html#idp29308128">Kernel 2.13.5</a></li>
+<li title="Kernel 2.13.4"><a href="notes.html#idp28997648">Kernel 2.13.4</a></li>
+<li title="Kernel 2.13.3"><a href="notes.html#idp29013824">Kernel 2.13.3</a></li>
+<li title="Kernel 2.13.2"><a href="notes.html#idp29031600">Kernel 2.13.2</a></li>
+<li title="Kernel 2.13.1"><a href="notes.html#idp29038832">Kernel 2.13.1</a></li>
+<li title="Kernel 2.13"><a href="notes.html#idp29051344">Kernel 2.13</a></li>
+<li title="Kernel 2.12.5.1"><a href="notes.html#idp26582528">Kernel 2.12.5.1</a></li>
+<li title="Kernel 2.12.5"><a href="notes.html#idp26589168">Kernel 2.12.5</a></li>
+<li title="Kernel 2.12.4"><a href="notes.html#idp26621280">Kernel 2.12.4</a></li>
+<li title="Kernel 2.12.3"><a href="notes.html#idp26632976">Kernel 2.12.3</a></li>
+<li title="Kernel 2.12.2.1"><a href="notes.html#idp29139840">Kernel 2.12.2.1</a></li>
+<li title="Kernel 2.12.2"><a href="notes.html#idp29145248">Kernel 2.12.2</a></li>
+<li title="Kernel 2.12.1.2"><a href="notes.html#idp29167264">Kernel 2.12.1.2</a></li>
+<li title="Kernel 2.12.1.1"><a href="notes.html#idp29172656">Kernel 2.12.1.1</a></li>
+<li title="Kernel 2.12.1"><a href="notes.html#idp29176336">Kernel 2.12.1</a></li>
+<li title="Kernel 2.12"><a href="notes.html#idp29189056">Kernel 2.12</a></li>
+<li title="Kernel 2.11.5.2"><a href="notes.html#idp26770096">Kernel 2.11.5.2</a></li>
+<li title="Kernel 2.11.5.1"><a href="notes.html#idp26773856">Kernel 2.11.5.1</a></li>
+<li title="Kernel 2.11.5"><a href="notes.html#idp26783856">Kernel 2.11.5</a></li>
+<li title="Kernel 2.11.4.2"><a href="notes.html#idp26800768">Kernel 2.11.4.2</a></li>
+<li title="Kernel 2.11.4.1"><a href="notes.html#idp26805120">Kernel 2.11.4.1</a></li>
+<li title="Kernel 2.11.4"><a href="notes.html#idp26809072">Kernel 2.11.4</a></li>
+<li title="Kernel 2.11.3.1"><a href="notes.html#idp26849696">Kernel 2.11.3.1</a></li>
+<li title="Kernel 2.11.3"><a href="notes.html#idp26853792">Kernel 2.11.3</a></li>
+<li title="Kernel 2.11.2"><a href="notes.html#idp26397840">Kernel 2.11.2</a></li>
+<li title="Kernel 2.11.1.1"><a href="notes.html#idp26419296">Kernel 2.11.1.1</a></li>
+<li title="Kernel 2.11.1"><a href="notes.html#idp26423344">Kernel 2.11.1</a></li>
+<li title="Kernel 2.11"><a href="notes.html#idp26433264">Kernel 2.11</a></li>
+<li title="Kernel 2.10.13"><a href="notes.html#idp26468048">Kernel 2.10.13</a></li>
+<li title="Kernel 2.10.12"><a href="notes.html#idp26484272">Kernel 2.10.12</a></li>
+<li title="Kernel 2.10.11.1"><a href="notes.html#idp26510784">Kernel 2.10.11.1</a></li>
+<li title="Kernel 2.10.11"><a href="notes.html#idp24300016">Kernel 2.10.11</a></li>
+<li title="Kernel 2.10.10.1"><a href="notes.html#idp24329776">Kernel 2.10.10.1</a></li>
+<li title="Kernel 2.10.10"><a href="notes.html#idp24335744">Kernel 2.10.10</a></li>
+<li title="Kernel 2.10.9"><a href="notes.html#idp24354768">Kernel 2.10.9</a></li>
+<li title="Kernel 2.10.8"><a href="notes.html#idp24386160">Kernel 2.10.8</a></li>
+<li title="Kernel 2.10.7"><a href="notes.html#idp24392560">Kernel 2.10.7</a></li>
+<li title="Kernel 2.10.6"><a href="notes.html#idp24405360">Kernel 2.10.6</a></li>
+<li title="Kernel 2.10.5"><a href="notes.html#idp24413792">Kernel 2.10.5</a></li>
+<li title="Kernel 2.10.4"><a href="notes.html#idp28040096">Kernel 2.10.4</a></li>
+<li title="Kernel 2.10.3"><a href="notes.html#idp28046080">Kernel 2.10.3</a></li>
+<li title="Kernel 2.10.1"><a href="notes.html#idp28054592">Kernel 2.10.1</a></li>
+</ul>
+</li></ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Kernel Release Notes</h1></center>
+<center><h4>Version 5.2.0.1</h4></center>
+<center><h4>June 15, 2018</h4></center>
+<div class="extrafrontpageinfo"><center></center></div>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 1997-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

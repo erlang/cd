@@ -1,0 +1,751 @@
+.TH erpc 3 "kernel 7.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erpc \- Enhanced Remote Procedure Call
+.SH DESCRIPTION
+.LP
+This module provide services similar to Remote Procedure Calls\&. A remote procedure call is a method to call a function on a remote node and collect the answer\&. It is used for collecting information on a remote node, or for running a function with some specific side effects on the remote node\&.
+.LP
+This is an enhanced subset of the operations provided by the \fIrpc\fR\& module\&. Enhanced in the sense that it makes it possible to distinguish between returned value, raised exceptions, and other errors\&. \fIerpc\fR\& also has better performance and scalability than the original \fIrpc\fR\& implementation\&. However, current \fIrpc\fR\& module will utilize \fIerpc\fR\& in order to also provide these properties when possible\&.
+.LP
+In order for an \fIerpc\fR\& operation to succeed, the remote node also needs to support \fIerpc\fR\&\&. Typically only ordinary Erlang nodes as of OTP 23 have \fIerpc\fR\& support\&.
+.LP
+Note that it is up to the user to ensure that correct code to execute via \fIerpc\fR\& is available on the involved nodes\&.
+.SH DATA TYPES
+.nf
+
+\fBrequest_id()\fR\&
+.br
+.fi
+.RS
+.LP
+An opaque type of call request identifiers\&. For more information see \fIsend_request/4\fR\&\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+call(Node, Fun) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+call(Node, Fun, Timeout) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Fun = function()
+.br
+Timeout = 0\&.\&.4294967295 | infinity
+.br
+Result = term()
+.br
+.RE
+.RE
+.RS
+.LP
+The same as calling \fIerpc:call(Node,erlang,apply,[Fun,[]],Timeout)\fR\&\&. May raise all the same exceptions as \fIerpc:call/5\fR\& plus an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if \fIFun\fR\& is not a fun of zero arity\&.
+.LP
+The call \fIerpc:call(Node,Fun)\fR\& is the same as the call \fIerpc:call(Node,Fun,infinity)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+call(Node, Module, Function, Args) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+call(Node, Module, Function, Args, Timeout) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Module = Function = atom()
+.br
+Args = [term()]
+.br
+Timeout = 0\&.\&.4294967295 | infinity
+.br
+Result = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates \fIapply(Module, Function, Args)\fR\& on node \fINode\fR\& and returns the corresponding value \fIResult\fR\&\&. \fITimeout\fR\& is an integer representing the timeout in milliseconds or the atom \fIinfinity\fR\& which prevents the operation from ever timing out\&.
+.LP
+The call \fIerpc:call(Node, Module, Function, Args)\fR\& is equivalent to the call \fIerpc:call(Node, Module, Function, Args, infinity)\fR\&
+.LP
+The \fIcall()\fR\& function only returns if the applied function successfully returned without raising any uncaught exceptions, the operation did not time out, and no failures occurred\&. In all other cases an exception is raised\&. The following exceptions, listed by exception class, can currently be raised by \fIerpc:call()\fR\&:
+.RS 2
+.TP 2
+.B
+\fIthrow\fR\&:
+The applied function called \fIthrow(Value)\fR\& and did not catch this exception\&. The exception reason \fIValue\fR\& equals the argument passed to \fIthrow/1\fR\&\&.
+.TP 2
+.B
+\fIexit\fR\&:
+Exception reason:
+.RS 2
+.TP 2
+.B
+\fI{exception, ExitReason}\fR\&:
+The applied function called \fIexit(ExitReason)\fR\& and did not catch this exception\&. The exit reason \fIExitReason\fR\& equals the argument passed to \fIexit/1\fR\&\&.
+.TP 2
+.B
+\fI{signal, ExitReason}\fR\&:
+The process that applied the function received an exit signal and terminated due to this signal\&. The process terminated with exit reason \fIExitReason\fR\&\&.
+.RE
+.TP 2
+.B
+\fIerror\fR\&:
+Exception reason:
+.RS 2
+.TP 2
+.B
+\fI{exception, ErrorReason, StackTrace}\fR\&:
+A runtime error occurred which raised and error exception while applying the function, and the applied function did not catch the exception\&. The error reason \fIErrorReason\fR\& indicates the type of error that occurred\&. \fIStackTrace\fR\& is formatted as when caught in a \fItry/catch\fR\& construct\&. The \fIStackTrace\fR\& is limited to the applied function and functions called by it\&.
+.TP 2
+.B
+\fI{erpc, ERpcErrorReason}\fR\&:
+The \fIerpc\fR\& operation failed\&. The following \fIERpcErrorReason\fR\&s are the most common ones:
+.RS 2
+.TP 2
+.B
+\fIbadarg\fR\&:
+If any one of these are true:
+.RS 2
+.TP 2
+*
+\fINode\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIModule\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFunction\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIArgs\fR\& is not a list\&. Note that the list is not verified to be a proper list at the client side\&.
+.LP
+.TP 2
+*
+\fITimeout\fR\& is not the atom \fIinfinity\fR\& or an integer in valid range\&.
+.LP
+.RE
+
+.TP 2
+.B
+\fInoconnection\fR\&:
+The connection to \fINode\fR\& was lost or could not be established\&. The function may or may not be applied\&.
+.TP 2
+.B
+\fIsystem_limit\fR\&:
+The \fIerpc\fR\& operation failed due to some system limit being reached\&. This typically due to failure to create a process on the remote node \fINode\fR\&, but can be other things as well\&.
+.TP 2
+.B
+\fItimeout\fR\&:
+The \fIerpc\fR\& operation timed out\&. The function may or may not be applied\&.
+.TP 2
+.B
+\fInotsup\fR\&:
+The remote node \fINode\fR\& does not support this \fIerpc\fR\& operation\&.
+.RE
+.RE
+.RE
+.LP
+If the \fIerpc\fR\& operation fails, but it is unknown if the function is/will be applied (that is, a timeout or a connection loss), the caller will not receive any further information about the result if/when the applied function completes\&. If the applied function explicitly communicates with the calling process, such communication may, of course, reach the calling process\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+You cannot make \fIany\fR\& assumptions about the process that will perform the \fIapply()\fR\&\&. It may be the calling process itself, a server, or a freshly spawned process\&.
+
+.RE
+.LP
+.nf
+
+.B
+cast(Node, Fun) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Fun = function()
+.br
+.RE
+.RE
+.RS
+.LP
+The same as calling \fIerpc:cast(Node,erlang,apply,[Fun,[]])\fR\&\&.
+.LP
+\fIerpc:cast/2\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINode\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFun\fR\& is not a a fun of zero arity\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+cast(Node, Module, Function, Args) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Module = Function = atom()
+.br
+Args = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates \fIapply(Module, Function, Args)\fR\& on node \fINode\fR\&\&. No response is delivered to the calling process\&. \fIerpc:cast()\fR\& returns immediately after the cast request has been sent\&. Any failures beside bad arguments are silently ignored\&.
+.LP
+\fIerpc:cast/4\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINode\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIModule\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFunction\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIArgs\fR\& is not a list\&. Note that the list is not verified to be a proper list at the client side\&.
+.LP
+.RE
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+You cannot make \fIany\fR\& assumptions about the process that will perform the \fIapply()\fR\&\&. It may be a server, or a freshly spawned process\&.
+
+.RE
+.LP
+.nf
+
+.B
+check_response(Message, RequestId) ->
+.B
+                  {response, Result} | no_response
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Message = term()
+.br
+RequestId = request_id()
+.br
+Result = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Check if a message is a response to a \fIcall\fR\& request previously made by the calling process using \fIerpc:send_request/4\fR\&\&. \fIRequestId\fR\& should be the value returned from the previously made \fIerpc:send_request()\fR\& call, and the corresponding response should not already have been received and handled to completion by \fIerpc:check_response()\fR\&, \fIerpc:receive_response()\fR\&, or \fIerpc:wait_response()\fR\&\&. \fIMessage\fR\& is the message to check\&.
+.LP
+If \fIMessage\fR\& does not correspond to the response, the atom \fIno_response\fR\& is returned\&. If \fIMessage\fR\& corresponds to the response, the \fIcall\fR\& operation is completed and either the result is returned as \fI{response, Result}\fR\& where \fIResult\fR\& corresponds to the value returned from the applied function or an exception is raised\&. The exceptions that can be raised corresponds to the same exceptions as can be raised by \fIerpc:call/4\fR\&\&. That is, no \fI{erpc, timeout}\fR\& \fIerror\fR\& exception can be raised\&. \fIerpc:check_response()\fR\& will fail with an \fI{erpc, badarg}\fR\& exception if/when an invalid \fIRequestId\fR\& is detected\&.
+.LP
+If the \fIerpc\fR\& operation fails, but it is unknown if the function is/will be applied (that is, a connection loss), the caller will not receive any further information about the result if/when the applied function completes\&. If the applied function explicitly communicates with the calling process, such communication may, of course, reach the calling process\&.
+.RE
+.LP
+.nf
+
+.B
+multicall(Nodes, Fun) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+multicall(Nodes, Fun, Timeout) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Nodes = [atom()]
+.br
+Fun = function()
+.br
+Timeout = 0\&.\&.4294967295 | infinity
+.br
+Result = term()
+.br
+.RE
+.RE
+.RS
+.LP
+The same as calling \fIerpc:multicall(Nodes,erlang,apply,[Fun,[]],Timeout)\fR\&\&. May raise all the same exceptions as \fIerpc:multicall/5\fR\& plus an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if \fIFun\fR\& is not a fun of zero arity\&.
+.LP
+The call \fIerpc:multicall(Nodes,Fun)\fR\& is the same as the call \fIerpc:multicall(Nodes,Fun, infinity)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+multicall(Nodes, Module, Function, Args) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+multicall(Nodes, Module, Function, Args, Timeout) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Nodes = [atom()]
+.br
+Module = Function = atom()
+.br
+Args = [term()]
+.br
+Timeout = 0\&.\&.4294967295 | infinity
+.br
+Result = 
+.br
+    [{ok, ReturnValue :: term()} | caught_call_exception()]
+.br
+.nf
+\fBcaught_call_exception()\fR\& = 
+.br
+    {throw, Throw :: term()} |
+.br
+    {exit, {exception, Reason :: term()}} |
+.br
+    {error,
+.br
+     {exception, Reason :: term(), StackTrace :: [stack_item()]}} |
+.br
+    {exit, {signal, Reason :: term()}} |
+.br
+    {error, {erpc, Reason :: term()}}
+.fi
+.br
+.nf
+\fBstack_item()\fR\& = 
+.br
+    {Module :: atom(),
+.br
+     Function :: atom(),
+.br
+     Arity :: arity() | (Args :: [term()]),
+.br
+     Location ::
+.br
+         [{file, Filename :: string()} |
+.br
+          {line, Line :: integer() >= 1}]}
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Performs multiple \fIcall\fR\& operations in parallel on multiple nodes\&. That is, evaluates \fIapply(Module, Function, Args)\fR\& on the nodes \fINodes\fR\& in parallel\&. \fITimeout\fR\& is an integer representing the timeout in milliseconds or the atom \fIinfinity\fR\& which prevents the operation from ever timing out\&. The result is returned as a list where the result from each node is placed at the same position as the node name is placed in \fINodes\fR\&\&. Each item in the resulting list is formatted as either:
+.RS 2
+.TP 2
+.B
+\fI{ok, Result}\fR\&:
+The \fIcall\fR\& operation for this specific node returned \fIResult\fR\&\&.
+.TP 2
+.B
+\fI{Class, ExceptionReason}\fR\&:
+The \fIcall\fR\& operation for this specific node raised an exception of class \fIClass\fR\& with exception reason \fIExceptionReason\fR\&\&. These corresponds the the exceptions that \fIerpc:call/5\fR\& can raise\&.
+.RE
+.LP
+\fIerpc:multicall/5\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINodes\fR\& is not a proper list of atoms\&. Note that some requests may already have been sent when the failure occurs\&. That is, the function may or may not be applied on some nodes\&.
+.LP
+.TP 2
+*
+\fIModule\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFunction\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIArgs\fR\& is not a list\&. Note that the list is not verified to be a proper list at the client side\&.
+.LP
+.RE
+
+.LP
+The call \fIerpc:multicall(Nodes, Module, Function, Args)\fR\& is equivalent to the call \fIerpc:multicall(Nodes, Module, Function, Args, infinity)\fR\&\&. These calls are also equivalent to calling \fImy_multicall(Nodes, Module, Function, Args)\fR\& if one disregard performance and failure behavior:
+.LP
+.nf
+
+my_multicall(Nodes, Module, Function, Args) ->
+  ReqIds = lists:map(fun (Node) ->
+                       erpc:send_request(Node, Module, Function, Args)
+                     end,
+                     Nodes),
+  lists:map(fun (ReqId) ->
+              try
+                {ok, erpc:receive_response(ReqId, infinity)}
+              catch
+                Class:Reason ->
+                  {Class, Reason}
+              end
+            end,
+            ReqIds).
+
+.fi
+.LP
+The \fITimeout\fR\& value in milliseconds sets an upper time limit for all \fIcall\fR\& operations to complete\&.
+.LP
+If an \fIerpc\fR\& operation fails, but it is unknown if the function is/will be applied (that is, a timeout, connection loss, or an improper \fINodes\fR\& list), the caller will not receive any further information about the result if/when the applied function completes\&. If the applied function communicates with the calling process, such communication may, of course, reach the calling process\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+You cannot make \fIany\fR\& assumptions about the process that will perform the \fIapply()\fR\&\&. It may be the calling process itself, a server, or a freshly spawned process\&.
+
+.RE
+.LP
+.nf
+
+.B
+multicast(Nodes, Fun) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Nodes = [node()]
+.br
+Fun = function()
+.br
+.RE
+.RE
+.RS
+.LP
+The same as calling \fIerpc:multicast(Nodes,erlang,apply,[Fun,[]])\fR\&\&.
+.LP
+\fIerpc:multicast/2\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINodes\fR\& is not a proper list of atoms\&.
+.LP
+.TP 2
+*
+\fIFun\fR\& is not a a fun of zero arity\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+multicast(Nodes, Module, Function, Args) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Nodes = [node()]
+.br
+Module = Function = atom()
+.br
+Args = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates \fIapply(Module, Function, Args)\fR\& on the nodes \fINodes\fR\&\&. No response is delivered to the calling process\&. \fIerpc:multicast()\fR\& returns immediately after the cast requests have been sent\&. Any failures beside bad arguments are silently ignored\&.
+.LP
+\fIerpc:multicast/4\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINodes\fR\& is not a proper list of atoms\&. Note that some requests may already have been sent when the failure occurs\&. That is, the function may or may not be applied on some nodes\&.
+.LP
+.TP 2
+*
+\fIModule\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFunction\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIArgs\fR\& is not a list\&. Note that the list is not verified to be a proper list at the client side\&.
+.LP
+.RE
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+You cannot make \fIany\fR\& assumptions about the process that will perform the \fIapply()\fR\&\&. It may be a server, or a freshly spawned process\&.
+
+.RE
+.LP
+.nf
+
+.B
+receive_response(RequestId) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+receive_response(RequestId, Timeout) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+RequestId = request_id()
+.br
+Timeout = 0\&.\&.4294967295 | infinity
+.br
+Result = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a response to a \fIcall\fR\& request previously made by the calling process using \fIerpc:send_request/4\fR\&\&. \fIRequestId\fR\& should be the value returned from the previously made \fIerpc:send_request()\fR\& call, and the corresponding response should not already have been received and handled to completion by \fIerpc:check_response()\fR\&, \fIerpc:receive_response()\fR\&, or \fIerpc:wait_response()\fR\&\&. \fITimeout\fR\& is an integer representing the timeout in milliseconds or the atom \fIinfinity\fR\& which prevents the operation from ever timing out\&. The \fIcall\fR\& operation is completed once the \fIerpc:receive_response()\fR\& call returns or raise an exception\&.
+.LP
+The call \fIerpc:receive_response(RequestId)\fR\& is equivalent to the call \fIerpc:receive_response(RequestId, infinity)\fR\&\&.
+.LP
+A call to the function \fImy_call(Node, Module, Function, Args, Timeout)\fR\& below is equivalent to the call \fIerpc:call(Node, Module, Function, Args, Timeout)\fR\& if one disregards performance\&. \fIerpc:call()\fR\& can utilize a message queue optimization which removes the need to scan the whole message queue which the combination \fIerpc:send_request()/erpc:receive_response()\fR\& cannot\&.
+.LP
+.nf
+
+my_call(Node, Module, Function, Args, Timeout) ->
+  RequestId = erpc:send_request(Node, Module, Function, Args),
+  erpc:receive_response(RequestId, Timeout).
+
+.fi
+.LP
+If the \fIerpc\fR\& operation fails, but it is unknown if the function is/will be applied (that is, a timeout, or a connection loss), the caller will not receive any further information about the result if/when the applied function completes\&. If the applied function explicitly communicates with the calling process, such communication may, of course, reach the calling process\&.
+.LP
+\fIerpc:receive_response()\fR\& will return or raise exceptions the same way as \fIerpc:call/5\fR\& does with the exception of \fI{erpc, badarg}\fR\&\&. An \fI{erpc, badarg}\fR\& exception will be raised if/when an invalid \fIRequestId\fR\& is detected or if an invalid \fITimeout\fR\& is passed\&.
+.RE
+.LP
+.nf
+
+.B
+send_request(Node, Fun) -> RequestId
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Fun = function()
+.br
+RequestId = request_id()
+.br
+.RE
+.RE
+.RS
+.LP
+The same as calling \fIerpc:send_request(Node,erlang,apply,[Fun,[]])\fR\&\&.
+.LP
+\fIerpc:send_request/2\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINode\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFun\fR\& is not a fun of zero arity\&.
+.LP
+.RE
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+You cannot make \fIany\fR\& assumptions about the process that will perform the \fIapply()\fR\&\&. It may be a server, or a freshly spawned process\&.
+
+.RE
+.LP
+.nf
+
+.B
+send_request(Node, Module, Function, Args) -> RequestId
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Node = node()
+.br
+Module = Function = atom()
+.br
+Args = [term()]
+.br
+RequestId = request_id()
+.br
+.RE
+.RE
+.RS
+.LP
+Send an asynchronous \fIcall\fR\& request to the node \fINode\fR\&\&. \fIerpc:send_request()\fR\& returns a request identifier that later is to be passed as argument to either \fIerpc:receive_response()\fR\&, \fIerpc:wait_response()\fR\&, or, \fIerpc:check_response()\fR\& in order to get the response of the call request\&.
+.LP
+\fIerpc:send_request()\fR\& fails with an \fI{erpc, badarg}\fR\& \fIerror\fR\& exception if:
+.RS 2
+.TP 2
+*
+\fINode\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIModule\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIFunction\fR\& is not an atom\&.
+.LP
+.TP 2
+*
+\fIArgs\fR\& is not a list\&. Note that the list is not verified to be a proper list at the client side\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+wait_response(RequestId) -> {response, Result} | no_response
+.br
+.fi
+.br
+.nf
+
+.B
+wait_response(RequestId, WaitTime) ->
+.B
+                 {response, Result} | no_response
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+RequestId = request_id()
+.br
+WaitTime = 0\&.\&.4294967295 | infinity
+.br
+Result = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Wait or poll for a response message to a \fIcall\fR\& request previously made by the calling process using \fIerpc:send_request/4\fR\&\&. \fIRequestId\fR\& should be the value returned from the previously made \fIerpc:send_request()\fR\& call, and the corresponding response should not already have been received and handled to completion by \fIerpc:check_response()\fR\&, \fIerpc:receive_response()\fR\&, or \fIerpc:wait_response()\fR\&\&. \fIWaitTime\fR\& equals the time to wait in milliseconds (or the atom \fIinfinity\fR\&) during the wait\&. \fIWaitTime\fR\& is an integer representing time to wait in milliseconds or the atom \fIinfinity\fR\& which will cause \fIwait_response/2\fR\& to wait for a response until it appears regardless of how long time that is\&.
+.LP
+The call \fIerpc:wait_response(RequestId)\fR\& is equivalent to the call \fIerpc:wait_response(RequestId, 0)\fR\&\&. That is, poll for a response message to a \fIcall\fR\& request previously made by the calling process\&.
+.LP
+If no response is received before \fIWaitTime\fR\& milliseconds, the atom \fIno_response\fR\& is returned\&. It is valid to continue waiting for a response as many times as needed up until a response has been received and completed by \fIerpc:check_response()\fR\&, \fIerpc:receive_response()\fR\&, or \fIerpc:wait_response()\fR\&\&. If a response is received, the \fIcall\fR\& operation is completed and either the result is returned as \fI{response, Result}\fR\& where \fIResult\fR\& corresponds to the value returned from the applied function or an exception is raised\&. The exceptions that can be raised corresponds to the same exceptions as can be raised by \fIerpc:call/4\fR\&\&. That is, no \fI{erpc, timeout}\fR\& \fIerror\fR\& exception can be raised\&. \fIerpc:wait_response()\fR\& will fail with an \fI{erpc, badarg}\fR\& exception if/when an invalid \fIRequestId\fR\& is detected or if an invalid \fIWaitTime\fR\& is passed\&.
+.LP
+If the \fIerpc\fR\& operation fails, but it is unknown if the function is/will be applied (that is, a too large wait time value, or a connection loss), the caller will not receive any further information about the result if/when the applied function completes\&. If the applied function explicitly communicates with the calling process, such communication may, of course, reach the calling process\&.
+.RE

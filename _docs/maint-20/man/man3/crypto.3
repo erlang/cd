@@ -1,0 +1,1436 @@
+.TH crypto 3 "crypto 4.2.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+crypto \- Crypto Functions
+.SH DESCRIPTION
+.LP
+This module provides a set of cryptographic functions\&.
+.RS 2
+.TP 2
+*
+Hash functions -  Secure Hash Standard,  The MD5 Message Digest Algorithm (RFC 1321) and The MD4 Message Digest Algorithm (RFC 1320) 
+.LP
+.TP 2
+*
+Hmac functions -  Keyed-Hashing for Message Authentication (RFC 2104) 
+.LP
+.TP 2
+*
+Cmac functions - The AES-CMAC Algorithm (RFC 4493)
+.LP
+.TP 2
+*
+Block ciphers - DES and AES in Block Cipher Modes -  ECB, CBC, CFB, OFB, CTR and GCM 
+.LP
+.TP 2
+*
+ RSA encryption RFC 1321  
+.LP
+.TP 2
+*
+Digital signatures Digital Signature Standard (DSS) and Elliptic Curve Digital Signature Algorithm (ECDSA)  
+.LP
+.TP 2
+*
+ Secure Remote Password Protocol (SRP - RFC 2945) 
+.LP
+.TP 2
+*
+gcm: Dworkin, M\&., "Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM) and GMAC", National Institute of Standards and Technology SP 800- 38D, November 2007\&.
+.LP
+.RE
+
+.SH "DATA TYPES "
+
+.LP
+.nf
+key_value() = integer() | binary() 
+.fi
+.LP
+Always \fIbinary()\fR\& when used as return value
+.LP
+.nf
+rsa_public() = [key_value()] = [E, N]  
+.fi
+.LP
+Where E is the public exponent and N is public modulus\&.
+.LP
+.nf
+rsa_private() = [key_value()] = [E, N, D] | [E, N, D, P1, P2, E1, E2, C] 
+.fi
+.LP
+Where E is the public exponent, N is public modulus and D is the private exponent\&. The longer key format contains redundant information that will make the calculation faster\&. P1,P2 are first and second prime factors\&. E1,E2 are first and second exponents\&. C is the CRT coefficient\&. Terminology is taken from  RFC 3447\&.
+.LP
+.nf
+dss_public() = [key_value()] = [P, Q, G, Y] 
+.fi
+.LP
+Where P, Q and G are the dss parameters and Y is the public key\&.
+.LP
+.nf
+dss_private() = [key_value()] = [P, Q, G, X] 
+.fi
+.LP
+Where P, Q and G are the dss parameters and X is the private key\&.
+.LP
+.nf
+srp_public() = key_value() 
+.fi
+.LP
+Where is \fIA\fR\& or \fIB\fR\& from SRP design
+.LP
+.nf
+srp_private() = key_value() 
+.fi
+.LP
+Where is \fIa\fR\& or \fIb\fR\& from SRP design
+.LP
+Where Verifier is \fIv\fR\&, Generator is \fIg\fR\& and Prime is\fI N\fR\&, DerivedKey is \fIX\fR\&, and Scrambler is \fIu\fR\& (optional will be generated if not provided) from SRP design Version = \&'3\&' | \&'6\&' | \&'6a\&'
+.LP
+.nf
+dh_public() = key_value() 
+.fi
+.LP
+.nf
+dh_private() = key_value() 
+.fi
+.LP
+.nf
+dh_params() = [key_value()] = [P, G] | [P, G, PrivateKeyBitLength]
+.fi
+.LP
+.nf
+ecdh_public() = key_value() 
+.fi
+.LP
+.nf
+ecdh_private() = key_value() 
+.fi
+.LP
+.nf
+ecdh_params() = ec_named_curve() | ec_explicit_curve()
+.fi
+.LP
+.nf
+ec_explicit_curve() =
+    {ec_field(), Prime :: key_value(), Point :: key_value(), Order :: integer(),
+     CoFactor :: none | integer()} 
+.fi
+.LP
+.nf
+ec_field() = {prime_field, Prime :: integer()} |
+    {characteristic_two_field, M :: integer(), Basis :: ec_basis()}
+.fi
+.LP
+.nf
+ec_basis() = {tpbasis, K :: non_neg_integer()} |
+    {ppbasis, K1 :: non_neg_integer(), K2 :: non_neg_integer(), K3 :: non_neg_integer()} |
+    onbasis
+.fi
+.LP
+.nf
+ec_named_curve() ->
+      sect571r1| sect571k1| sect409r1| sect409k1| secp521r1| secp384r1| secp224r1| secp224k1|
+      secp192k1| secp160r2| secp128r2| secp128r1| sect233r1| sect233k1| sect193r2| sect193r1|
+      sect131r2| sect131r1| sect283r1| sect283k1| sect163r2| secp256k1| secp160k1| secp160r1|
+      secp112r2| secp112r1| sect113r2| sect113r1| sect239k1| sect163r1| sect163k1| secp256r1|
+      secp192r1|
+      brainpoolP160r1| brainpoolP160t1| brainpoolP192r1| brainpoolP192t1| brainpoolP224r1|
+      brainpoolP224t1| brainpoolP256r1| brainpoolP256t1| brainpoolP320r1| brainpoolP320t1|
+      brainpoolP384r1| brainpoolP384t1| brainpoolP512r1| brainpoolP512t1
+    
+.fi
+.LP
+Note that the \fIsect\fR\& curves are GF2m (characteristic two) curves and are only supported if the underlying OpenSSL has support for them\&. See also \fBcrypto:supports/0\fR\& 
+.LP
+.nf
+engine_key_ref() = #{engine   := engine_ref(),
+                               key_id   := key_id(),
+                               password => password()}
+.fi
+.LP
+.nf
+engine_ref() = term()
+.fi
+.LP
+The result of a call to \fBengine_load/3\fR\&\&.
+.LP
+.nf
+key_id() = string() | binary()
+.fi
+.LP
+Identifies the key to be used\&. The format depends on the loaded engine\&. It is passed to the \fIENGINE_load_(private|public)_key\fR\& functions in libcrypto\&.
+.LP
+.nf
+password() = string() | binary()
+.fi
+.LP
+The key\&'s password
+.LP
+.nf
+stream_cipher() = rc4 | aes_ctr 
+.fi
+.LP
+.nf
+block_cipher() = aes_cbc | aes_cfb8 | aes_cfb128 | aes_ige256 | blowfish_cbc |
+     blowfish_cfb64 | des_cbc | des_cfb | des3_cbc | des3_cfb | des_ede3 | rc2_cbc 
+.fi
+.LP
+.nf
+aead_cipher() = aes_gcm | chacha20_poly1305 
+.fi
+.LP
+.nf
+stream_key() = aes_key() | rc4_key() 
+.fi
+.LP
+.nf
+block_key() = aes_key() |  blowfish_key() | des_key()| des3_key() 
+.fi
+.LP
+.nf
+aes_key() = iodata() 
+.fi
+.LP
+Key length is 128, 192 or 256 bits
+.LP
+.nf
+rc4_key() = iodata() 
+.fi
+.LP
+Variable key length from 8 bits up to 2048 bits (usually between 40 and 256)
+.LP
+.nf
+blowfish_key() = iodata() 
+.fi
+.LP
+Variable key length from 32 bits up to 448 bits
+.LP
+.nf
+des_key() = iodata() 
+.fi
+.LP
+Key length is 64 bits (in CBC mode only 8 bits are used)
+.LP
+.nf
+des3_key() = [binary(), binary(), binary()] 
+.fi
+.LP
+Each key part is 64 bits (in CBC mode only 8 bits are used)
+.LP
+.nf
+digest_type() =  md5 | sha | sha224 | sha256 | sha384 | sha512
+.fi
+.LP
+.nf
+rsa_digest_type() = md5 | ripemd160 | sha | sha224 | sha256 | sha384 | sha512
+.fi
+.LP
+.nf
+dss_digest_type() = sha | sha224 | sha256 | sha384 | sha512
+.fi
+.LP
+Note that the actual supported dss_digest_type depends on the underlying crypto library\&. In OpenSSL version >= 1\&.0\&.1 the listed digest are supported, while in 1\&.0\&.0 only sha, sha224 and sha256 are supported\&. In version 0\&.9\&.8 only sha is supported\&.
+.LP
+.nf
+ecdsa_digest_type() = sha | sha224 | sha256 | sha384 | sha512
+.fi
+.LP
+.nf
+sign_options() = [{rsa_pad, rsa_sign_padding()} | {rsa_pss_saltlen, integer()}]
+.fi
+.LP
+.nf
+rsa_sign_padding() = rsa_pkcs1_padding | rsa_pkcs1_pss_padding
+.fi
+.LP
+.nf
+ hash_algorithms() =  md5 | ripemd160 | sha | sha224 | sha256 | sha384 | sha512 
+.fi
+.LP
+md4 is also supported for hash_init/1 and hash/2\&. Note that both md4 and md5 are recommended only for compatibility with existing applications\&.
+.LP
+.nf
+ cipher_algorithms() = aes_cbc | aes_cfb8 | aes_cfb128 | aes_ctr | aes_gcm |
+     aes_ige256 | blowfish_cbc | blowfish_cfb64 | chacha20_poly1305 | des_cbc |
+     des_cfb | des3_cbc | des3_cfb | des_ede3 | rc2_cbc | rc4 
+.fi
+.LP
+.nf
+ mac_algorithms() = hmac | cmac
+.fi
+.LP
+.nf
+ public_key_algorithms() = rsa |dss | ecdsa | dh | ecdh | ec_gf2m
+.fi
+.LP
+Note that ec_gf2m is not strictly a public key algorithm, but a restriction on what curves are supported with ecdsa and ecdh\&.
+.LP
+.nf
+engine_method_type() = engine_method_rsa | engine_method_dsa | engine_method_dh |
+     engine_method_rand | engine_method_ecdh | engine_method_ecdsa |
+     engine_method_ciphers | engine_method_digests | engine_method_store |
+     engine_method_pkey_meths | engine_method_pkey_asn1_meths
+.fi
+.SH EXPORTS
+.LP
+.B
+block_encrypt(Type, Key, PlainText) -> CipherText
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = des_ecb | blowfish_ecb | aes_ecb 
+.br
+Key = block_key() 
+.br
+PlainText = iodata() 
+.br
+.RE
+.RE
+.RS
+.LP
+Encrypt \fIPlainText\fR\& according to \fIType\fR\& block cipher\&.
+.LP
+May throw exception \fInotsup\fR\& in case the chosen \fIType\fR\& is not supported by the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+block_decrypt(Type, Key, CipherText) -> PlainText
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = des_ecb | blowfish_ecb | aes_ecb 
+.br
+Key = block_key() 
+.br
+PlainText = iodata() 
+.br
+.RE
+.RE
+.RS
+.LP
+Decrypt \fICipherText\fR\& according to \fIType\fR\& block cipher\&.
+.LP
+May throw exception \fInotsup\fR\& in case the chosen \fIType\fR\& is not supported by the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+block_encrypt(Type, Key, Ivec, PlainText) -> CipherText
+.br
+.B
+block_encrypt(AeadType, Key, Ivec, {AAD, PlainText}) -> {CipherText, CipherTag}
+.br
+.B
+block_encrypt(aes_gcm, Key, Ivec, {AAD, PlainText, TagLength}) -> {CipherText, CipherTag}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = block_cipher() 
+.br
+AeadType = aead_cipher() 
+.br
+Key = block_key() 
+.br
+PlainText = iodata() 
+.br
+AAD = IVec = CipherText = CipherTag = binary()
+.br
+TagLength = 1\&.\&.16
+.br
+.RE
+.RE
+.RS
+.LP
+Encrypt \fIPlainText\fR\& according to \fIType\fR\& block cipher\&. \fIIVec\fR\& is an arbitrary initializing vector\&.
+.LP
+In AEAD (Authenticated Encryption with Associated Data) mode, encrypt \fIPlainText\fR\&according to \fIType\fR\& block cipher and calculate \fICipherTag\fR\& that also authenticates the \fIAAD\fR\& (Associated Authenticated Data)\&.
+.LP
+May throw exception \fInotsup\fR\& in case the chosen \fIType\fR\& is not supported by the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+block_decrypt(Type, Key, Ivec, CipherText) -> PlainText
+.br
+.B
+block_decrypt(AeadType, Key, Ivec, {AAD, CipherText, CipherTag}) -> PlainText | error
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = block_cipher() 
+.br
+AeadType = aead_cipher() 
+.br
+Key = block_key() 
+.br
+PlainText = iodata() 
+.br
+AAD = IVec = CipherText = CipherTag = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Decrypt \fICipherText\fR\& according to \fIType\fR\& block cipher\&. \fIIVec\fR\& is an arbitrary initializing vector\&.
+.LP
+In AEAD (Authenticated Encryption with Associated Data) mode, decrypt \fICipherText\fR\&according to \fIType\fR\& block cipher and check the authenticity the \fIPlainText\fR\& and \fIAAD\fR\& (Associated Authenticated Data) using the \fICipherTag\fR\&\&. May return \fIerror\fR\& if the decryption or validation fail\&'s
+.LP
+May throw exception \fInotsup\fR\& in case the chosen \fIType\fR\& is not supported by the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+bytes_to_integer(Bin) -> Integer 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Bin = binary() - as returned by crypto functions
+.br
+Integer = integer() 
+.br
+.RE
+.RE
+.RS
+.LP
+Convert binary representation, of an integer, to an Erlang integer\&.
+.RE
+.LP
+.B
+compute_key(Type, OthersPublicKey, MyKey, Params) -> SharedSecret
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ Type = dh | ecdh | srp 
+.br
+OthersPublicKey = dh_public() | ecdh_public() | srp_public() 
+.br
+MyKey = dh_private() | ecdh_private() | {srp_public(),srp_private()}
+.br
+Params = dh_params() | ecdh_params() | SrpUserParams | SrpHostParams
+.br
+SrpUserParams = {user, [DerivedKey::binary(), Prime::binary(), Generator::binary(), Version::atom() | [Scrambler:binary()]]} 
+.br
+SrpHostParams = {host, [Verifier::binary(), Prime::binary(), Version::atom() | [Scrambler::binary]]} 
+.br
+SharedSecret = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Computes the shared secret from the private key and the other party\&'s public key\&. See also \fBpublic_key:compute_key/2\fR\& 
+.RE
+.LP
+.B
+exor(Data1, Data2) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Data1, Data2 = iodata()
+.br
+Result = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Performs bit-wise XOR (exclusive or) on the data supplied\&.
+.RE
+.LP
+.B
+generate_key(Type, Params) -> {PublicKey, PrivKeyOut} 
+.br
+.B
+generate_key(Type, Params, PrivKeyIn) -> {PublicKey, PrivKeyOut} 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ Type = dh | ecdh | rsa | srp 
+.br
+Params = dh_params() | ecdh_params() | RsaParams | SrpUserParams | SrpHostParams 
+.br
+RsaParams = {ModulusSizeInBits::integer(), PublicExponent::key_value()}
+.br
+SrpUserParams = {user, [Generator::binary(), Prime::binary(), Version::atom()]}
+.br
+SrpHostParams = {host, [Verifier::binary(), Generator::binary(), Prime::binary(), Version::atom()]}
+.br
+PublicKey = dh_public() | ecdh_public() | rsa_public() | srp_public() 
+.br
+PrivKeyIn = undefined | dh_private() | ecdh_private() | srp_private() 
+.br
+PrivKeyOut = dh_private() | ecdh_private() | rsa_private() | srp_private() 
+.br
+.RE
+.RE
+.RS
+.LP
+Generates a public key of type \fIType\fR\&\&. See also \fBpublic_key:generate_key/1\fR\&\&. May throw exception an exception of class \fIerror\fR\&:
+.RS 2
+.TP 2
+*
+\fIbadarg\fR\&: an argument is of wrong type or has an illegal value,
+.LP
+.TP 2
+*
+\fIlow_entropy\fR\&: the random generator failed due to lack of secure "randomness",
+.LP
+.TP 2
+*
+\fIcomputation_failed\fR\&: the computation fails of another reason than \fIlow_entropy\fR\&\&.
+.LP
+.RE
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+RSA key generation is only available if the runtime was built with dirty scheduler support\&. Otherwise, attempting to generate an RSA key will throw exception \fIerror:notsup\fR\&\&.
+
+.RE
+.LP
+.B
+hash(Type, Data) -> Digest
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = md4 | hash_algorithms()
+.br
+Data = iodata()
+.br
+Digest = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Computes a message digest of type \fIType\fR\& from \fIData\fR\&\&.
+.LP
+May throw exception \fInotsup\fR\& in case the chosen \fIType\fR\& is not supported by the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+hash_init(Type) -> Context
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = md4 | hash_algorithms()
+.br
+.RE
+.RE
+.RS
+.LP
+Initializes the context for streaming hash operations\&. \fIType\fR\& determines which digest to use\&. The returned context should be used as argument to \fBhash_update\fR\&\&.
+.LP
+May throw exception \fInotsup\fR\& in case the chosen \fIType\fR\& is not supported by the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+hash_update(Context, Data) -> NewContext
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Data = iodata()
+.br
+.RE
+.RE
+.RS
+.LP
+Updates the digest represented by \fIContext\fR\& using the given \fIData\fR\&\&. \fIContext\fR\& must have been generated using \fBhash_init\fR\& or a previous call to this function\&. \fIData\fR\& can be any length\&. \fINewContext\fR\& must be passed into the next call to \fIhash_update\fR\& or \fBhash_final\fR\&\&.
+.RE
+.LP
+.B
+hash_final(Context) -> Digest
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Digest = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Finalizes the hash operation referenced by \fIContext\fR\& returned from a previous call to \fBhash_update\fR\&\&. The size of \fIDigest\fR\& is determined by the type of hash function used to generate it\&.
+.RE
+.LP
+.B
+hmac(Type, Key, Data) -> Mac
+.br
+.B
+hmac(Type, Key, Data, MacLength) -> Mac
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = hash_algorithms() - except ripemd160
+.br
+Key = iodata()
+.br
+Data = iodata()
+.br
+MacLength = integer()
+.br
+Mac = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Computes a HMAC of type \fIType\fR\& from \fIData\fR\& using \fIKey\fR\& as the authentication key\&.
+.LP
+\fIMacLength\fR\& will limit the size of the resultant \fIMac\fR\&\&.
+.RE
+.LP
+.B
+hmac_init(Type, Key) -> Context
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = hash_algorithms() - except ripemd160
+.br
+Key = iodata()
+.br
+Context = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Initializes the context for streaming HMAC operations\&. \fIType\fR\& determines which hash function to use in the HMAC operation\&. \fIKey\fR\& is the authentication key\&. The key can be any length\&.
+.RE
+.LP
+.B
+hmac_update(Context, Data) -> NewContext
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = NewContext = binary()
+.br
+Data = iodata()
+.br
+.RE
+.RE
+.RS
+.LP
+Updates the HMAC represented by \fIContext\fR\& using the given \fIData\fR\&\&. \fIContext\fR\& must have been generated using an HMAC init function (such as \fBhmac_init\fR\&)\&. \fIData\fR\& can be any length\&. \fINewContext\fR\& must be passed into the next call to \fIhmac_update\fR\& or to one of the functions \fBhmac_final\fR\& and \fBhmac_final_n\fR\& 
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Do not use a \fIContext\fR\& as argument in more than one call to hmac_update or hmac_final\&. The semantics of reusing old contexts in any way is undefined and could even crash the VM in earlier releases\&. The reason for this limitation is a lack of support in the underlying OpenSSL API\&.
+
+.RE
+.LP
+.B
+hmac_final(Context) -> Mac
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = Mac = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Finalizes the HMAC operation referenced by \fIContext\fR\&\&. The size of the resultant MAC is determined by the type of hash function used to generate it\&.
+.RE
+.LP
+.B
+hmac_final_n(Context, HashLen) -> Mac
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = Mac = binary()
+.br
+HashLen = non_neg_integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Finalizes the HMAC operation referenced by \fIContext\fR\&\&. \fIHashLen\fR\& must be greater than zero\&. \fIMac\fR\& will be a binary with at most \fIHashLen\fR\& bytes\&. Note that if HashLen is greater than the actual number of bytes returned from the underlying hash, the returned hash will have fewer than \fIHashLen\fR\& bytes\&.
+.RE
+.LP
+.B
+cmac(Type, Key, Data) -> Mac
+.br
+.B
+cmac(Type, Key, Data, MacLength) -> Mac
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = block_cipher()
+.br
+Key = iodata()
+.br
+Data = iodata()
+.br
+MacLength = integer()
+.br
+Mac = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Computes a CMAC of type \fIType\fR\& from \fIData\fR\& using \fIKey\fR\& as the authentication key\&.
+.LP
+\fIMacLength\fR\& will limit the size of the resultant \fIMac\fR\&\&.
+.RE
+.LP
+.B
+info_fips() -> Status
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Status = enabled | not_enabled | not_supported
+.br
+.RE
+.RE
+.RS
+.LP
+Provides information about the FIPS operating status of crypto and the underlying OpenSSL library\&. If crypto was built with FIPS support this can be either \fIenabled\fR\& (when running in FIPS mode) or \fInot_enabled\fR\&\&. For other builds this value is always \fInot_supported\fR\&\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+In FIPS mode all non-FIPS compliant algorithms are disabled and throw exception \fInot_supported\fR\&\&. Check \fBsupports\fR\& that in FIPS mode returns the restricted list of available algorithms\&.
+
+.RE
+.LP
+.B
+info_lib() -> [{Name,VerNum,VerStr}]
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = binary()
+.br
+VerNum = integer()
+.br
+VerStr = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Provides the name and version of the libraries used by crypto\&.
+.LP
+\fIName\fR\& is the name of the library\&. \fIVerNum\fR\& is the numeric version according to the library\&'s own versioning scheme\&. \fIVerStr\fR\& contains a text variant of the version\&.
+.LP
+.nf
+
+> info_lib()\&.
+[{<<"OpenSSL">>,269484095,<<"OpenSSL 1.1.0c  10 Nov 2016"">>}]
+        
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+From OTP R16 the \fInumeric version\fR\& represents the version of the OpenSSL \fIheader files\fR\& (\fIopenssl/opensslv\&.h\fR\&) used when crypto was compiled\&. The text variant represents the OpenSSL library used at runtime\&. In earlier OTP versions both numeric and text was taken from the library\&.
+
+.RE
+.LP
+.B
+mod_pow(N, P, M) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+N, P, M = binary() | integer()
+.br
+Result = binary() | error
+.br
+.RE
+.RE
+.RS
+.LP
+Computes the function \fIN^P mod M\fR\&\&.
+.RE
+.LP
+.B
+next_iv(Type, Data) -> NextIVec
+.br
+.B
+next_iv(Type, Data, IVec) -> NextIVec
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = des_cbc | des3_cbc | aes_cbc | des_cfb
+.br
+Data = iodata()
+.br
+IVec = NextIVec = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the initialization vector to be used in the next iteration of encrypt/decrypt of type \fIType\fR\&\&. \fIData\fR\& is the encrypted data from the previous iteration step\&. The \fIIVec\fR\& argument is only needed for \fIdes_cfb\fR\& as the vector used in the previous iteration step\&.
+.RE
+.LP
+.B
+private_decrypt(Type, CipherText, PrivateKey, Padding) -> PlainText
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = rsa
+.br
+CipherText = binary()
+.br
+PrivateKey = rsa_private() | engine_key_ref()
+.br
+Padding = rsa_pkcs1_padding | rsa_pkcs1_oaep_padding | rsa_no_padding
+.br
+PlainText = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Decrypts the \fICipherText\fR\&, encrypted with \fBpublic_encrypt/4\fR\& (or equivalent function) using the \fIPrivateKey\fR\&, and returns the plaintext (message digest)\&. This is a low level signature verification operation used for instance by older versions of the SSL protocol\&. See also \fBpublic_key:decrypt_private/[2,3]\fR\& 
+.RE
+.LP
+.B
+privkey_to_pubkey(Type, EnginePrivateKeyRef) -> PublicKey
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = rsa | dss
+.br
+EnginePrivateKeyRef = engine_key_ref()
+.br
+PublicKey = rsa_public() | dss_public()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches the corresponding public key from a private key stored in an Engine\&. The key must be of the type indicated by the Type parameter\&.
+.RE
+.LP
+.B
+private_encrypt(Type, PlainText, PrivateKey, Padding) -> CipherText
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = rsa
+.br
+PlainText = binary()
+.br
+.RS 2
+ The size of the \fIPlainText\fR\& must be less than \fIbyte_size(N)-11\fR\& if \fIrsa_pkcs1_padding\fR\& is used, and \fIbyte_size(N)\fR\& if \fIrsa_no_padding\fR\& is used, where N is public modulus of the RSA key\&.
+.RE
+PrivateKey = rsa_private() | engine_key_ref()
+.br
+Padding = rsa_pkcs1_padding | rsa_no_padding
+.br
+CipherText = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Encrypts the \fIPlainText\fR\& using the \fIPrivateKey\fR\& and returns the ciphertext\&. This is a low level signature operation used for instance by older versions of the SSL protocol\&. See also \fBpublic_key:encrypt_private/[2,3]\fR\& 
+.RE
+.LP
+.B
+public_decrypt(Type, CipherText, PublicKey, Padding) -> PlainText
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = rsa
+.br
+CipherText = binary()
+.br
+PublicKey = rsa_public() | engine_key_ref()
+.br
+Padding = rsa_pkcs1_padding | rsa_no_padding
+.br
+PlainText = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Decrypts the \fICipherText\fR\&, encrypted with \fBprivate_encrypt/4\fR\&(or equivalent function) using the \fIPrivateKey\fR\&, and returns the plaintext (message digest)\&. This is a low level signature verification operation used for instance by older versions of the SSL protocol\&. See also \fBpublic_key:decrypt_public/[2,3]\fR\& 
+.RE
+.LP
+.B
+public_encrypt(Type, PlainText, PublicKey, Padding) -> CipherText
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = rsa
+.br
+PlainText = binary()
+.br
+.RS 2
+ The size of the \fIPlainText\fR\& must be less than \fIbyte_size(N)-11\fR\& if \fIrsa_pkcs1_padding\fR\& is used, and \fIbyte_size(N)\fR\& if \fIrsa_no_padding\fR\& is used, where N is public modulus of the RSA key\&.
+.RE
+PublicKey = rsa_public() | engine_key_ref()
+.br
+Padding = rsa_pkcs1_padding | rsa_pkcs1_oaep_padding | rsa_no_padding
+.br
+CipherText = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Encrypts the \fIPlainText\fR\& (message digest) using the \fIPublicKey\fR\& and returns the \fICipherText\fR\&\&. This is a low level signature operation used for instance by older versions of the SSL protocol\&. See also \fBpublic_key:encrypt_public/[2,3]\fR\& 
+.RE
+.LP
+.B
+rand_seed(Seed) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Seed = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Set the seed for PRNG to the given binary\&. This calls the RAND_seed function from openssl\&. Only use this if the system you are running on does not have enough "randomness" built in\&. Normally this is when \fBstrong_rand_bytes/1\fR\& throws \fIlow_entropy\fR\&
+.RE
+.LP
+.B
+rand_uniform(Lo, Hi) -> N
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Lo, Hi, N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Generate a random number \fIN, Lo =< N < Hi\&.\fR\& Uses the \fIcrypto\fR\& library pseudo-random number generator\&. \fIHi\fR\& must be larger than \fILo\fR\&\&.
+.RE
+.LP
+.B
+sign(Algorithm, DigestType, Msg, Key) -> binary()
+.br
+.B
+sign(Algorithm, DigestType, Msg, Key, Options) -> binary()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = rsa | dss | ecdsa 
+.br
+Msg = binary() | {digest,binary()}
+.br
+.RS 2
+The msg is either the binary "cleartext" data to be signed or it is the hashed value of "cleartext" i\&.e\&. the digest (plaintext)\&.
+.RE
+DigestType = rsa_digest_type() | dss_digest_type() | ecdsa_digest_type()
+.br
+Key = rsa_private() | dss_private() | [ecdh_private(),ecdh_params()] | engine_key_ref()
+.br
+Options = sign_options()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a digital signature\&.
+.LP
+Algorithm \fIdss\fR\& can only be used together with digest type \fIsha\fR\&\&.
+.LP
+See also \fBpublic_key:sign/3\fR\&\&.
+.RE
+.LP
+.B
+start() -> ok
+.br
+.RS
+.LP
+Equivalent to application:start(crypto)\&.
+.RE
+.LP
+.B
+stop() -> ok
+.br
+.RS
+.LP
+Equivalent to application:stop(crypto)\&.
+.RE
+.LP
+.B
+strong_rand_bytes(N) -> binary()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Generates N bytes randomly uniform 0\&.\&.255, and returns the result in a binary\&. Uses a cryptographically secure prng seeded and periodically mixed with operating system provided entropy\&. By default this is the \fIRAND_bytes\fR\& method from OpenSSL\&.
+.LP
+May throw exception \fIlow_entropy\fR\& in case the random generator failed due to lack of secure "randomness"\&.
+.RE
+.LP
+.B
+rand_seed() -> rand:state()
+.br
+.RS
+.LP
+Creates state object for \fBrandom number generation\fR\&, in order to generate cryptographically strong random numbers (based on OpenSSL\&'s \fIBN_rand_range\fR\&), and saves it on process dictionary before returning it as well\&. See also \fBrand:seed/1\fR\&\&.
+.LP
+\fIExample\fR\&
+.LP
+.nf
+
+_ = crypto:rand_seed(),
+_IntegerValue = rand:uniform(42), % [1; 42]
+_FloatValue = rand:uniform().     % [0.0; 1.0[
+.fi
+.RE
+.LP
+.B
+rand_seed_s() -> rand:state()
+.br
+.RS
+.LP
+Creates state object for \fBrandom number generation\fR\&, in order to generate cryptographically strongly random numbers (based on OpenSSL\&'s \fIBN_rand_range\fR\&)\&. See also \fBrand:seed_s/1\fR\&\&.
+.RE
+.LP
+.B
+stream_init(Type, Key) -> State
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = rc4 
+.br
+State = opaque() 
+.br
+Key = iodata()
+.br
+.RE
+.RE
+.RS
+.LP
+Initializes the state for use in RC4 stream encryption \fBstream_encrypt\fR\& and \fBstream_decrypt\fR\&
+.RE
+.LP
+.B
+stream_init(Type, Key, IVec) -> State
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = aes_ctr 
+.br
+State = opaque() 
+.br
+Key = iodata()
+.br
+IVec = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Initializes the state for use in streaming AES encryption using Counter mode (CTR)\&. \fIKey\fR\& is the AES key and must be either 128, 192, or 256 bits long\&. \fIIVec\fR\& is an arbitrary initializing vector of 128 bits (16 bytes)\&. This state is for use with \fBstream_encrypt\fR\& and \fBstream_decrypt\fR\&\&.
+.RE
+.LP
+.B
+stream_encrypt(State, PlainText) -> { NewState, CipherText}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Text = iodata()
+.br
+CipherText = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Encrypts \fIPlainText\fR\& according to the stream cipher \fIType\fR\& specified in stream_init/3\&. \fIText\fR\& can be any number of bytes\&. The initial \fIState\fR\& is created using \fBstream_init\fR\&\&. \fINewState\fR\& must be passed into the next call to \fIstream_encrypt\fR\&\&.
+.RE
+.LP
+.B
+stream_decrypt(State, CipherText) -> { NewState, PlainText }
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+CipherText = iodata()
+.br
+PlainText = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Decrypts \fICipherText\fR\& according to the stream cipher \fIType\fR\& specified in stream_init/3\&. \fIPlainText\fR\& can be any number of bytes\&. The initial \fIState\fR\& is created using \fBstream_init\fR\&\&. \fINewState\fR\& must be passed into the next call to \fIstream_decrypt\fR\&\&.
+.RE
+.LP
+.B
+supports() -> AlgorithmList 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ AlgorithmList = [{hashs, [hash_algorithms()]}, {ciphers, [cipher_algorithms()]}, {public_keys, [public_key_algorithms()]}, {macs, [mac_algorithms()]}] 
+.br
+.RE
+.RE
+.RS
+.LP
+Can be used to determine which crypto algorithms that are supported by the underlying OpenSSL library
+.RE
+.LP
+.B
+ec_curves() -> EllipticCurveList 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+EllipticCurveList = [ec_named_curve()]
+.br
+.RE
+.RE
+.RS
+.LP
+Can be used to determine which named elliptic curves are supported\&.
+.RE
+.LP
+.B
+ec_curve(NamedCurve) -> EllipticCurve 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+NamedCurve = ec_named_curve()
+.br
+EllipticCurve = ec_explicit_curve()
+.br
+.RE
+.RE
+.RS
+.LP
+Return the defining parameters of a elliptic curve\&.
+.RE
+.LP
+.B
+verify(Algorithm, DigestType, Msg, Signature, Key) -> boolean()
+.br
+.B
+verify(Algorithm, DigestType, Msg, Signature, Key, Options) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ Algorithm = rsa | dss | ecdsa 
+.br
+Msg = binary() | {digest,binary()}
+.br
+.RS 2
+The msg is either the binary "cleartext" data or it is the hashed value of "cleartext" i\&.e\&. the digest (plaintext)\&.
+.RE
+DigestType = rsa_digest_type() | dss_digest_type() | ecdsa_digest_type()
+.br
+Signature = binary()
+.br
+Key = rsa_public() | dss_public() | [ecdh_public(),ecdh_params()] | engine_key_ref()
+.br
+Options = sign_options()
+.br
+.RE
+.RE
+.RS
+.LP
+Verifies a digital signature
+.LP
+Algorithm \fIdss\fR\& can only be used together with digest type \fIsha\fR\&\&.
+.LP
+See also \fBpublic_key:verify/4\fR\&\&.
+.RE
+.LP
+.B
+engine_get_all_methods() -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = [EngineMethod::atom()]
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all possible engine methods\&.
+.LP
+May throw exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.LP
+See also the chapter \fBEngine Load\fR\& in the User\&'s Guide\&.
+.RE
+.LP
+.B
+engine_load(EngineId, PreCmds, PostCmds) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+EngineId = unicode:chardata()
+.br
+PreCmds, PostCmds = [{unicode:chardata(), unicode:chardata()}]
+.br
+Result = {ok, Engine::term()} | {error, Reason::term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Loads the OpenSSL engine given by \fIEngineId\fR\& if it is available and then returns ok and an engine handle\&. This function is the same as calling \fIengine_load/4\fR\& with \fIEngineMethods\fR\& set to a list of all the possible methods\&. An error tuple is returned if the engine can\&'t be loaded\&.
+.LP
+The function throws a badarg if the parameters are in wrong format\&. It may also throw the exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.LP
+See also the chapter \fBEngine Load\fR\& in the User\&'s Guide\&.
+.RE
+.LP
+.B
+engine_load(EngineId, PreCmds, PostCmds, EngineMethods) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+EngineId = unicode:chardata()
+.br
+PreCmds, PostCmds = [{unicode:chardata(), unicode:chardata()}]
+.br
+EngineMethods = [engine_method_type()]
+.br
+Result = {ok, Engine::term()} | {error, Reason::term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Loads the OpenSSL engine given by \fIEngineId\fR\& if it is available and then returns ok and an engine handle\&. An error tuple is returned if the engine can\&'t be loaded\&.
+.LP
+The function throws a badarg if the parameters are in wrong format\&. It may also throw the exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.LP
+See also the chapter \fBEngine Load\fR\& in the User\&'s Guide\&.
+.RE
+.LP
+.B
+engine_unload(Engine) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Engine = term()
+.br
+Result = ok | {error, Reason::term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Unloads the OpenSSL engine given by \fIEngineId\fR\&\&. An error tuple is returned if the engine can\&'t be unloaded\&.
+.LP
+The function throws a badarg if the parameter is in wrong format\&. It may also throw the exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.LP
+See also the chapter \fBEngine Load\fR\& in the User\&'s Guide\&.
+.RE
+.LP
+.B
+engine_list() -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = [EngineId::unicode:chardata()]
+.br
+.RE
+.RE
+.RS
+.LP
+List the id\&'s of all engines in OpenSSL\&'s internal list\&.
+.LP
+It may also throw the exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.LP
+See also the chapter \fBEngine Load\fR\& in the User\&'s Guide\&.
+.RE
+.LP
+.B
+engine_ctrl_cmd_string(Engine, CmdName, CmdArg) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Engine = term()
+.br
+CmdName = unicode:chardata()
+.br
+CmdArg = unicode:chardata()
+.br
+Result = ok | {error, Reason::term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Sends ctrl commands to the OpenSSL engine given by \fIEngine\fR\&\&. This function is the same as calling \fIengine_ctrl_cmd_string/4\fR\& with \fIOptional\fR\& set to \fIfalse\fR\&\&.
+.LP
+The function throws a badarg if the parameters are in wrong format\&. It may also throw the exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.RE
+.LP
+.B
+engine_ctrl_cmd_string(Engine, CmdName, CmdArg, Optional) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Engine = term()
+.br
+CmdName = unicode:chardata()
+.br
+CmdArg = unicode:chardata()
+.br
+Optional = boolean()
+.br
+Result = ok | {error, Reason::term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Sends ctrl commands to the OpenSSL engine given by \fIEngine\fR\&\&. \fIOptional\fR\& is a boolean argument that can relax the semantics of the function\&. If set to \fItrue\fR\& it will only return failure if the ENGINE supported the given command name but failed while executing it, if the ENGINE doesn\&'t support the command name it will simply return success without doing anything\&. In this case we assume the user is only supplying commands specific to the given ENGINE so we set this to \fIfalse\fR\&\&.
+.LP
+The function throws a badarg if the parameters are in wrong format\&. It may also throw the exception notsup in case there is no engine support in the underlying OpenSSL implementation\&.
+.RE

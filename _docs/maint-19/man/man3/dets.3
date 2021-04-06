@@ -1,0 +1,1694 @@
+.TH dets 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+dets \- A disk-based term storage.
+.SH DESCRIPTION
+.LP
+This module provides a term storage on file\&. The stored terms, in this module called \fIobjects\fR\&, are tuples such that one element is defined to be the key\&. A Dets \fItable\fR\& is a collection of objects with the key at the same position stored on a file\&.
+.LP
+This module is used by the Mnesia application, and is provided "as is" for users who are interested in efficient storage of Erlang terms on disk only\&. Many applications only need to store some terms in a file\&. Mnesia adds transactions, queries, and distribution\&. The size of Dets files cannot exceed 2 GB\&. If larger tables are needed, table fragmentation in Mnesia can be used\&.
+.LP
+Three types of Dets tables exist:
+.RS 2
+.TP 2
+*
+\fIset\fR\&\&. A table of this type has at most one object with a given key\&. If an object with a key already present in the table is inserted, the existing object is overwritten by the new object\&.
+.LP
+.TP 2
+*
+\fIbag\fR\&\&. A table of this type has zero or more different objects with a given key\&.
+.LP
+.TP 2
+*
+\fIduplicate_bag\fR\&\&. A table of this type has zero or more possibly matching objects with a given key\&.
+.LP
+.RE
+
+.LP
+Dets tables must be opened before they can be updated or read, and when finished they must be properly closed\&. If a table is not properly closed, Dets automatically repairs the table\&. This can take a substantial time if the table is large\&. A Dets table is closed when the process which opened the table terminates\&. If many Erlang processes (users) open the same Dets table, they share the table\&. The table is properly closed when all users have either terminated or closed the table\&. Dets tables are not properly closed if the Erlang runtime system terminates abnormally\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+A \fI^C\fR\& command abnormally terminates an Erlang runtime system in a Unix environment with a break-handler\&.
+
+.LP
+As all operations performed by Dets are disk operations, it is important to realize that a single look-up operation involves a series of disk seek and read operations\&. The Dets functions are therefore much slower than the corresponding \fB\fIets(3)\fR\&\fR\& functions, although Dets exports a similar interface\&.
+.LP
+Dets organizes data as a linear hash list and the hash list grows gracefully as more data is inserted into the table\&. Space management on the file is performed by what is called a buddy system\&. The current implementation keeps the entire buddy system in RAM, which implies that if the table gets heavily fragmented, quite some memory can be used up\&. The only way to defragment a table is to close it and then open it again with option \fIrepair\fR\& set to \fIforce\fR\&\&.
+.LP
+Notice that type \fIordered_set\fR\& in Ets is not yet provided by Dets, neither is the limited support for concurrent updates that makes a sequence of \fIfirst\fR\& and \fInext\fR\& calls safe to use on fixed ETS tables\&. Both these features will be provided by Dets in a future release of Erlang/OTP\&. Until then, the Mnesia application (or some user-implemented method for locking) must be used to implement safe concurrency\&. Currently, no Erlang/OTP library has support for ordered disk-based term storage\&.
+.LP
+Two versions of the format used for storing objects on file are supported by Dets\&. The first version, 8, is the format always used for tables created by Erlang/OTP R7 and earlier\&. The second version, 9, is the default version of tables created by Erlang/OTP R8 (and later releases)\&. Erlang/OTP R8 can create version 8 tables, and convert version 8 tables to version 9, and conversely, upon request\&.
+.LP
+All Dets functions return \fI{error, Reason}\fR\& if an error occurs (\fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\& are exceptions, they exit the process with the error tuple)\&. If badly formed arguments are specified, all functions exit the process with a \fIbadarg\fR\& message\&.
+.SH DATA TYPES
+.nf
+
+\fBaccess()\fR\& = read | read_write
+.br
+.fi
+.nf
+
+\fBauto_save()\fR\& = infinity | integer() >= 0
+.br
+.fi
+.nf
+
+\fBbindings_cont()\fR\&
+.br
+.fi
+.RS
+.LP
+Opaque continuation used by \fB\fImatch/1\fR\&\fR\& and \fB\fImatch/3\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBcont()\fR\&
+.br
+.fi
+.RS
+.LP
+Opaque continuation used by \fB\fIbchunk/2\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBkeypos()\fR\& = integer() >= 1
+.br
+.fi
+.nf
+
+\fBmatch_spec()\fR\& = \fBets:match_spec()\fR\&
+.br
+.fi
+.RS
+.LP
+Match specifications, see section \fB Match Specification in Erlang\fR\& in ERTS User\&'s Guide and the \fB\fIms_transform(3)\fR\&\fR\& module\&.
+.RE
+.nf
+
+\fBno_slots()\fR\& = integer() >= 0 | default
+.br
+.fi
+.nf
+
+\fBobject()\fR\& = tuple()
+.br
+.fi
+.nf
+
+\fBobject_cont()\fR\&
+.br
+.fi
+.RS
+.LP
+Opaque continuation used by \fB\fImatch_object/1\fR\&\fR\& and \fB\fImatch_object/3\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBpattern()\fR\& = atom() | tuple()
+.br
+.fi
+.RS
+.LP
+For a description of patterns, see \fB\fIets:match/2\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBselect_cont()\fR\&
+.br
+.fi
+.RS
+.LP
+Opaque continuation used by \fB\fIselect/1\fR\&\fR\& and \fB\fIselect/3\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBtab_name()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBtype()\fR\& = bag | duplicate_bag | set
+.br
+.fi
+.nf
+
+\fBversion()\fR\& = 8 | 9 | default
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+all() -> [tab_name()]
+.br
+.fi
+.br
+.RS
+.LP
+Returns a list of the names of all open tables on this node\&.
+.RE
+.LP
+.nf
+
+.B
+bchunk(Name, Continuation) ->
+.B
+          {Continuation2, Data} |
+.B
+          \&'$end_of_table\&' |
+.B
+          {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Continuation = start | \fBcont()\fR\&
+.br
+Continuation2 = \fBcont()\fR\&
+.br
+Data = binary() | tuple()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of objects stored in a table\&. The exact representation of the returned objects is not public\&. The lists of data can be used for initializing a table by specifying value \fIbchunk\fR\& to option \fIformat\fR\& of function \fB\fIinit_table/3\fR\&\fR\& The Mnesia application uses this function for copying open tables\&.
+.LP
+Unless the table is protected using \fIsafe_fixtable/2\fR\&, calls to \fIbchunk/2\fR\& do possibly not work as expected if concurrent updates are made to the table\&.
+.LP
+The first time \fIbchunk/2\fR\& is called, an initial continuation, the atom \fIstart\fR\&, must be provided\&.
+.LP
+\fIbchunk/2\fR\& returns a tuple \fI{Continuation2, Data}\fR\&, where \fIData\fR\& is a list of objects\&. \fIContinuation2\fR\& is another continuation that is to be passed on to a subsequent call to \fIbchunk/2\fR\&\&. With a series of calls to \fIbchunk/2\fR\&, all table objects can be extracted\&.
+.LP
+\fIbchunk/2\fR\& returns \fI\&'$end_of_table\&'\fR\& when all objects are returned, or \fI{error, Reason}\fR\& if an error occurs\&.
+.RE
+.LP
+.nf
+
+.B
+close(Name) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Closes a table\&. Only processes that have opened a table are allowed to close it\&.
+.LP
+All open tables must be closed before the system is stopped\&. If an attempt is made to open a table that is not properly closed, Dets automatically tries to repair it\&.
+.RE
+.LP
+.nf
+
+.B
+delete(Name, Key) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Key = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all objects with key \fIKey\fR\& from table \fIName\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete_all_objects(Name) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all objects from a table in almost constant time\&. However, if the table if fixed, \fIdelete_all_objects(T)\fR\& is equivalent to \fImatch_delete(T, \&'_\&')\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete_object(Name, Object) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Object = \fBobject()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all instances of a specified object from a table\&. If a table is of type \fIbag\fR\& or \fIduplicate_bag\fR\&, this function can be used to delete only some of the objects with a specified key\&.
+.RE
+.LP
+.nf
+
+.B
+first(Name) -> Key | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Key = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the first key stored in table \fIName\fR\& according to the internal order of the table, or \fI\&'$end_of_table\&'\fR\& if the table is empty\&.
+.LP
+Unless the table is protected using \fIsafe_fixtable/2\fR\&, subsequent calls to \fB\fInext/2\fR\&\fR\& do possibly not work as expected if concurrent updates are made to the table\&.
+.LP
+If an error occurs, the process is exited with an error tuple \fI{error, Reason}\fR\&\&. The error tuple is not returned, as it cannot be distinguished from a key\&.
+.LP
+There are two reasons why \fIfirst/1\fR\& and \fInext/2\fR\& are not to be used: they are not efficient, and they prevent the use of key \fI\&'$end_of_table\&'\fR\&, as this atom is used to indicate the end of the table\&. If possible, use functions \fB\fImatch\fR\&\fR\&, \fB\fImatch_object\fR\&\fR\&, and \fB\fIselect\fR\&\fR\& for traversing tables\&.
+.RE
+.LP
+.nf
+
+.B
+foldl(Function, Acc0, Name) -> Acc | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+foldr(Function, Acc0, Name) -> Acc | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Function = fun((Object :: \fBobject()\fR\&, AccIn) -> AccOut)
+.br
+Acc0 = Acc = AccIn = AccOut = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Calls \fIFunction\fR\& on successive elements of table \fIName\fR\& together with an extra argument \fIAccIn\fR\&\&. The table elements are traversed in unspecified order\&. \fIFunction\fR\& must return a new accumulator that is passed to the next call\&. \fIAcc0\fR\& is returned if the table is empty\&.
+.RE
+.LP
+.nf
+
+.B
+from_ets(Name, EtsTab) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+EtsTab = \fBets:tab()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all objects of table \fIName\fR\& and then inserts all the objects of the ETS table \fIEtsTab\fR\&\&. The objects are inserted in unspecified order\&. As \fIets:safe_fixtable/2\fR\& is called, the ETS table must be public or owned by the calling process\&.
+.RE
+.LP
+.nf
+
+.B
+info(Name) -> InfoList | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+InfoList = [InfoTuple]
+.br
+InfoTuple = 
+.br
+    {file_size, integer() >= 0} |
+.br
+    {filename, \fBfile:name()\fR\&} |
+.br
+    {keypos, \fBkeypos()\fR\&} |
+.br
+    {size, integer() >= 0} |
+.br
+    {type, \fBtype()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns information about table \fIName\fR\& as a list of tuples:
+.RS 2
+.TP 2
+*
+\fI{file_size, integer() >= 0}}\fR\& - The file size, in bytes\&.
+.LP
+.TP 2
+*
+\fI{filename, \fR\&\fB\fIfile:name()\fR\&\fR\&\fI}\fR\& - The name of the file where objects are stored\&.
+.LP
+.TP 2
+*
+\fI{keypos, \fR\&\fB\fIkeypos()\fR\&\fR\&\fI}\fR\& - The key position\&.
+.LP
+.TP 2
+*
+\fI{size, integer() >= 0}\fR\& - The number of objects stored in the table\&.
+.LP
+.TP 2
+*
+\fI{type, \fR\&\fB\fItype()\fR\&\fR\&\fI}\fR\& - The table type\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+info(Name, Item) -> Value | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Item = 
+.br
+    access |
+.br
+    auto_save |
+.br
+    bchunk_format |
+.br
+    hash |
+.br
+    file_size |
+.br
+    filename |
+.br
+    keypos |
+.br
+    memory |
+.br
+    no_keys |
+.br
+    no_objects |
+.br
+    no_slots |
+.br
+    owner |
+.br
+    ram_file |
+.br
+    safe_fixed |
+.br
+    safe_fixed_monotonic_time |
+.br
+    size |
+.br
+    type |
+.br
+    version
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the information associated with \fIItem\fR\& for table \fIName\fR\&\&. In addition to the \fI{Item, Value}\fR\& pairs defined for \fB\fIinfo/1\fR\&\fR\&, the following items are allowed:
+.RS 2
+.TP 2
+*
+\fI{access, \fR\&\fB\fIaccess()\fR\&\fR\&\fI}\fR\& - The access mode\&.
+.LP
+.TP 2
+*
+\fI{auto_save, \fR\&\fB\fIauto_save()\fR\&\fR\&\fI}\fR\& - The autosave interval\&.
+.LP
+.TP 2
+*
+\fI{bchunk_format, binary()}\fR\& - An opaque binary describing the format of the objects returned by \fIbchunk/2\fR\&\&. The binary can be used as argument to \fIis_compatible_chunk_format/2\fR\&\&. Only available for version 9 tables\&.
+.LP
+.TP 2
+*
+\fI{hash, Hash}\fR\& - Describes which BIF is used to calculate the hash values of the objects stored in the Dets table\&. Possible values of \fIHash\fR\&:
+.RS 2
+.TP 2
+*
+\fIhash\fR\& - Implies that the \fIerlang:hash/2\fR\& BIF is used\&.
+.LP
+.TP 2
+*
+\fIphash\fR\& - Implies that the \fIerlang:phash/2\fR\& BIF is used\&.
+.LP
+.TP 2
+*
+\fIphash2\fR\& - Implies that the \fIerlang:phash2/1\fR\& BIF is used\&.
+.LP
+.RE
+
+.LP
+.TP 2
+*
+\fI{memory, integer() >= 0}\fR\& - The file size, in bytes\&. The same value is associated with item \fIfile_size\fR\&\&.
+.LP
+.TP 2
+*
+\fI{no_keys, integer >= 0()}\fR\& - The number of different keys stored in the table\&. Only available for version 9 tables\&.
+.LP
+.TP 2
+*
+\fI{no_objects, integer >= 0()}\fR\& - The number of objects stored in the table\&.
+.LP
+.TP 2
+*
+\fI{no_slots, {Min, Used, Max}}\fR\& - The number of slots of the table\&. \fIMin\fR\& is the minimum number of slots, \fIUsed\fR\& is the number of currently used slots, and \fIMax\fR\& is the maximum number of slots\&. Only available for version 9 tables\&.
+.LP
+.TP 2
+*
+\fI{owner, pid()}\fR\& - The pid of the process that handles requests to the Dets table\&.
+.LP
+.TP 2
+*
+\fI{ram_file, boolean()}\fR\& - Whether the table is kept in RAM\&.
+.LP
+.TP 2
+*
+\fI{safe_fixed_monotonic_time, SafeFixed}\fR\& - If the table is fixed, \fISafeFixed\fR\& is a tuple \fI{FixedAtTime, [{Pid,RefCount}]}\fR\&\&. \fIFixedAtTime\fR\& is the time when the table was first fixed, and \fIPid\fR\& is the pid of the process that fixes the table \fIRefCount\fR\& times\&. There can be any number of processes in the list\&. If the table is not fixed, \fISafeFixed\fR\& is the atom \fIfalse\fR\&\&.
+.RS 2
+.LP
+\fIFixedAtTime\fR\& corresponds to the result returned by \fB\fIerlang:monotonic_time/0\fR\&\fR\& at the time of fixation\&. The use of \fIsafe_fixed_monotonic_time\fR\& is \fB time warp safe\fR\&\&.
+.RE
+.LP
+.TP 2
+*
+\fI{safe_fixed, SafeFixed}\fR\& - The same as \fI{safe_fixed_monotonic_time, SafeFixed}\fR\& except the format and value of \fIFixedAtTime\fR\&\&.
+.RS 2
+.LP
+\fIFixedAtTime\fR\& corresponds to the result returned by \fB\fIerlang:timestamp/0\fR\&\fR\& at the time of fixation\&. Notice that when the system uses single or multi \fBtime warp modes\fR\&, this can produce strange results\&. This is because the use of \fIsafe_fixed\fR\& is not \fB time warp safe\fR\&\&. Time warp safe code must use \fIsafe_fixed_monotonic_time\fR\& instead\&.
+.RE
+.LP
+.TP 2
+*
+\fI{version, integer()}\fR\& - The version of the format of the table\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+init_table(Name, InitFun) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+init_table(Name, InitFun, Options) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+InitFun = fun((Arg) -> Res)
+.br
+Arg = read | close
+.br
+Res = 
+.br
+    end_of_input |
+.br
+    {[\fBobject()\fR\&], InitFun} |
+.br
+    {Data, InitFun} |
+.br
+    term()
+.br
+Options = Option | [Option]
+.br
+Option = {min_no_slots, \fBno_slots()\fR\&} | {format, term | bchunk}
+.br
+Reason = term()
+.br
+Data = binary() | tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Replaces the existing objects of table \fIName\fR\& with objects created by calling the input function \fIInitFun\fR\&, see below\&. The reason for using this function rather than calling \fIinsert/2\fR\& is that of efficiency\&. Notice that the input functions are called by the process that handles requests to the Dets table, not by the calling process\&.
+.LP
+When called with argument \fIread\fR\&, function \fIInitFun\fR\& is assumed to return \fIend_of_input\fR\& when there is no more input, or \fI{Objects, Fun}\fR\&, where \fIObjects\fR\& is a list of objects and \fIFun\fR\& is a new input function\&. Any other value \fIValue\fR\& is returned as an error \fI{error, {init_fun, Value}}\fR\&\&. Each input function is called exactly once, and if an error occurs, the last function is called with argument \fIclose\fR\&, the reply of which is ignored\&.
+.LP
+If the table type is \fIset\fR\& and more than one object exists with a given key, one of the objects is chosen\&. This is not necessarily the last object with the given key in the sequence of objects returned by the input functions\&. Avoid duplicate keys, otherwise the file becomes unnecessarily fragmented\&. This holds also for duplicated objects stored in tables of type \fIbag\fR\&\&.
+.LP
+It is important that the table has a sufficient number of slots for the objects\&. If not, the hash list starts to grow when \fIinit_table/2\fR\& returns, which significantly slows down access to the table for a period of time\&. The minimum number of slots is set by the \fIopen_file/2\fR\& option \fImin_no_slots\fR\& and returned by the \fIinfo/2\fR\& item \fIno_slots\fR\&\&. See also option \fImin_no_slots\fR\& below\&.
+.LP
+Argument \fIOptions\fR\& is a list of \fI{Key, Val}\fR\& tuples, where the following values are allowed:
+.RS 2
+.TP 2
+*
+\fI{min_no_slots, no_slots()}\fR\& - Specifies the estimated number of different keys to be stored in the table\&. The \fIopen_file/2\fR\& option with the same name is ignored, unless the table is created, in which case performance can be enhanced by supplying an estimate when initializing the table\&.
+.LP
+.TP 2
+*
+\fI{format, Format}\fR\& - Specifies the format of the objects returned by function \fIInitFun\fR\&\&. If \fIFormat\fR\& is \fIterm\fR\& (the default), \fIInitFun\fR\& is assumed to return a list of tuples\&. If \fIFormat\fR\& is \fIbchunk\fR\&, \fIInitFun\fR\& is assumed to return \fIData\fR\& as returned by \fB\fIbchunk/2\fR\&\fR\&\&. This option overrides option \fImin_no_slots\fR\&\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+insert(Name, Objects) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Objects = \fBobject()\fR\& | [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Inserts one or more objects into the table \fIName\fR\&\&. If there already exists an object with a key matching the key of some of the given objects and the table type is \fIset\fR\&, the old object will be replaced\&.
+.RE
+.LP
+.nf
+
+.B
+insert_new(Name, Objects) -> boolean() | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Objects = \fBobject()\fR\& | [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Inserts one or more objects into table \fIName\fR\&\&. If there already exists some object with a key matching the key of any of the specified objects, the table is not updated and \fIfalse\fR\& is returned\&. Otherwise the objects are inserted and \fItrue\fR\& returned\&.
+.RE
+.LP
+.nf
+
+.B
+is_compatible_bchunk_format(Name, BchunkFormat) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+BchunkFormat = binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if it would be possible to initialize table \fIName\fR\&, using \fB\fIinit_table/3\fR\&\fR\& with option \fI{format, bchunk}\fR\&, with objects read with \fB\fIbchunk/2\fR\&\fR\& from some table \fIT\fR\&, such that calling \fIinfo(T, bchunk_format)\fR\& returns \fIBchunkFormat\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_dets_file(Filename) -> boolean() | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if file \fIFilename\fR\& is a Dets table, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+lookup(Name, Key) -> Objects | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Key = term()
+.br
+Objects = [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all objects with key \fIKey\fR\& stored in table \fIName\fR\&, for example:
+.LP
+.nf
+
+2> dets:open_file(abc, [{type, bag}])\&.
+{ok,abc}
+3> dets:insert(abc, {1,2,3})\&.
+ok
+4> dets:insert(abc, {1,3,4})\&.
+ok
+5> dets:lookup(abc, 1)\&.
+[{1,2,3},{1,3,4}]
+.fi
+.LP
+If the table type is \fIset\fR\&, the function returns either the empty list or a list with one object, as there cannot be more than one object with a given key\&. If the table type is \fIbag\fR\& or \fIduplicate_bag\fR\&, the function returns a list of arbitrary length\&.
+.LP
+Notice that the order of objects returned is unspecified\&. In particular, the order in which objects were inserted is not reflected\&.
+.RE
+.LP
+.nf
+
+.B
+match(Continuation) ->
+.B
+         {[Match], Continuation2} |
+.B
+         \&'$end_of_table\&' |
+.B
+         {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = Continuation2 = \fBbindings_cont()\fR\&
+.br
+Match = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Matches some objects stored in a table and returns a non-empty list of the bindings matching a specified pattern in some unspecified order\&. The table, the pattern, and the number of objects that are matched are all defined by \fIContinuation\fR\&, which has been returned by a previous call to \fImatch/1\fR\& or \fImatch/3\fR\&\&.
+.LP
+When all table objects are matched, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+match(Name, Pattern) -> [Match] | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Pattern = \fBpattern()\fR\&
+.br
+Match = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns for each object of table \fIName\fR\& that matches \fIPattern\fR\& a list of bindings in some unspecified order\&. For a description of patterns, see \fB\fIets:match/2\fR\&\fR\&\&. If the keypos\&'th element of \fIPattern\fR\& is unbound, all table objects are matched\&. If the keypos\&'th element is bound, only the objects with the correct key are matched\&.
+.RE
+.LP
+.nf
+
+.B
+match(Name, Pattern, N) ->
+.B
+         {[Match], Continuation} |
+.B
+         \&'$end_of_table\&' |
+.B
+         {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Pattern = \fBpattern()\fR\&
+.br
+N = default | integer() >= 0
+.br
+Continuation = \fBbindings_cont()\fR\&
+.br
+Match = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Matches some or all objects of table \fIName\fR\& and returns a non-empty list of the bindings that match \fIPattern\fR\& in some unspecified order\&. For a description of patterns, see \fB\fIets:match/2\fR\&\fR\&\&.
+.LP
+A tuple of the bindings and a continuation is returned, unless the table is empty, in which case \fI\&'$end_of_table\&'\fR\& is returned\&. The continuation is to be used when matching further objects by calling \fB\fImatch/1\fR\&\fR\&\&.
+.LP
+If the keypos\&'th element of \fIPattern\fR\& is bound, all table objects are matched\&. If the keypos\&'th element is unbound, all table objects are matched, \fIN\fR\& objects at a time, until at least one object matches or the end of the table is reached\&. The default, indicated by giving \fIN\fR\& the value \fIdefault\fR\&, is to let the number of objects vary depending on the sizes of the objects\&. If \fIName\fR\& is a version 9 table, all objects with the same key are always matched at the same time, which implies that more than N objects can sometimes be matched\&.
+.LP
+The table is always to be protected using \fB\fIsafe_fixtable/2\fR\&\fR\& before calling \fImatch/3\fR\&, otherwise errors can occur when calling \fImatch/1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+match_delete(Name, Pattern) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Pattern = \fBpattern()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all objects that match \fIPattern\fR\& from table \fIName\fR\&\&. For a description of patterns, see \fB\fIets:match/2\fR\&\fR\&\&.
+.LP
+If the keypos\&'th element of \fIPattern\fR\& is bound, only the objects with the correct key are matched\&.
+.RE
+.LP
+.nf
+
+.B
+match_object(Continuation) ->
+.B
+                {Objects, Continuation2} |
+.B
+                \&'$end_of_table\&' |
+.B
+                {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = Continuation2 = \fBobject_cont()\fR\&
+.br
+Objects = [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a non-empty list of some objects stored in a table that match a given pattern in some unspecified order\&. The table, the pattern, and the number of objects that are matched are all defined by \fIContinuation\fR\&, which has been returned by a previous call to \fImatch_object/1\fR\& or \fImatch_object/3\fR\&\&.
+.LP
+When all table objects are matched, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+match_object(Name, Pattern) -> Objects | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Pattern = \fBpattern()\fR\&
+.br
+Objects = [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all objects of table \fIName\fR\& that match \fIPattern\fR\& in some unspecified order\&. For a description of patterns, see \fB\fIets:match/2\fR\&\fR\&\&.
+.LP
+If the keypos\&'th element of \fIPattern\fR\& is unbound, all table objects are matched\&. If the keypos\&'th element of \fIPattern\fR\& is bound, only the objects with the correct key are matched\&.
+.LP
+Using the \fImatch_object\fR\& functions for traversing all table objects is more efficient than calling \fIfirst/1\fR\& and \fInext/2\fR\& or \fIslot/2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+match_object(Name, Pattern, N) ->
+.B
+                {Objects, Continuation} |
+.B
+                \&'$end_of_table\&' |
+.B
+                {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Pattern = \fBpattern()\fR\&
+.br
+N = default | integer() >= 0
+.br
+Continuation = \fBobject_cont()\fR\&
+.br
+Objects = [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Matches some or all objects stored in table \fIName\fR\& and returns a non-empty list of the objects that match \fIPattern\fR\& in some unspecified order\&. For a description of patterns, see \fB\fIets:match/2\fR\&\fR\&\&.
+.LP
+A list of objects and a continuation is returned, unless the table is empty, in which case \fI\&'$end_of_table\&'\fR\& is returned\&. The continuation is to be used when matching further objects by calling \fB\fImatch_object/1\fR\&\fR\&\&.
+.LP
+If the keypos\&'th element of \fIPattern\fR\& is bound, all table objects are matched\&. If the keypos\&'th element is unbound, all table objects are matched, \fIN\fR\& objects at a time, until at least one object matches or the end of the table is reached\&. The default, indicated by giving \fIN\fR\& the value \fIdefault\fR\&, is to let the number of objects vary depending on the sizes of the objects\&. If \fIName\fR\& is a version 9 table, all matching objects with the same key are always returned in the same reply, which implies that more than N objects can sometimes be returned\&.
+.LP
+The table is always to be protected using \fB\fIsafe_fixtable/2\fR\&\fR\& before calling \fImatch_object/3\fR\&, otherwise errors can occur when calling \fImatch_object/1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+member(Name, Key) -> boolean() | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Key = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fIlookup/2\fR\&\fR\&, but does not return the objects\&. Returns \fItrue\fR\& if one or more table elements has key \fIKey\fR\&, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+next(Name, Key1) -> Key2 | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Key1 = Key2 = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns either the key following \fIKey1\fR\& in table \fIName\fR\& according to the internal order of the table, or \fI\&'$end_of_table\&'\fR\& if there is no next key\&.
+.LP
+If an error occurs, the process is exited with an error tuple \fI{error, Reason}\fR\&\&.
+.LP
+To find the first key in the table, use \fB\fIfirst/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+open_file(Filename) -> {ok, Reference} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name()\fR\&
+.br
+Reference = reference()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Opens an existing table\&. If the table is not properly closed, it is repaired\&. The returned reference is to be used as the table name\&. This function is most useful for debugging purposes\&.
+.RE
+.LP
+.nf
+
+.B
+open_file(Name, Args) -> {ok, Name} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Args = [OpenArg]
+.br
+OpenArg = 
+.br
+    {access, \fBaccess()\fR\&} |
+.br
+    {auto_save, \fBauto_save()\fR\&} |
+.br
+    {estimated_no_objects, integer() >= 0} |
+.br
+    {file, \fBfile:name()\fR\&} |
+.br
+    {max_no_slots, \fBno_slots()\fR\&} |
+.br
+    {min_no_slots, \fBno_slots()\fR\&} |
+.br
+    {keypos, \fBkeypos()\fR\&} |
+.br
+    {ram_file, boolean()} |
+.br
+    {repair, boolean() | force} |
+.br
+    {type, \fBtype()\fR\&} |
+.br
+    {version, \fBversion()\fR\&}
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Opens a table\&. An empty Dets table is created if no file exists\&.
+.LP
+The atom \fIName\fR\& is the table name\&. The table name must be provided in all subsequent operations on the table\&. The name can be used by other processes as well, and many processes can share one table\&.
+.LP
+If two processes open the same table by giving the same name and arguments, the table has two users\&. If one user closes the table, it remains open until the second user closes it\&.
+.LP
+Argument \fIArgs\fR\& is a list of \fI{Key, Val}\fR\& tuples, where the following values are allowed:
+.RS 2
+.TP 2
+*
+\fI{access, \fR\&\fB\fIaccess()\fR\&\fR\&\fI}\fR\& - Existing tables can be opened in read-only mode\&. A table that is opened in read-only mode is not subjected to the automatic file reparation algorithm if it is later opened after a crash\&. Defaults to \fIread_write\fR\&\&.
+.LP
+.TP 2
+*
+\fI{auto_save, \fR\&\fB\fIauto_save()\fR\&\fR\&\fI}\fR\& - The autosave interval\&. If the interval is an integer \fITime\fR\&, the table is flushed to disk whenever it is not accessed for \fITime\fR\& milliseconds\&. A table that has been flushed requires no reparation when reopened after an uncontrolled emulator halt\&. If the interval is the atom \fIinfinity\fR\&, autosave is disabled\&. Defaults to 180000 (3 minutes)\&.
+.LP
+.TP 2
+*
+\fI{estimated_no_objects, \fR\&\fB\fIno_slots()\fR\&\fR\&\fI}\fR\& - Equivalent to option \fImin_no_slots\fR\&\&.
+.LP
+.TP 2
+*
+\fI{file, \fR\&\fB\fIfile:name()\fR\&\fR\&\fI}\fR\& - The name of the file to be opened\&. Defaults to the table name\&.
+.LP
+.TP 2
+*
+\fI{max_no_slots, \fR\&\fB\fIno_slots()\fR\&\fR\&\fI}\fR\& - The maximum number of slots to be used\&. Defaults to 32 M, which is the maximal value\&. Notice that a higher value can increase the table fragmentation, and a smaller value can decrease the fragmentation, at the expense of execution time\&. Only available for version 9 tables\&.
+.LP
+.TP 2
+*
+\fI{min_no_slots, \fR\&\fB\fIno_slots()\fR\&\fR\&\fI}\fR\& - Application performance can be enhanced with this flag by specifying, when the table is created, the estimated number of different keys to be stored in the table\&. Defaults to 256, which is the minimum value\&.
+.LP
+.TP 2
+*
+\fI{keypos, \fR\&\fB\fIkeypos()\fR\&\fR\&\fI}\fR\& - The position of the element of each object to be used as key\&. Defaults to 1\&. The ability to explicitly state the key position is most convenient when we want to store Erlang records in which the first position of the record is the name of the record type\&.
+.LP
+.TP 2
+*
+\fI{ram_file, boolean()}\fR\& - Whether the table is to be kept in RAM\&. Keeping the table in RAM can sound like an anomaly, but can enhance the performance of applications that open a table, insert a set of objects, and then close the table\&. When the table is closed, its contents are written to the disk file\&. Defaults to \fIfalse\fR\&\&.
+.LP
+.TP 2
+*
+\fI{repair, Value}\fR\& - \fIValue\fR\& can be either a \fIboolean()\fR\& or the atom \fIforce\fR\&\&. The flag specifies if the Dets server is to invoke the automatic file reparation algorithm\&. Defaults to \fItrue\fR\&\&. If \fIfalse\fR\& is specified, no attempt is made to repair the file, and \fI{error, {needs_repair, FileName}}\fR\& is returned if the table must be repaired\&.
+.RS 2
+.LP
+Value \fIforce\fR\& means that a reparation is made even if the table is properly closed\&. This is how to convert tables created by older versions of STDLIB\&. An example is tables hashed with the deprecated \fIerlang:hash/2\fR\& BIF\&. Tables created with Dets from STDLIB version 1\&.8\&.2 or later use function \fIerlang:phash/2\fR\& or function \fIerlang:phash2/1\fR\&, which is preferred\&.
+.RE
+.RS 2
+.LP
+Option \fIrepair\fR\& is ignored if the table is already open\&.
+.RE
+.LP
+.TP 2
+*
+\fI{type, \fR\&\fB\fItype()\fR\&\fR\&\fI}\fR\& - The table type\&. Defaults to \fIset\fR\&\&.
+.LP
+.TP 2
+*
+\fI{version, \fR\&\fB\fIversion()\fR\&\fR\&\fI}\fR\& - The version of the format used for the table\&. Defaults to \fI9\fR\&\&. Tables on the format used before Erlang/OTP R8 can be created by specifying value \fI8\fR\&\&. A version 8 table can be converted to a version 9 table by specifying options \fI{version,9}\fR\& and \fI{repair,force}\fR\&\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+pid2name(Pid) -> {ok, Name} | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Pid = pid()
+.br
+Name = \fBtab_name()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the table name given the pid of a process that handles requests to a table, or \fIundefined\fR\& if there is no such table\&.
+.LP
+This function is meant to be used for debugging only\&.
+.RE
+.LP
+.nf
+
+.B
+repair_continuation(Continuation, MatchSpec) -> Continuation2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = Continuation2 = \fBselect_cont()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+This function can be used to restore an opaque continuation returned by \fB\fIselect/3\fR\&\fR\& or \fB\fIselect/1\fR\&\fR\& if the continuation has passed through external term format (been sent between nodes or stored on disk)\&.
+.LP
+The reason for this function is that continuation terms contain compiled match specifications and therefore are invalidated if converted to external term format\&. Given that the original match specification is kept intact, the continuation can be restored, meaning it can once again be used in subsequent \fIselect/1\fR\& calls even though it has been stored on disk or on another node\&.
+.LP
+For more information and examples, see the \fB\fIets(3)\fR\&\fR\& module\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This function is rarely needed in application code\&. It is used by application Mnesia to provide distributed \fIselect/3\fR\& and \fIselect/1\fR\& sequences\&. A normal application would either use Mnesia or keep the continuation from being converted to external format\&.
+.LP
+The reason for not having an external representation of compiled match specifications is performance\&. It can be subject to change in future releases, while this interface remains for backward compatibility\&.
+
+.RE
+.LP
+.nf
+
+.B
+safe_fixtable(Name, Fix) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Fix = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+If \fIFix\fR\& is \fItrue\fR\&, table \fIName\fR\& is fixed (once more) by the calling process, otherwise the table is released\&. The table is also released when a fixing process terminates\&.
+.LP
+If many processes fix a table, the table remains fixed until all processes have released it or terminated\&. A reference counter is kept on a per process basis, and N consecutive fixes require N releases to release the table\&.
+.LP
+It is not guaranteed that calls to \fIfirst/1\fR\&, \fInext/2\fR\&, or select and match functions work as expected even if the table is fixed; the limited support for concurrency provided by the \fB\fIets(3)\fR\&\fR\& module is not yet provided by Dets\&. Fixing a table currently only disables resizing of the hash list of the table\&.
+.LP
+If objects have been added while the table was fixed, the hash list starts to grow when the table is released, which significantly slows down access to the table for a period of time\&.
+.RE
+.LP
+.nf
+
+.B
+select(Continuation) ->
+.B
+          {Selection, Continuation2} |
+.B
+          \&'$end_of_table\&' |
+.B
+          {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = Continuation2 = \fBselect_cont()\fR\&
+.br
+Selection = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Applies a match specification to some objects stored in a table and returns a non-empty list of the results\&. The table, the match specification, and the number of objects that are matched are all defined by \fIContinuation\fR\&, which is returned by a previous call to \fB\fIselect/1\fR\&\fR\& or \fB\fIselect/3\fR\&\fR\&\&.
+.LP
+When all objects of the table have been matched, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+select(Name, MatchSpec) -> Selection | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+Selection = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the results of applying match specification \fIMatchSpec\fR\& to all or some objects stored in table \fIName\fR\&\&. The order of the objects is not specified\&. For a description of match specifications, see the \fBERTS User\&'s Guide\fR\&\&.
+.LP
+If the keypos\&'th element of \fIMatchSpec\fR\& is unbound, the match specification is applied to all objects of the table\&. If the keypos\&'th element is bound, the match specification is applied to the objects with the correct key(s) only\&.
+.LP
+Using the \fIselect\fR\& functions for traversing all objects of a table is more efficient than calling \fIfirst/1\fR\& and \fInext/2\fR\& or \fIslot/2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+select(Name, MatchSpec, N) ->
+.B
+          {Selection, Continuation} |
+.B
+          \&'$end_of_table\&' |
+.B
+          {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+N = default | integer() >= 0
+.br
+Continuation = \fBselect_cont()\fR\&
+.br
+Selection = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the results of applying match specification \fIMatchSpec\fR\& to some or all objects stored in table \fIName\fR\&\&. The order of the objects is not specified\&. For a description of match specifications, see the \fBERTS User\&'s Guide\fR\&\&.
+.LP
+A tuple of the results of applying the match specification and a continuation is returned, unless the table is empty, in which case \fI\&'$end_of_table\&'\fR\& is returned\&. The continuation is to be used when matching more objects by calling \fB\fIselect/1\fR\&\fR\&\&.
+.LP
+If the keypos\&'th element of \fIMatchSpec\fR\& is bound, the match specification is applied to all objects of the table with the correct key(s)\&. If the keypos\&'th element of \fIMatchSpec\fR\& is unbound, the match specification is applied to all objects of the table, \fIN\fR\& objects at a time, until at least one object matches or the end of the table is reached\&. The default, indicated by giving \fIN\fR\& the value \fIdefault\fR\&, is to let the number of objects vary depending on the sizes of the objects\&. If \fIName\fR\& is a version 9 table, all objects with the same key are always handled at the same time, which implies that the match specification can be applied to more than N objects\&.
+.LP
+The table is always to be protected using \fB\fIsafe_fixtable/2\fR\&\fR\& before calling \fIselect/3\fR\&, otherwise errors can occur when calling \fIselect/1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+select_delete(Name, MatchSpec) -> N | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+N = integer() >= 0
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes each object from table \fIName\fR\& such that applying match specification \fIMatchSpec\fR\& to the object returns value \fItrue\fR\&\&. For a description of match specifications, see the \fBERTS User\&'s Guide\fR\&\&. Returns the number of deleted objects\&.
+.LP
+If the keypos\&'th element of \fIMatchSpec\fR\& is bound, the match specification is applied to the objects with the correct key(s) only\&.
+.RE
+.LP
+.nf
+
+.B
+slot(Name, I) -> \&'$end_of_table\&' | Objects | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+I = integer() >= 0
+.br
+Objects = [\fBobject()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+The objects of a table are distributed among slots, starting with slot \fI0\fR\& and ending with slot \fIn\fR\&\&. Returns the list of objects associated with slot \fII\fR\&\&. If \fII\fR\& > \fIn\fR\&, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+sync(Name) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Ensures that all updates made to table \fIName\fR\& are written to disk\&. This also applies to tables that have been opened with flag \fIram_file\fR\& set to \fItrue\fR\&\&. In this case, the contents of the RAM file are flushed to disk\&.
+.LP
+Notice that the space management data structures kept in RAM, the buddy system, is also written to the disk\&. This can take some time if the table is fragmented\&.
+.RE
+.LP
+.nf
+
+.B
+table(Name) -> QueryHandle
+.br
+.fi
+.br
+.nf
+
+.B
+table(Name, Options) -> QueryHandle
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Options = Option | [Option]
+.br
+Option = {n_objects, Limit} | {traverse, TraverseMethod}
+.br
+Limit = default | integer() >= 1
+.br
+TraverseMethod = first_next | select | {select, \fBmatch_spec()\fR\&}
+.br
+QueryHandle = \fBqlc:query_handle()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a Query List Comprehension (QLC) query handle\&. The \fB\fIqlc(3)\fR\&\fR\& module provides a query language aimed mainly for Mnesia, but ETS tables, Dets tables, and lists are also recognized by \fIqlc\fR\& as sources of data\&. Calling \fB\fIdets:table/1,2\fR\&\fR\& is the means to make Dets table \fIName\fR\& usable to \fIqlc\fR\&\&.
+.LP
+When there are only simple restrictions on the key position, \fIqlc\fR\& uses \fB\fIdets:lookup/2\fR\&\fR\& to look up the keys\&. When that is not possible, the whole table is traversed\&. Option \fItraverse\fR\& determines how this is done:
+.RS 2
+.TP 2
+*
+\fIfirst_next\fR\& - The table is traversed one key at a time by calling \fIdets:first/1\fR\& and \fIdets:next/2\fR\&\&.
+.LP
+.TP 2
+*
+\fIselect\fR\& - The table is traversed by calling \fB\fIdets:select/3\fR\&\fR\& and \fB\fIdets:select/1\fR\&\fR\&\&. Option \fIn_objects\fR\& determines the number of objects returned (the third argument of \fIselect/3\fR\&)\&. The match specification (the second argument of \fIselect/3\fR\&) is assembled by \fIqlc\fR\&:
+.RS 2
+.TP 2
+*
+Simple filters are translated into equivalent match specifications\&.
+.LP
+.TP 2
+*
+More complicated filters must be applied to all objects returned by \fIselect/3\fR\& given a match specification that matches all objects\&.
+.LP
+.RE
+
+.LP
+.TP 2
+*
+\fI{select, \fR\&\fB match_spec()\fR\&\fI}\fR\& - As for \fIselect\fR\&, the table is traversed by calling \fIdets:select/3\fR\& and \fIdets:select/1\fR\&\&. The difference is that the match specification is specified explicitly\&. This is how to state match specifications that cannot easily be expressed within the syntax provided by \fIqlc\fR\&\&.
+.LP
+.RE
+
+.LP
+The following example uses an explicit match specification to traverse the table:
+.LP
+.nf
+
+1> dets:open_file(t, []),
+ok = dets:insert(t, [{1,a},{2,b},{3,c},{4,d}]),
+MS = ets:fun2ms(fun({X,Y}) when (X > 1) or (X < 5) -> {Y} end),
+QH1 = dets:table(t, [{traverse, {select, MS}}])\&.
+.fi
+.LP
+An example with implicit match specification:
+.LP
+.nf
+
+2> QH2 = qlc:q([{Y} || {X,Y} <- dets:table(t), (X > 1) or (X < 5)])\&.
+.fi
+.LP
+The latter example is equivalent to the former, which can be verified using function \fIqlc:info/1\fR\&:
+.LP
+.nf
+
+3> qlc:info(QH1) =:= qlc:info(QH2)\&.
+true
+.fi
+.LP
+\fIqlc:info/1\fR\& returns information about a query handle\&. In this case identical information is returned for the two query handles\&.
+.RE
+.LP
+.nf
+
+.B
+to_ets(Name, EtsTab) -> EtsTab | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+EtsTab = \fBets:tab()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Inserts the objects of the Dets table \fIName\fR\& into the ETS table \fIEtsTab\fR\&\&. The order in which the objects are inserted is not specified\&. The existing objects of the ETS table are kept unless overwritten\&.
+.RE
+.LP
+.nf
+
+.B
+traverse(Name, Fun) -> Return | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Fun = fun((Object) -> FunReturn)
+.br
+Object = \fBobject()\fR\&
+.br
+FunReturn = 
+.br
+    continue | {continue, Val} | {done, Value} | OtherValue
+.br
+Return = [term()] | OtherValue
+.br
+Val = Value = OtherValue = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Applies \fIFun\fR\& to each object stored in table \fIName\fR\& in some unspecified order\&. Different actions are taken depending on the return value of \fIFun\fR\&\&. The following \fIFun\fR\& return values are allowed:
+.RS 2
+.TP 2
+.B
+\fIcontinue\fR\&:
+Continue to perform the traversal\&. For example, the following function can be used to print the contents of a table:
+.LP
+.nf
+
+fun(X) -> io:format("~p~n", [X]), continue end.
+.fi
+.TP 2
+.B
+\fI{continue, Val}\fR\&:
+Continue the traversal and accumulate \fIVal\fR\&\&. The following function is supplied to collect all objects of a table in a list:
+.LP
+.nf
+
+fun(X) -> {continue, X} end.
+.fi
+.TP 2
+.B
+\fI{done, Value}\fR\&:
+Terminate the traversal and return \fI[Value | Acc]\fR\&\&.
+.RE
+.LP
+Any other value \fIOtherValue\fR\& returned by \fIFun\fR\& terminates the traversal and is returned immediately\&.
+.RE
+.LP
+.nf
+
+.B
+update_counter(Name, Key, Increment) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBtab_name()\fR\&
+.br
+Key = term()
+.br
+Increment = {Pos, Incr} | Incr
+.br
+Pos = Incr = Result = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Updates the object with key \fIKey\fR\& stored in table \fIName\fR\& of type \fIset\fR\& by adding \fIIncr\fR\& to the element at the \fIPos\fR\&:th position\&. The new counter value is returned\&. If no position is specified, the element directly following the key is updated\&.
+.LP
+This functions provides a way of updating a counter, without having to look up an object, update the object by incrementing an element, and insert the resulting object into the table again\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIets(3)\fR\&\fR\&, \fB\fImnesia(3)\fR\&\fR\&, \fB\fIqlc(3)\fR\&\fR\&

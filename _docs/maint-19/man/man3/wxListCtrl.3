@@ -1,0 +1,1484 @@
+.TH wxListCtrl 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxListCtrl \- See external documentation: wxListCtrl.
+.SH DESCRIPTION
+.LP
+See external documentation: wxListCtrl\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxControl\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxListCtrl():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxListCtrl()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent) -> \fBwxListCtrl()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxListCtrl()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {winid, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()} | {validator, \fBwx:wx_object()\fR\&} | {onGetItemText, function()} | {onGetItemAttr, function()} | {onGetItemColumnImage, function()}
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a listctrl with optional callback functions:
+.LP
+OnGetItemText = (This, Item, Column) -> unicode:charlist() OnGetItemAttr = (This, Item) -> wxListItemAttr:wxListItemAttr() OnGetItemColumnImage = (This, Item, Column) -> integer()
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+arrange(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBarrange(This, [])\fR\&\&.
+.RE
+.LP
+.B
+arrange(This, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Option = {flag, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+assignImageList(This, ImageList, Which) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+ImageList = \fBwxImageList:wxImageList()\fR\&
+.br
+Which = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+clearAll(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent) -> \fBwxListCtrl()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxWindow:wxWindow()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Options::[Option]) -> \fBwxListCtrl()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxWindow:wxWindow()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {winid, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()} | {validator, \fBwx:wx_object()\fR\&} | {onGetItemText, function()} | {onGetItemAttr, function()} | {onGetItemColumnImage, function()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deleteAllItems(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deleteColumn(This, Col) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deleteItem(This, Item) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+editLabel(This, Item) -> \fBwxTextCtrl:wxTextCtrl()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+ensureVisible(This, Item) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+findItem(This, Start, Str) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Start = integer()
+.br
+Str = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBfindItem(This, Start, Str, [])\fR\&\&.
+.RE
+.LP
+.B
+findItem(This, Start, Str, Options::[Option]) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Start = integer()
+.br
+Str = \fBunicode:chardata()\fR\&
+.br
+Option = {partial, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+findItem(This, Start, Pt, Direction) -> integer() when
+.br
+This::wxListCtrl(), Start::integer(), Pt::{X::integer(), Y::integer()}, Direction::integer()\&.
+.br
+
+.RE
+.LP
+.B
+getColumn(This, Col, Item) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+Item = \fBwxListItem:wxListItem()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getColumnCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getColumnWidth(This, Col) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getCountPerPage(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getEditControl(This) -> \fBwxTextCtrl:wxTextCtrl()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getImageList(This, Which) -> \fBwxImageList:wxImageList()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Which = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItem(This, Info) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Info = \fBwxListItem:wxListItem()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemBackgroundColour(This, Item) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemData(This, Item) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemFont(This, Item) -> \fBwxFont:wxFont()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemPosition(This, Item) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::boolean(), Pos::{X::integer(), Y::integer()}}
+.br
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemRect(This, Item) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::boolean(), Rect::{X::integer(), Y::integer(), W::integer(), H::integer()}}
+.br
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBgetItemRect(This, Item, [])\fR\&\&.
+.RE
+.LP
+.B
+getItemRect(This, Item, Options::[Option]) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::boolean(), Rect::{X::integer(), Y::integer(), W::integer(), H::integer()}}
+.br
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Option = {code, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemSpacing(This) -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemState(This, Item, StateMask) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+StateMask = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemText(This, Item) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getItemTextColour(This, Item) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getNextItem(This, Item) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBgetNextItem(This, Item, [])\fR\&\&.
+.RE
+.LP
+.B
+getNextItem(This, Item, Options::[Option]) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Option = {geometry, integer()} | {state, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSelectedItemCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTextColour(This) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTopItem(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getViewRect(This) -> {X::integer(), Y::integer(), W::integer(), H::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hitTest(This, Point) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::integer(), Flags::integer(), PSubItem::integer()}
+.br
+This = \fBwxListCtrl()\fR\&
+.br
+Point = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+insertColumn(This, Col, Heading) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+Heading = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+insertColumn(This, Col, Info) -> integer() when
+.br
+This::wxListCtrl(), Col::integer(), Info::wxListItem:wxListItem()\&.
+.br
+
+.RE
+.LP
+.B
+insertColumn(This, Col, Heading, Options::[Option]) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+Heading = \fBunicode:chardata()\fR\&
+.br
+Option = {format, integer()} | {width, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+insertItem(This, Info) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Info = \fBwxListItem:wxListItem()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+insertItem(This, Index, ImageIndex) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Index = integer()
+.br
+ImageIndex = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+insertItem(This, Index, Label) -> integer() when
+.br
+This::wxListCtrl(), Index::integer(), Label::unicode:chardata()\&.
+.br
+
+.RE
+.LP
+.B
+insertItem(This, Index, Label, ImageIndex) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Index = integer()
+.br
+Label = \fBunicode:chardata()\fR\&
+.br
+ImageIndex = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+refreshItem(This, Item) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+refreshItems(This, ItemFrom, ItemTo) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+ItemFrom = integer()
+.br
+ItemTo = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+scrollList(This, Dx, Dy) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Dx = integer()
+.br
+Dy = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setBackgroundColour(This, Colour) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Colour = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setColumn(This, Col, Item) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+Item = \fBwxListItem:wxListItem()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setColumnWidth(This, Col, Width) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = integer()
+.br
+Width = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setImageList(This, ImageList, Which) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+ImageList = \fBwxImageList:wxImageList()\fR\&
+.br
+Which = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItem(This, Info) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Info = \fBwxListItem:wxListItem()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItem(This, Index, Col, Label) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Index = integer()
+.br
+Col = integer()
+.br
+Label = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetItem(This, Index, Col, Label, [])\fR\&\&.
+.RE
+.LP
+.B
+setItem(This, Index, Col, Label, Options::[Option]) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Index = integer()
+.br
+Col = integer()
+.br
+Label = \fBunicode:chardata()\fR\&
+.br
+Option = {imageId, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemBackgroundColour(This, Item, Col) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Col = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemCount(This, Count) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Count = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemData(This, Item, Data) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Data = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemFont(This, Item, F) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+F = \fBwxFont:wxFont()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemImage(This, Item, Image) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Image = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetItemImage(This, Item, Image, [])\fR\&\&.
+.RE
+.LP
+.B
+setItemImage(This, Item, Image, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Image = integer()
+.br
+Option = {selImage, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemColumnImage(This, Item, Column, Image) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Column = integer()
+.br
+Image = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemPosition(This, Item, Pos) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Pos = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemState(This, Item, State, StateMask) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+State = integer()
+.br
+StateMask = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemText(This, Item, Str) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Str = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setItemTextColour(This, Item, Col) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Item = integer()
+.br
+Col = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSingleStyle(This, Style) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Style = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetSingleStyle(This, Style, [])\fR\&\&.
+.RE
+.LP
+.B
+setSingleStyle(This, Style, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Style = integer()
+.br
+Option = {add, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setTextColour(This, Col) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Col = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setWindowStyleFlag(This, Style) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxListCtrl()\fR\&
+.br
+Style = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+sortItems(This::\fBwxListCtrl()\fR\&, SortCallBack::function()) -> boolean()
+.br
+.RS
+.LP
+Sort the items in the list control
+.br
+
+.LP
+.nf
+SortCallBack(Item1,Item2) -> integer()
+.fi
+.LP
+
+.br
+SortCallBack receives the client data associated with two items to compare, and should return 0 if the items are equal, a negative value if the first item is less than the second one and a positive value if the first item is greater than the second one\&. 
+.br
+NOTE: The callback may not call other (wx) processes\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxListCtrl()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

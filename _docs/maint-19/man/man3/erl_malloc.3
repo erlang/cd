@@ -1,0 +1,229 @@
+.TH erl_malloc 3 "erl_interface 3.9.3" "Ericsson AB" "C Library Functions"
+.SH NAME
+erl_malloc \- Memory allocation functions.
+.SH DESCRIPTION
+.LP
+This module provides functions for allocating and deallocating memory\&.
+.SH EXPORTS
+.LP
+.B
+ETERM *erl_alloc_eterm(etype)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned char etype;
+.br
+.RE
+.RE
+.RS
+.LP
+Allocates an \fI(ETERM)\fR\& structure\&.
+.LP
+Specify \fIetype\fR\& as one of the following constants:
+.RS 2
+.TP 2
+*
+\fIERL_INTEGER\fR\&
+.LP
+.TP 2
+*
+\fIERL_U_INTEGER\fR\& (unsigned integer) 
+.LP
+.TP 2
+*
+\fIERL_ATOM\fR\&
+.LP
+.TP 2
+*
+\fIERL_PID\fR\& (Erlang process identifier) 
+.LP
+.TP 2
+*
+\fIERL_PORT\fR\&
+.LP
+.TP 2
+*
+\fIERL_REF\fR\& (Erlang reference) 
+.LP
+.TP 2
+*
+\fIERL_LIST\fR\&
+.LP
+.TP 2
+*
+\fIERL_EMPTY_LIST\fR\&
+.LP
+.TP 2
+*
+\fIERL_TUPLE\fR\&
+.LP
+.TP 2
+*
+\fIERL_BINARY\fR\&
+.LP
+.TP 2
+*
+\fIERL_FLOAT\fR\&
+.LP
+.TP 2
+*
+\fIERL_VARIABLE\fR\&
+.LP
+.TP 2
+*
+\fIERL_SMALL_BIG\fR\& (bignum) 
+.LP
+.TP 2
+*
+\fIERL_U_SMALL_BIG\fR\& (bignum) 
+.LP
+.RE
+
+.LP
+\fIERL_SMALL_BIG\fR\& and \fIERL_U_SMALL_BIG\fR\& are for creating Erlang \fIbignums\fR\&, which can contain integers of any size\&. The size of an integer in Erlang is machine-dependent, but any integer > 2^28 requires a bignum\&.
+.RE
+.LP
+.B
+void erl_eterm_release(void)
+.br
+.RS
+.LP
+Clears the freelist, where blocks are placed when they are released by \fIerl_free_term()\fR\& and \fIerl_free_compound()\fR\&\&.
+.RE
+.LP
+.B
+void erl_eterm_statistics(allocated, freed)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+long *allocated;
+.br
+long *freed;
+.br
+.RE
+.RE
+.RS
+.LP
+Reports term allocation statistics\&.
+.LP
+\fIallocated\fR\& and \fIfreed\fR\& are initialized to contain information about the fix-allocator used to allocate \fIETERM\fR\& components\&.
+.RS 2
+.TP 2
+*
+\fIallocated\fR\& is the number of blocks currently allocated to \fIETERM\fR\& objects\&.
+.LP
+.TP 2
+*
+\fIfreed\fR\& is the length of the freelist, where blocks are placed when they are released by \fIerl_free_term()\fR\& and \fIerl_free_compound()\fR\&\&.
+.LP
+.RE
+
+.RE
+.LP
+.B
+void erl_free(ptr)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+void *ptr;
+.br
+.RE
+.RE
+.RS
+.LP
+Calls the standard \fIfree()\fR\& function\&.
+.RE
+.LP
+.B
+void erl_free_array(array, size)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM **array;
+.br
+int size;
+.br
+.RE
+.RE
+.RS
+.LP
+Frees an array of Erlang terms\&.
+.RS 2
+.TP 2
+*
+\fIarray\fR\& is an array of ETERM* objects\&.
+.LP
+.TP 2
+*
+\fIsize\fR\& is the number of terms in the array\&. 
+.LP
+.RE
+
+.RE
+.LP
+.B
+void erl_free_compound(t)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *t;
+.br
+.RE
+.RE
+.RS
+.LP
+Normally it is the programmer\&'s responsibility to free each Erlang term that has been returned from any of the \fIErl_Interface\fR\& functions\&. However, as many of the functions that build new Erlang terms in fact share objects with other existing terms, it can be difficult for the programmer to maintain pointers to all such terms to free them individually\&.
+.LP
+\fIerl_free_compound()\fR\& recursively frees all of the subterms associated with a specified Erlang term, regardless of whether we are still holding pointers to the subterms\&.
+.LP
+For an example, see section \fBBuilding Terms and Patterns\fR\& in the User\&'s Guide\&.
+.RE
+.LP
+.B
+void erl_free_term(t)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *t;
+.br
+.RE
+.RE
+.RS
+.LP
+Frees an Erlang term\&.
+.RE
+.LP
+.B
+void erl_malloc(size)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+long size;
+.br
+.RE
+.RE
+.RS
+.LP
+Calls the standard \fImalloc()\fR\& function\&.
+.RE

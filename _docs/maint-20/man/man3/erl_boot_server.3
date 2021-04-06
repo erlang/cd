@@ -1,0 +1,154 @@
+.TH erl_boot_server 3 "kernel 5.4.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_boot_server \- Boot server for other Erlang machines.
+.SH DESCRIPTION
+.LP
+This server is used to assist diskless Erlang nodes that fetch all Erlang code from another machine\&.
+.LP
+This server is used to fetch all code, including the start script, if an Erlang runtime system is started with command-line flag \fI-loader inet\fR\&\&. All hosts specified with command-line flag \fI-hosts Host\fR\& must have one instance of this server running\&.
+.LP
+This server can be started with the Kernel configuration parameter \fIstart_boot_server\fR\&\&.
+.LP
+The \fIerl_boot_server\fR\& can read regular files and files in archives\&. See \fB\fIcode(3)\fR\&\fR\& and \fB\fIerl_prim_loader(3)\fR\&\fR\& in ERTS\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+The support for loading code from archive files is experimental\&. It is released before it is ready to obtain early feedback\&. The file format, semantics, interfaces, and so on, can be changed in a future release\&.
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+add_slave(Slave) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Slave = Host
+.br
+Host = \fBinet:ip_address()\fR\& | \fBinet:hostname()\fR\&
+.br
+Reason = {badarg, Slave}
+.br
+.RE
+.RE
+.RS
+.LP
+Adds a \fISlave\fR\& node to the list of allowed slave hosts\&.
+.RE
+.LP
+.nf
+
+.B
+delete_slave(Slave) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Slave = Host
+.br
+Host = \fBinet:ip_address()\fR\& | \fBinet:hostname()\fR\&
+.br
+Reason = {badarg, Slave}
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes a \fISlave\fR\& node from the list of allowed slave hosts\&.
+.RE
+.LP
+.nf
+
+.B
+start(Slaves) -> {ok, Pid} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Slaves = [Host]
+.br
+Host = \fBinet:ip_address()\fR\& | \fBinet:hostname()\fR\&
+.br
+Pid = pid()
+.br
+Reason = {badarg, Slaves}
+.br
+.RE
+.RE
+.RS
+.LP
+Starts the boot server\&. \fISlaves\fR\& is a list of IP addresses for hosts, which are allowed to use this server as a boot server\&.
+.RE
+.LP
+.nf
+
+.B
+start_link(Slaves) -> {ok, Pid} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Slaves = [Host]
+.br
+Host = \fBinet:ip_address()\fR\& | \fBinet:hostname()\fR\&
+.br
+Pid = pid()
+.br
+Reason = {badarg, Slaves}
+.br
+.RE
+.RE
+.RS
+.LP
+Starts the boot server and links to the caller\&. This function is used to start the server if it is included in a supervision tree\&.
+.RE
+.LP
+.nf
+
+.B
+which_slaves() -> Slaves
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Slaves = [Slave]
+.br
+Slave = 
+.br
+    {Netmask :: \fBinet:ip_address()\fR\&, Address :: \fBinet:ip_address()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the current list of allowed slave hosts\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerts:init(3)\fR\&\fR\&, \fB\fIerts:erl_prim_loader(3)\fR\&\fR\&

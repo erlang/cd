@@ -1,0 +1,66 @@
+.TH ct_property_test 3 "common_test 1.10.1" "" "Erlang Module Definition"
+.SH NAME
+ct_property_test \- EXPERIMENTAL support in common-test for calling property based tests.
+.SH DESCRIPTION
+.LP
+EXPERIMENTAL support in common-test for calling property based tests\&.
+.LP
+This module is a first step towards running Property Based testing in the Common Test framework\&. A property testing tool like QuickCheck or PropEr is assumed to be installed\&.
+.LP
+The idea is to have a common_test testsuite calling a property testing tool with special property test suites as defined by that tool\&. In this manual we assume the usual Erlang Application directory structure\&. The tests are collected in the application\&'s \fItest\fR\& directory\&. The test directory has a sub-directory called \fIproperty_test\fR\& where everything needed for the property tests are collected\&.
+.LP
+A typical ct test suite using \fIct_property_test\fR\& is organized as follows:
+.LP
+.nf
+   -include_lib("common_test/include/ct.hrl").
+  
+   all() -> [prop_ftp_case].
+  
+   init_per_suite(Config) ->
+       ct_property_test:init_per_suite(Config).
+  
+   %%%---- test case
+   prop_ftp_case(Config) ->
+       ct_property_test:quickcheck(
+         ftp_simple_client_server:prop_ftp(Config),
+         Config
+        ).
+.fi
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This is experimental code which may be changed or removed anytime without any warning\&.
+
+.SH EXPORTS
+.LP
+.B
+init_per_suite(Config) -> Config | {skip, Reason}
+.br
+.RS
+.LP
+Initializes Config for property testing\&.
+.LP
+The function investigates if support is available for either Quickcheck, PropEr, or Triq\&. The options \fI{property_dir,AbsPath}\fR\& and \fI{property_test_tool,Tool}\fR\& is set in the Config returned\&.
+.LP
+The function is intended to be called in the init_per_suite in the test suite\&.
+.LP
+The property tests are assumed to be in the subdirectory \fIproperty_test\fR\&\&.
+.RE
+.LP
+.B
+quickcheck(Property, Config) -> true | {fail, Reason}
+.br
+.RS
+.LP
+Call quickcheck and return the result in a form suitable for common_test\&.
+.LP
+The function is intended to be called in the test cases in the test suite\&.
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

@@ -1,0 +1,426 @@
+.TH edoc 3 "edoc 0.12" "" "Erlang Module Definition"
+.SH NAME
+edoc \- EDoc - the Erlang program documentation generator.
+.SH DESCRIPTION
+.LP
+EDoc - the Erlang program documentation generator\&.
+.LP
+This module provides the main user interface to EDoc\&.
+.RS 2
+.TP 2
+*
+EDoc User Manual
+.LP
+.TP 2
+*
+Running EDoc
+.LP
+.RE
+
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+comment() = {Line, Column, Indentation, Text}:
+
+.RS 2
+.TP 2
+*
+Line = integer()
+.LP
+.TP 2
+*
+Column = integer()
+.LP
+.TP 2
+*
+Indentation = integer()
+.LP
+.TP 2
+*
+Text = [string()]
+.LP
+.RE
+
+.TP 2
+.B
+edoc_module():
+
+.RS 2
+.LP
+The EDoc documentation data for a module, expressed as an XML document in XMerL format\&. See the file edoc\&.dtd for details\&.
+.RE
+.TP 2
+.B
+filename() = file:filename():
+
+.TP 2
+.B
+proplist() = [term()]:
+
+.TP 2
+.B
+syntaxTree() = erl_syntax:syntaxTree():
+
+.RE
+.SH EXPORTS
+.LP
+.B
+application(Application::atom()) -> ok
+.br
+.RS
+.LP
+Equivalent to application(Application, [])\&.
+.RE
+.LP
+.B
+application(Application::atom(), Options::proplist()) -> ok
+.br
+.RS
+.LP
+Run EDoc on an application in its default app-directory\&. See application/3 for details\&.
+.LP
+\fISee also:\fR\& application/1\&.
+.RE
+.LP
+.B
+application(Application::atom(), Dir::filename(), Options::proplist()) -> ok
+.br
+.RS
+.LP
+Run EDoc on an application located in the specified directory\&. Tries to automatically set up good defaults\&. Unless the user specifies otherwise:
+.RS 2
+.TP 2
+*
+The \fIdoc\fR\& subdirectory will be used as the target directory, if it exists; otherwise the application directory is used\&.
+.LP
+.TP 2
+*
+The source code is assumed to be located in the \fIsrc\fR\& subdirectory, if it exists, or otherwise in the application directory itself\&.
+.LP
+.TP 2
+*
+The subpackages option is turned on\&. All found source files will be processed\&.
+.LP
+.TP 2
+*
+The \fIinclude\fR\& subdirectory is automatically added to the include path\&. (Only important if  preprocessing is turned on\&.)
+.LP
+.RE
+
+.LP
+See run/2 for details, including options\&.
+.LP
+\fISee also:\fR\& application/2\&.
+.RE
+.LP
+.B
+file(Name::filename()) -> ok
+.br
+.RS
+.LP
+\fIThis function is deprecated: \fR\&See file/2 for details\&.
+.LP
+Equivalent to file(Name, [])\&.
+.RE
+.LP
+.B
+file(Name::filename(), Options::proplist()) -> ok
+.br
+.RS
+.LP
+\fIThis function is deprecated: \fR\&This is part of the old interface to EDoc and is mainly kept for backwards compatibility\&. The preferred way of generating documentation is through one of the functions application/2 and files/2\&.
+.LP
+Reads a source code file and outputs formatted documentation to a corresponding file\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{dir, filename()}\fR\&:
+Specifies the output directory for the created file\&. (By default, the output is written to the directory of the source file\&.)
+.TP 2
+.B
+\fI{source_suffix, string()}\fR\&:
+Specifies the expected suffix of the input file\&. The default value is \fI"\&.erl"\fR\&\&.
+.TP 2
+.B
+\fI{file_suffix, string()}\fR\&:
+Specifies the suffix for the created file\&. The default value is \fI"\&.html"\fR\&\&.
+.RE
+.LP
+See get_doc/2 and layout/2 for further options\&.
+.LP
+For running EDoc from a Makefile or similar, see edoc_run:file/1\&.
+.LP
+\fISee also:\fR\& read/2\&.
+.RE
+.LP
+.B
+files(Files::[filename()]) -> ok
+.br
+.RS
+.RE
+.LP
+.B
+files(Files::[filename()], Options::proplist()) -> ok
+.br
+.RS
+.LP
+Runs EDoc on a given set of source files\&. See run/2 for details, including options\&.
+.RE
+.LP
+.B
+get_doc(File::filename()) -> {ModuleName, edoc_module()}
+.br
+.RS
+.LP
+Equivalent to get_doc(File, [])\&.
+.RE
+.LP
+.B
+get_doc(File::filename(), Options::proplist()) -> {ModuleName, edoc_module()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ModuleName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Reads a source code file and extracts EDoc documentation data\&. Note that without an environment parameter (see get_doc/3), hypertext links may not be correct\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{def, Macros}\fR\&:
+
+.RS 2
+.TP 2
+*
+\fIMacros\fR\& = \fIMacro | [Macro]\fR\&
+.LP
+.TP 2
+*
+\fIMacro\fR\& = \fI{Name::atom(), Text::string()}\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Specifies a set of EDoc macro definitions\&. See Inline macro expansion for details\&.
+.RE
+.TP 2
+.B
+\fI{hidden, boolean()}\fR\&:
+If the value is \fItrue\fR\&, documentation of hidden functions will also be included\&. The default value is \fIfalse\fR\&\&.
+.TP 2
+.B
+\fI{private, boolean()}\fR\&:
+If the value is \fItrue\fR\&, documentation of private functions will also be included\&. The default value is \fIfalse\fR\&\&.
+.TP 2
+.B
+\fI{todo, boolean()}\fR\&:
+If the value is \fItrue\fR\&, To-Do notes written using \fI@todo\fR\& or \fI@TODO\fR\& tags will be included in the documentation\&. The default value is \fIfalse\fR\&\&.
+.RE
+.LP
+See read_source/2, read_comments/2 and edoc_lib:get_doc_env/3 for further options\&.
+.LP
+\fISee also:\fR\& get_doc/3, layout/2, read/2, run/2, edoc_extract:source/5\&.
+.RE
+.LP
+.B
+get_doc(File::filename(), Env::edoc_lib:edoc_env(), Options::proplist()) -> {ModuleName, edoc_module()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ModuleName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Like get_doc/2, but for a given environment parameter\&. \fIEnv\fR\& is an environment created by edoc_lib:get_doc_env/3\&.
+.RE
+.LP
+.B
+layout(Doc::edoc_module()) -> string()
+.br
+.RS
+.LP
+Equivalent to layout(Doc, [])\&.
+.RE
+.LP
+.B
+layout(Doc::edoc_module(), Options::proplist()) -> string()
+.br
+.RS
+.LP
+Transforms EDoc module documentation data to text\&. The default layout creates an HTML document\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{layout, Module::atom()}\fR\&:
+Specifies a callback module to be used for formatting\&. The module must export a function \fImodule(Doc, Options)\fR\&\&. The default callback module is edoc_layout; see edoc_layout:module/2 for layout-specific options\&.
+.RE
+.LP
+
+.LP
+\fISee also:\fR\& file/2, layout/1, read/2, run/2\&.
+.RE
+.LP
+.B
+read(File::filename()) -> string()
+.br
+.RS
+.LP
+Equivalent to read(File, [])\&.
+.RE
+.LP
+.B
+read(File::filename(), Options::proplist()) -> string()
+.br
+.RS
+.LP
+Reads and processes a source file and returns the resulting EDoc-text as a string\&. See get_doc/2 and layout/2 for options\&.
+.LP
+\fISee also:\fR\& file/2\&.
+.RE
+.LP
+.B
+read_comments(File) -> [comment()]
+.br
+.RS
+.LP
+Equivalent to read_comments(File, [])\&.
+.RE
+.LP
+.B
+read_comments(File::filename(), Options::proplist()) -> [comment()]
+.br
+.RS
+.LP
+Extracts comments from an Erlang source code file\&. See the module erl_comment_scan(3) for details on the representation of comments\&. Currently, no options are avaliable\&.
+.RE
+.LP
+.B
+read_source(Name::File) -> [syntaxTree()]
+.br
+.RS
+.LP
+Equivalent to read_source(File, [])\&.
+.RE
+.LP
+.B
+read_source(File::filename(), Options::proplist()) -> [syntaxTree()]
+.br
+.RS
+.LP
+Reads an Erlang source file and returns the list of "source code form" syntax trees\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{preprocess, boolean()}\fR\&:
+If the value is \fItrue\fR\&, the source file will be read via the Erlang preprocessor (\fIepp\fR\&)\&. The default value is \fIfalse\fR\&\&. \fIno_preprocess\fR\& is an alias for \fI{preprocess, false}\fR\&\&.
+.RS 2
+.LP
+Normally, preprocessing is not necessary for EDoc to work, but if a file contains too exotic definitions or uses of macros, it will not be possible to read it without preprocessing\&. \fINote: comments in included files will not be available to EDoc, even with this option enabled\&.\fR\& 
+.RE
+.TP 2
+.B
+\fI{includes, Path::[string()]}\fR\&:
+Specifies a list of directory names to be searched for include files, if the \fIpreprocess\fR\& option is turned on\&. Also used with the \fI@headerfile\fR\& tag\&. The default value is the empty list\&. The directory of the source file is always automatically appended to the search path\&.
+.TP 2
+.B
+\fI{macros, [{atom(), term()}]}\fR\&:
+Specifies a list of pre-defined Erlang preprocessor (\fIepp\fR\&) macro definitions, used if the \fIpreprocess\fR\& option is turned on\&. The default value is the empty list\&.
+.TP 2
+.B
+\fI{report_missing_types, boolean()}\fR\&:
+If the value is \fItrue\fR\&, warnings are issued for missing types\&. The default value is \fIfalse\fR\&\&. \fIno_report_missing_types\fR\& is an alias for \fI{report_missing_types, false}\fR\&\&.
+.RE
+.LP
+
+.LP
+\fISee also:\fR\& erl_syntax(3), get_doc/2\&.
+.RE
+.LP
+.B
+run(Files::[filename()], Options::proplist()) -> ok
+.br
+.RS
+.LP
+Runs EDoc on a given set of source files\&. Note that the doclet plugin module has its own particular options; see the \fIdoclet\fR\& option below\&.
+.LP
+Also see layout/2 for layout-related options, and get_doc/2 for options related to reading source files\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{app_default, string()}\fR\&:
+Specifies the default base URI for unknown applications\&.
+.TP 2
+.B
+\fI{application, App::atom()}\fR\&:
+Specifies that the generated documentation describes the application \fIApp\fR\&\&. This mainly affects generated references\&.
+.TP 2
+.B
+\fI{dir, filename()}\fR\&:
+Specifies the target directory for the generated documentation\&.
+.TP 2
+.B
+\fI{doc_path, [string()]}\fR\&:
+Specifies a list of file system paths pointing to directories that contain EDoc-generated documentation\&. All paths for applications in the code path are automatically added\&.
+.TP 2
+.B
+\fI{doclet, Module::atom()}\fR\&:
+Specifies a callback module to be used for creating the documentation\&. The module must export a function \fIrun(Cmd, Ctxt)\fR\&\&. The default doclet module is edoc_doclet; see edoc_doclet:run/2 for doclet-specific options\&.
+.TP 2
+.B
+\fI{file_suffix, string()}\fR\&:
+Specifies the suffix used for output files\&. The default value is \fI"\&.html"\fR\&\&. Note that this also affects generated references\&.
+.TP 2
+.B
+\fI{new, boolean()}\fR\&:
+If the value is \fItrue\fR\&, any existing \fIedoc-info\fR\& file in the target directory will be ignored and overwritten\&. The default value is \fIfalse\fR\&\&.
+.TP 2
+.B
+\fI{source_path, [filename()]}\fR\&:
+Specifies a list of file system paths used to locate the source code for packages\&.
+.TP 2
+.B
+\fI{source_suffix, string()}\fR\&:
+Specifies the expected suffix of input files\&. The default value is \fI"\&.erl"\fR\&\&.
+.TP 2
+.B
+\fI{subpackages, boolean()}\fR\&:
+If the value is \fItrue\fR\&, all subpackages of specified packages will also be included in the documentation\&. The default value is \fIfalse\fR\&\&. \fIno_subpackages\fR\& is an alias for \fI{subpackages, false}\fR\&\&.
+.RS 2
+.LP
+Subpackage source files are found by recursively searching for source code files in subdirectories of the known source code root directories\&. (Also see the \fIsource_path\fR\& option\&.) Directory names must begin with a lowercase letter and contain only alphanumeric characters and underscore, or they will be ignored\&. (For example, a subdirectory named \fItest-files\fR\& will not be searched\&.)
+.RE
+.RE
+.LP
+
+.LP
+\fISee also:\fR\& application/2, files/2\&.
+.RE
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

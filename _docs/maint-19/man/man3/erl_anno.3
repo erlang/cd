@@ -1,0 +1,527 @@
+.TH erl_anno 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_anno \- Abstract datatype for the annotations of the Erlang Compiler.
+  
+.SH DESCRIPTION
+.LP
+This module provides an abstract type that is used by the Erlang Compiler and its helper modules for holding data such as column, line number, and text\&. The data type is a collection of \fIannotations\fR\& as described in the following\&.
+.LP
+The Erlang Token Scanner returns tokens with a subset of the following annotations, depending on the options:
+.RS 2
+.TP 2
+.B
+\fIcolumn\fR\&:
+The column where the token begins\&.
+.TP 2
+.B
+\fIlocation\fR\&:
+The line and column where the token begins, or just the line if the column is unknown\&.
+.TP 2
+.B
+\fItext\fR\&:
+The token\&'s text\&.
+.RE
+.LP
+From this, the following annotation is derived:
+.RS 2
+.TP 2
+.B
+\fIline\fR\&:
+The line where the token begins\&.
+.RE
+.LP
+This module also supports the following annotations, which are used by various modules:
+.RS 2
+.TP 2
+.B
+\fIfile\fR\&:
+A filename\&.
+.TP 2
+.B
+\fIgenerated\fR\&:
+A Boolean indicating if the abstract code is compiler-generated\&. The Erlang Compiler does not emit warnings for such code\&.
+.TP 2
+.B
+\fIrecord\fR\&:
+A Boolean indicating if the origin of the abstract code is a record\&. Used by \fBDialyzer\fR\& to assign types to tuple elements\&.
+.RE
+.LP
+The functions \fB\fIcolumn()\fR\&\fR\&, \fB\fIend_location()\fR\&\fR\&, \fB\fIline()\fR\&\fR\&, \fB\fIlocation()\fR\&\fR\&, and \fB\fItext()\fR\&\fR\& in the \fIerl_scan\fR\& module can be used for inspecting annotations in tokens\&.
+.LP
+The functions \fB\fIanno_from_term()\fR\&\fR\&, \fB\fIanno_to_term()\fR\&\fR\&, \fB\fIfold_anno()\fR\&\fR\&, \fB\fImap_anno()\fR\&\fR\&, \fB\fImapfold_anno()\fR\&\fR\&, and \fB\fInew_anno()\fR\&\fR\&, in the \fIerl_parse\fR\& module can be used for manipulating annotations in abstract code\&.
+.SH DATA TYPES
+.nf
+
+.B
+anno()
+.br
+.fi
+.RS
+.LP
+A collection of annotations\&.
+.RE
+.nf
+
+\fBanno_term()\fR\& = term()
+.br
+.fi
+.RS
+.LP
+The term representing a collection of annotations\&. It is either a \fIlocation()\fR\& or a list of key-value pairs\&.
+.RE
+.nf
+
+\fBcolumn()\fR\& = integer() >= 1
+.br
+.fi
+.nf
+
+\fBline()\fR\& = integer() >= 0
+.br
+.fi
+.nf
+
+\fBlocation()\fR\& = \fBline()\fR\& | {\fBline()\fR\&, \fBcolumn()\fR\&}
+.br
+.fi
+.nf
+
+\fBtext()\fR\& = string()
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+column(Anno) -> column() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBcolumn()\fR\& = integer() >= 1
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the column of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+end_location(Anno) -> location() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBlocation()\fR\& = \fBline()\fR\& | {\fBline()\fR\&, \fBcolumn()\fR\&}
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the end location of the text of the annotations Anno\&. If there is no text, \fIundefined\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+file(Anno) -> filename() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBfilename()\fR\& = \fBfile:filename_all()\fR\&
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the filename of the annotations Anno\&. If there is no filename, \fIundefined\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+from_term(Term) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Term = \fBanno_term()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns annotations with representation Term\&.
+.LP
+See also \fBto_term()\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+generated(Anno) -> generated()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBgenerated()\fR\& = boolean()
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if annotations Anno is marked as generated\&. The default is to return \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_anno(Term) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Term = any()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if Term is a collection of annotations, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+line(Anno) -> line()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBline()\fR\& = integer() >= 0
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the line of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+location(Anno) -> location()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBlocation()\fR\& = \fBline()\fR\& | {\fBline()\fR\&, \fBcolumn()\fR\&}
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the location of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+new(Location) -> anno()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Location = \fBlocation()\fR\&
+.br
+.nf
+\fBlocation()\fR\& = \fBline()\fR\& | {\fBline()\fR\&, \fBcolumn()\fR\&}
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a new collection of annotations given a location\&.
+.RE
+.LP
+.nf
+
+.B
+set_file(File, Anno) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+File = \fBfilename()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBfilename()\fR\& = \fBfile:filename_all()\fR\&
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the filename of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+set_generated(Generated, Anno) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Generated = \fBgenerated()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBgenerated()\fR\& = boolean()
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the generated marker of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+set_line(Line, Anno) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Line = \fBline()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBline()\fR\& = integer() >= 0
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the line of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+set_location(Location, Anno) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Location = \fBlocation()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBlocation()\fR\& = \fBline()\fR\& | {\fBline()\fR\&, \fBcolumn()\fR\&}
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the location of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+set_record(Record, Anno) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Record = \fBrecord()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBrecord()\fR\& = boolean()
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the record marker of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+set_text(Text, Anno) -> Anno
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Text = \fBtext()\fR\&
+.br
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBtext()\fR\& = string()
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the text of the annotations Anno\&.
+.RE
+.LP
+.nf
+
+.B
+text(Anno) -> text() | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.nf
+\fBtext()\fR\& = string()
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the text of the annotations Anno\&. If there is no text, \fIundefined\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+to_term(Anno) -> anno_term()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Anno = \fBanno()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the term representing the annotations Anno\&.
+.LP
+See also \fBfrom_term()\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerl_parse(3)\fR\&\fR\&, \fB\fIerl_scan(3)\fR\&\fR\&

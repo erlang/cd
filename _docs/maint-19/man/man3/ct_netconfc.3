@@ -1,0 +1,1100 @@
+.TH ct_netconfc 3 "common_test 1.14" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ct_netconfc \- NETCONF client module.
+.SH DESCRIPTION
+.LP
+NETCONF client module\&.
+.LP
+The NETCONF client is compliant with RFC 4741 NETCONF Configuration Protocol and RFC 4742 Using the NETCONF Configuration Protocol over Secure SHell (SSH)\&.\&.
+.LP
+For each server to test against, the following entry can be added to a configuration file:
+.LP
+.nf
+
+ {server_id(),options()}.
+.fi
+.LP
+The \fIserver_id()\fR\& or an associated \fItarget_name()\fR\& (see module \fB\fIct\fR\&\fR\&) must then be used in calls to \fB\fIct_netconfc:open/2\fR\&\fR\&\&.
+.LP
+If no configuration exists for a server, a session can still be opened by calling \fB\fIct_netconfc:open/2\fR\&\fR\& with all necessary options specified in the call\&. The first argument to \fB\fIct_netconfc:open/2\fR\&\fR\& can then be any atom\&.
+.SH "LOGGING"
+
+.LP
+The NETCONF server uses \fIerror_logger\fR\& for logging of NETCONF traffic\&. A special purpose error handler is implemented in \fIct_conn_log_h\fR\&\&. To use this error handler, add the \fIcth_conn_log\fR\& hook in the test suite, for example:
+.LP
+.nf
+
+ suite() ->
+    [{ct_hooks, [{cth_conn_log, [{conn_mod(),hook_options()}]}]}].
+.fi
+.LP
+\fIconn_mod()\fR\& is the name of the \fICommon Test\fR\& module implementing the connection protocol, for example, \fIct_netconfc\fR\&\&.
+.LP
+Hook option \fIlog_type\fR\& specifies the type of logging:
+.RS 2
+.TP 2
+.B
+\fIraw\fR\&:
+The sent and received NETCONF data is logged to a separate text file "as is" without any formatting\&. A link to the file is added to the test case HTML log\&.\&.
+.TP 2
+.B
+\fIpretty\fR\&:
+The sent and received NETCONF data is logged to a separate text file with XML data nicely indented\&. A link to the file is added to the test case HTML log\&.
+.TP 2
+.B
+\fIhtml (default)\fR\&:
+The sent and received NETCONF traffic is pretty printed directly in the test case HTML log\&.
+.TP 2
+.B
+\fIsilent\fR\&:
+NETCONF traffic is not logged\&.
+.RE
+.LP
+By default, all NETCONF traffic is logged in one single log file\&. However, different connections can be logged in separate files\&. To do this, use hook option \fIhosts\fR\& and list the names of the servers/connections to be used in the suite\&. The connections must be named for this to work, that is, they must be opened with \fB\fIct_netconfc:open/2\fR\&\fR\&\&.
+.LP
+Option \fIhosts\fR\& has no effect if \fIlog_type\fR\& is set to \fIhtml\fR\& or \fIsilent\fR\&\&.
+.LP
+The hook options can also be specified in a configuration file with configuration variable \fIct_conn_log\fR\&:
+.LP
+.nf
+
+ {ct_conn_log,[{conn_mod(),hook_options()}]}.
+.fi
+.LP
+For example:
+.LP
+.nf
+
+ {ct_conn_log,[{ct_netconfc,[{log_type,pretty},
+                             {hosts,[key_or_name()]}]}]}
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Hook options specified in a configuration file overwrite the hard-coded hook options in the test suite\&.
+
+.LP
+\fILogging Example 1:\fR\&
+.LP
+The following \fIct_hooks\fR\& statement causes pretty printing of NETCONF traffic to separate logs for the connections named \fInc_server1\fR\& and \fInc_server2\fR\&\&. Any other connections are logged to default NETCONF log\&.
+.LP
+.nf
+
+ suite() ->
+    [{ct_hooks, [{cth_conn_log, [{ct_netconfc,[{log_type,pretty}},
+                                               {hosts,[nc_server1,nc_server2]}]}
+                                ]}]}].
+.fi
+.LP
+Connections must be opened as follows:
+.LP
+.nf
+
+ open(nc_server1,[...]),
+ open(nc_server2,[...]).
+.fi
+.LP
+\fILogging Example 2:\fR\&
+.LP
+The following configuration file causes raw logging of all NETCONF traffic in to one single text file:
+.LP
+.nf
+
+ {ct_conn_log,[{ct_netconfc,[{log_type,raw}]}]}.
+.fi
+.LP
+The \fIct_hooks\fR\& statement must look as follows:
+.LP
+.nf
+
+ suite() ->
+    [{ct_hooks, [{cth_conn_log, []}]}].
+.fi
+.LP
+The same \fIct_hooks\fR\& statement without the configuration file would cause HTML logging of all NETCONF connections in to the test case HTML log\&.
+.SH "NOTIFICATIONS"
+
+.LP
+The NETCONF client is also compliant with RFC 5277 NETCONF Event Notifications, which defines a mechanism for an asynchronous message notification delivery service for the NETCONF protocol\&.
+.LP
+Specific functions to support this are \fB\fIct_netconfc:create_subscription/6\fR\&\fR\& and \fB\fIct_netconfc:get_event_streams/3\fR\&\fR\&\&. (The functions also exist with other arities\&.)
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+\fIclient() = handle() | key_or_name()\fR\&:
+
+.RS 2
+.LP
+For \fIhandle()\fR\&, see module \fB\fIct\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIerror_reason() = term()\fR\&:
+
+.TP 2
+.B
+\fIevent_time() = {eventTime, xml_attributes(), [xs_datetime()]}\fR\&:
+
+.TP 2
+.B
+\fIhandle() = term()\fR\&:
+
+.RS 2
+.LP
+Opaque reference for a connection (NETCONF session)\&. For more information, see module \fB\fIct\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIhost() = \fR\&\fB\fIinet:hostname()\fR\&\fR\&\fI | \fR\&\fB\fIinet:ip_address()\fR\&\fR\&:
+
+.TP 2
+.B
+\fIkey_or_name() = server_id() | target_name()\fR\&:
+
+.RS 2
+.LP
+For \fItarget_name\fR\&, see module \fB\fIct\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fInetconf_db() = running | startup | candidate\fR\&:
+
+.TP 2
+.B
+\fInotification() = {notification, xml_attributes(), notification_content()}\fR\&:
+
+.TP 2
+.B
+\fInotification_content() = [event_time() | simple_xml()]\fR\&:
+
+.TP 2
+.B
+\fIoption() = {ssh, host()} | {port, \fR\&\fB\fIinet:port_number()\fR\&\fR\&\fI} | {timeout, timeout()} | SshConnectOption\fR\&:
+
+.RS 2
+.LP
+\fISshConnectOption\fR\& is any valid option to \fB\fIssh:connect/3,4\fR\&\fR\&\&. Common options used are \fIuser\fR\&, \fIpassword\fR\& and \fIuser_dir\fR\&\&. The \fISshConnectOptions\fR\& are verfied by the SSH application\&.
+.RE
+.TP 2
+.B
+\fIoptions() = [option()]\fR\&:
+
+.RS 2
+.LP
+Options used for setting up an SSH connection to a NETCONF server\&.
+.RE
+.TP 2
+.B
+\fIserver_id() = atom()\fR\&:
+
+.RS 2
+.LP
+The identity of a server, specified in a configuration file\&.
+.RE
+.TP 2
+.B
+\fIsimple_xml() = {xml_tag(), xml_attributes(), xml_content()} | {xml_tag(), xml_content()} | xml_tag()\fR\&:
+
+.RS 2
+.LP
+This type is further described in application \fB\fIxmerl\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstream_data() = {description, string()} | {replaySupport, string()} | {replayLogCreationTime, string()} | {replayLogAgedTime, string()}\fR\&:
+
+.RS 2
+.LP
+For details about the data format for the string values, see "XML Schema for Event Notifications" in RFC 5277\&.
+.RE
+.TP 2
+.B
+\fIstream_name() = string()\fR\&:
+
+.TP 2
+.B
+\fIstreams() = [{stream_name(), [stream_data()]}]\fR\&:
+
+.TP 2
+.B
+\fIxml_attribute_tag() = atom()\fR\&:
+
+.TP 2
+.B
+\fIxml_attribute_value() = string()\fR\&:
+
+.TP 2
+.B
+\fIxml_attributes() = [{xml_attribute_tag(), xml_attribute_value()}]\fR\&:
+
+.TP 2
+.B
+\fIxml_content() = [simple_xml() | iolist()]\fR\&:
+
+.TP 2
+.B
+\fIxml_tag() = atom()\fR\&:
+
+.TP 2
+.B
+\fIxpath() = {xpath, string()}\fR\&:
+
+.TP 2
+.B
+\fIxs_datetime() = string()\fR\&:
+
+.RS 2
+.LP
+This date and time identifier has the same format as the XML type \fIdateTime\fR\& and is compliant with RFC 3339 Date and Time on the Internet Timestamps\&. The format is as follows:
+.RE
+.LP
+.nf
+
+ [-]CCYY-MM-DDThh:mm:ss[.s][Z|(+|-)hh:mm]
+.fi
+.RE
+.SH EXPORTS
+.LP
+.B
+action(Client, Action) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:action(Client, Action, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+action(Client, Action, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Action = simple_xml()
+.br
+Timeout = timeout()
+.br
+Result = ok | {ok, [simple_xml()]} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Executes an action\&. If the return type is void, \fIok\fR\& is returned instead of \fI{ok,[simple_xml()]}\fR\&\&.
+.RE
+.LP
+.B
+close_session(Client) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:close_session(Client, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+close_session(Client, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Requests graceful termination of the session associated with the client\&.
+.LP
+When a NETCONF server receives a \fIclose-session\fR\& request, it gracefully closes the session\&. The server releases any locks and resources associated with the session and gracefully closes any associated connections\&. Any NETCONF requests received after a \fIclose-session\fR\& request are ignored\&.
+.RE
+.LP
+.B
+copy_config(Client, Source, Target) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:copy_config(Client, Source, Target, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+copy_config(Client, Target, Source, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Target = netconf_db()
+.br
+Source = netconf_db()
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Copies configuration data\&.
+.LP
+Which source and target options that can be issued depends on the capabilities supported by the server\&. That is, \fI:candidate\fR\& and/or \fI:startup\fR\& are required\&.
+.RE
+.LP
+.B
+create_subscription(Client) -> term()
+.br
+.RS
+.RE
+.LP
+.B
+create_subscription(Client, Timeout) -> term()
+.br
+.RS
+.RE
+.LP
+.B
+create_subscription(Client, Stream, Timeout) -> term()
+.br
+.RS
+.RE
+.LP
+.B
+create_subscription(Client, StartTime, StopTime, Timeout) -> term()
+.br
+.RS
+.RE
+.LP
+.B
+create_subscription(Client, Stream, StartTime, StopTime, Timeout) -> term()
+.br
+.RS
+.RE
+.LP
+.B
+create_subscription(Client, Stream, Filter, StartTime, StopTime, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Stream = stream_name()
+.br
+Filter = simple_xml() | [simple_xml()]
+.br
+StartTime = xs_datetime()
+.br
+StopTime = xs_datetime()
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a subscription for event notifications\&.
+.LP
+This function sets up a subscription for NETCONF event notifications of the specified stream type, matching the specified filter\&. The calling process receives notifications as messages of type \fInotification()\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIStream\fR\&:
+Optional parameter that indicates which stream of event is of interest\&. If not present, events in the default NETCONF stream are sent\&.
+.TP 2
+.B
+\fIFilter\fR\&:
+Optional parameter that indicates which subset of all possible events is of interest\&. The parameter format is the same as that of the filter parameter in the NETCONF protocol operations\&. If not present, all events not precluded by other parameters are sent\&.
+.TP 2
+.B
+\fIStartTime\fR\&:
+Optional parameter used to trigger the replay feature and indicate that the replay is to start at the time specified\&. If \fIStartTime\fR\& is not present, this is not a replay subscription\&.
+.RS 2
+.LP
+It is not valid to specify start times that are later than the current time\&. If \fIStartTime\fR\& is specified earlier than the log can support, the replay begins with the earliest available notification\&.
+.RE
+.RS 2
+.LP
+This parameter is of type \fIdateTime\fR\& and compliant to RFC 3339\&. Implementations must support time zones\&.
+.RE
+.TP 2
+.B
+\fIStopTime\fR\&:
+Optional parameter used with the optional replay feature to indicate the newest notifications of interest\&. If \fIStopTime\fR\& is not present, the notifications continues until the subscription is terminated\&.
+.RS 2
+.LP
+Must be used with and be later than \fIStartTime\fR\&\&. Values of \fIStopTime\fR\& in the future are valid\&. This parameter is of type \fIdateTime\fR\& and compliant to RFC 3339\&. Implementations must support time zones\&.
+.RE
+.RE
+.LP
+For more details about the event notification mechanism, see RFC 5277\&.
+.RE
+.LP
+.B
+delete_config(Client, Target) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:delete_config(Client, Target, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+delete_config(Client, Target, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Target = startup | candidate
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes configuration data\&.
+.LP
+The running configuration cannot be deleted and \fI:candidate\fR\& or \fI:startup\fR\& must be advertised by the server\&.
+.RE
+.LP
+.B
+edit_config(Client, Target, Config) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:edit_config(Client, Target, Config, [], infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+edit_config(Client, Target, Config, OptParamsOrTimeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Target = netconf_db()
+.br
+Config = simple_xml()
+.br
+OptParamsOrTimeout = [simple_xml()] | timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+If \fIOptParamsOrTimeout\fR\& is a time-out value, this function is equivalent to \fB\fIct_netconfc:edit_config(Client, Target, Config, [], Timeout)\fR\&\fR\&\&.
+.LP
+If \fIOptParamsOrTimeout\fR\& is a list of simple XML, this function is equivalent to \fB\fIct_netconfc:edit_config(Client, Target, Config, OptParams, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+edit_config(Client, Target, Config, OptParams, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Target = netconf_db()
+.br
+Config = simple_xml()
+.br
+OptParams = [simple_xml()]
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Edits configuration data\&.
+.LP
+By default only the running target is available, unless the server includes \fI:candidate\fR\& or \fI:startup\fR\& in its list of capabilities\&.
+.LP
+\fIOptParams\fR\& can be used for specifying optional parameters (\fIdefault-operation\fR\&, \fItest-option\fR\&, or \fIerror-option\fR\&) to be added to the \fIedit-config\fR\& request\&. The value must be a list containing valid simple XML, for example:
+.LP
+.nf
+
+ [{'default-operation', ["none"]},
+  {'error-option', ["rollback-on-error"]}]
+.fi
+.RE
+.LP
+.B
+get(Client, Filter) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:get(Client, Filter, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+get(Client, Filter, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Filter = simple_xml() | xpath()
+.br
+Timeout = timeout()
+.br
+Result = {ok, [simple_xml()]} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Gets data\&.
+.LP
+This operation returns both configuration and state data from the server\&.
+.LP
+Filter type \fIxpath\fR\& can be used only if the server supports \fI:xpath\fR\&\&.
+.RE
+.LP
+.B
+get_capabilities(Client) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:get_capabilities(Client, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+get_capabilities(Client, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Timeout = timeout()
+.br
+Result = [string()] | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the server side capabilities\&.
+.LP
+The following capability identifiers, defined in RFC 4741 NETCONF Configuration Protocol, can be returned:
+.RS 2
+.TP 2
+*
+\fI"urn:ietf:params:netconf:base:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:writable-running:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:candidate:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:confirmed-commit:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:rollback-on-error:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:startup:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:url:1\&.0"\fR\&
+.LP
+.TP 2
+*
+\fI"urn:ietf:params:netconf:capability:xpath:1\&.0"\fR\&
+.LP
+.RE
+
+.LP
+More identifiers can exist, for example, server-side namespace\&.
+.RE
+.LP
+.B
+get_config(Client, Source, Filter) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:get_config(Client, Source, Filter, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+get_config(Client, Source, Filter, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Source = netconf_db()
+.br
+Filter = simple_xml() | xpath()
+.br
+Timeout = timeout()
+.br
+Result = {ok, [simple_xml()]} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Gets configuration data\&.
+.LP
+To be able to access another source than \fIrunning\fR\&, the server must advertise \fI:candidate\fR\& and/or \fI:startup\fR\&\&.
+.LP
+Filter type \fIxpath\fR\& can be used only if the server supports \fI:xpath\fR\&\&.
+.RE
+.LP
+.B
+get_event_streams(Client, Timeout) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:get_event_streams(Client, [], Timeout)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+get_event_streams(Client, Streams, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Streams = [stream_name()]
+.br
+Timeout = timeout()
+.br
+Result = {ok, streams()} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Sends a request to get the specified event streams\&.
+.LP
+\fIStreams\fR\& is a list of stream names\&. The following filter is sent to the NETCONF server in a \fIget\fR\& request:
+.LP
+.nf
+
+ <netconf xmlns="urn:ietf:params:xml:ns:netmod:notification">
+   <streams>
+     <stream>
+       <name>StreamName1</name>
+     </stream>
+     <stream>
+       <name>StreamName2</name>
+     </stream>
+     ...
+   </streams>
+ </netconf>
+.fi
+.LP
+If \fIStreams\fR\& is an empty list, \fIall\fR\& streams are requested by sending the following filter:
+.LP
+.nf
+
+ <netconf xmlns="urn:ietf:params:xml:ns:netmod:notification">
+   <streams/>
+ </netconf>
+.fi
+.LP
+If more complex filtering is needed, use \fB\fIct_netconfc:get/2\fR\&\fR\& or \fB\fIct_netconfc:get/3\fR\&\fR\& and specify the exact filter according to "XML Schema for Event Notifications" in RFC 5277\&.
+.RE
+.LP
+.B
+get_session_id(Client) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:get_session_id(Client, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+get_session_id(Client, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Timeout = timeout()
+.br
+Result = pos_integer() | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the session Id associated with the specified client\&.
+.RE
+.LP
+.B
+hello(Client) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:hello(Client, [], infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+hello(Client, Timeout) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:hello(Client, [], Timeout)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+hello(Client, Options, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = handle()
+.br
+Options = [{capability, [string()]}]
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Exchanges \fIhello\fR\& messages with the server\&.
+.LP
+Adds optional capabilities and sends a \fIhello\fR\& message to the server and waits for the return\&.
+.RE
+.LP
+.B
+kill_session(Client, SessionId) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:kill_session(Client, SessionId, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+kill_session(Client, SessionId, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+SessionId = pos_integer()
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Forces termination of the session associated with the supplied session Id\&.
+.LP
+The server side must abort any ongoing operations, release any locks and resources associated with the session, and close any associated connections\&.
+.LP
+Only if the server is in the confirmed commit phase, the configuration is restored to its state before entering the confirmed commit phase\&. Otherwise, no configuration rollback is performed\&.
+.LP
+If the specified \fISessionId\fR\& is equal to the current session Id, an error is returned\&.
+.RE
+.LP
+.B
+lock(Client, Target) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:lock(Client, Target, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+lock(Client, Target, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Target = netconf_db()
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Unlocks the configuration target\&.
+.LP
+Which target parameters that can be used depends on if \fI:candidate\fR\& and/or \fI:startup\fR\& are supported by the server\&. If successfull, the configuration system of the device is unavailable to other clients (NETCONF, CORBA, SNMP, and so on)\&. Locks are intended to be short-lived\&.
+.LP
+Operation \fB\fIct_netconfc:kill_session/2\fR\&\fR\& or \fB\fIct_netconfc:kill_session/3\fR\&\fR\& can be used to force the release of a lock owned by another NETCONF session\&. How this is achieved by the server side is implementation-specific\&.
+.RE
+.LP
+.B
+only_open(Options) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Options = options()
+.br
+Result = {ok, handle()} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Opens a NETCONF session, but does not send \fIhello\fR\&\&.
+.LP
+As \fB\fIct_netconfc:open/1\fR\&\fR\&, but does not send a \fIhello\fR\& message\&.
+.RE
+.LP
+.B
+only_open(KeyOrName, ExtraOptions) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyOrName = key_or_name()
+.br
+ExtraOptions = options()
+.br
+Result = {ok, handle()} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Opens a name NETCONF session, but does not send \fIhello\fR\&\&.
+.LP
+As \fB\fIct_netconfc:open/2\fR\&\fR\&, but does not send a \fIhello\fR\& message\&.
+.RE
+.LP
+.B
+open(Options) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Options = options()
+.br
+Result = {ok, handle()} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Opens a NETCONF session and exchanges \fIhello\fR\& messages\&.
+.LP
+If the server options are specified in a configuration file, or if a named client is needed for logging purposes (see section \fBLogging\fR\& in this module), use \fB\fIct_netconfc:open/2\fR\&\fR\& instead\&.
+.LP
+The opaque \fIhandle()\fR\& reference returned from this function is required as client identifier when calling any other function in this module\&.
+.LP
+Option \fItimeout\fR\& (milliseconds) is used when setting up the SSH connection and when waiting for the \fIhello\fR\& message from the server\&. It is not used for any other purposes during the lifetime of the connection\&.
+.RE
+.LP
+.B
+open(KeyOrName, ExtraOptions) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyOrName = key_or_name()
+.br
+ExtraOptions = options()
+.br
+Result = {ok, handle()} | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Opens a named NETCONF session and exchanges \fIhello\fR\& messages\&.
+.LP
+If \fIKeyOrName\fR\& is a configured \fIserver_id()\fR\& or a \fItarget_name()\fR\& associated with such an Id, then the options for this server are fetched from the configuration file\&.
+.LP
+Argument \fIExtraOptions\fR\& is added to the options found in the configuration file\&. If the same options are specified, the values from the configuration file overwrite \fIExtraOptions\fR\&\&.
+.LP
+If the server is not specified in a configuration file, use \fB\fIct_netconfc:open/1\fR\&\fR\& instead\&.
+.LP
+The opaque \fIhandle()\fR\& reference returned from this function can be used as client identifier when calling any other function in this module\&. However, if \fIKeyOrName\fR\& is a \fItarget_name()\fR\&, that is, if the server is named through a call to \fB\fIct:require/2\fR\&\fR\& or a \fIrequire\fR\& statement in the test suite, then this name can be used instead of \fIhandle()\fR\&\&.
+.LP
+Option \fItimeout\fR\& (milliseconds) is used when setting up the SSH connection and when waiting for the \fIhello\fR\& message from the server\&. It is not used for any other purposes during the lifetime of the connection\&.
+.LP
+See also \fB\fIct:require/2\fR\&\fR\&\&.
+.RE
+.LP
+.B
+send(Client, SimpleXml) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:send(Client, SimpleXml, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+send(Client, SimpleXml, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+SimpleXml = simple_xml()
+.br
+Timeout = timeout()
+.br
+Result = simple_xml() | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Sends an XML document to the server\&.
+.LP
+The specified XML document is sent "as is" to the server\&. This function can be used for sending XML documents that cannot be expressed by other interface functions in this module\&.
+.RE
+.LP
+.B
+send_rpc(Client, SimpleXml) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:send_rpc(Client, SimpleXml, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+send_rpc(Client, SimpleXml, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+SimpleXml = simple_xml()
+.br
+Timeout = timeout()
+.br
+Result = [simple_xml()] | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Sends a NETCONF \fIrpc\fR\& request to the server\&.
+.LP
+The specified XML document is wrapped in a valid NETCONF \fIrpc\fR\& request and sent to the server\&. The \fImessage-id\fR\& and namespace attributes are added to element \fIrpc\fR\&\&.
+.LP
+This function can be used for sending \fIrpc\fR\& requests that cannot be expressed by other interface functions in this module\&.
+.RE
+.LP
+.B
+unlock(Client, Target) -> Result
+.br
+.RS
+.LP
+Equivalent to \fB\fIct_netconfc:unlock(Client, Target, infinity)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+unlock(Client, Target, Timeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Client = client()
+.br
+Target = netconf_db()
+.br
+Timeout = timeout()
+.br
+Result = ok | {error, error_reason()}
+.br
+.RE
+.RE
+.RS
+.LP
+Unlocks the configuration target\&.
+.LP
+If the client earlier has acquired a lock through \fB\fIct_netconfc:lock/2\fR\&\fR\& or \fB\fIct_netconfc:lock/3\fR\&\fR\&, this operation releases the associated lock\&. To access another target than \fIrunning\fR\&, the server must support \fI:candidate\fR\& and/or \fI:startup\fR\&\&.
+.RE

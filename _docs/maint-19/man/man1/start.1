@@ -1,0 +1,29 @@
+.TH start 1 "erts 8.3.5.4" "Ericsson AB" "User Commands"
+.SH NAME
+start \- OTP start script example for Unix.
+.SH DESCRIPTION
+.LP
+The \fIstart\fR\& script is an example script on how to start up the Erlang system in embedded mode on Unix\&.
+.LP
+For more information about the use, see the \fB Embedded System User\&'s Guide\fR\& in System Documentation\&.
+.SH EXPORTS
+.LP
+.B
+start [ data_file ]
+.br
+.RS
+.LP
+Argument:
+.RS 2
+.TP 2
+.B
+\fIdata_file\fR\&:
+Optional\&. Specifies what \fIstart_erl\&.data\fR\& file to use\&.
+.RE
+.LP
+Environment variable \fIRELDIR\fR\& can be set before calling this example, which sets the directory where to find the release files\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIrun_erl(1)\fR\&\fR\&, \fB\fIstart_erl(1)\fR\&\fR\&

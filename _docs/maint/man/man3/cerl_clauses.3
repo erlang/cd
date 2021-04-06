@@ -1,0 +1,164 @@
+.TH cerl_clauses 3 "compiler 7.6.5" "" "Erlang Module Definition"
+.SH NAME
+cerl_clauses \- Utility functions for Core Erlang case/receive clauses.
+.SH DESCRIPTION
+.LP
+Utility functions for Core Erlang case/receive clauses\&.
+.LP
+Syntax trees are defined in the module cerl\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+cerl() = cerl:cerl():
+
+.RE
+.SH EXPORTS
+.LP
+.B
+any_catchall(Clauses::[cerl()]) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if any of the abstract clauses in the list is a catch-all, otherwise \fIfalse\fR\&\&. See \fIis_catchall/1\fR\& for details\&.
+.LP
+Note: each node in \fIClauses\fR\& must have type \fIclause\fR\&\&.
+.LP
+\fISee also:\fR\& is_catchall/1\&.
+.RE
+.LP
+.B
+eval_guard(Expr::cerl()) -> none | {value, term()}
+.br
+.RS
+.LP
+Tries to reduce a guard expression to a single constant value, if possible\&. The returned value is \fI{value, Term}\fR\& if the guard expression \fIExpr\fR\& always yields the constant value \fITerm\fR\&, and is otherwise \fInone\fR\&\&.
+.LP
+Note that although guard expressions should only yield boolean values, this function does not guarantee that \fITerm\fR\& is either \fItrue\fR\& or \fIfalse\fR\&\&. Also note that only simple constructs like let-expressions are examined recursively; general constant folding is not performed\&.
+.LP
+\fISee also:\fR\& is_catchall/1\&.
+.RE
+.LP
+.B
+is_catchall(Clause::cerl()) -> boolean()
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if an abstract clause is a catch-all, otherwise \fIfalse\fR\&\&. A clause is a catch-all if all its patterns are variables, and its guard expression always evaluates to \fItrue\fR\&; cf\&. \fIeval_guard/1\fR\&\&.
+.LP
+Note: \fIClause\fR\& must have type \fIclause\fR\&\&.
+.LP
+\fISee also:\fR\& any_catchall/1, eval_guard/1\&.
+.RE
+.LP
+.B
+match(Pattern::cerl(), E::Expr) -> none | {true, Bindings} | {false, Bindings}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Expr = any | cerl()
+.br
+Bindings = [{cerl(), Expr}]
+.br
+.RE
+.RE
+.RS
+.LP
+Matches a pattern against an expression\&. The returned value is \fInone\fR\& if a match is impossible, \fI{true, Bindings}\fR\& if \fIPattern\fR\& definitely matches \fIExpr\fR\&, and \fI{false, Bindings}\fR\& if a match is not definite, but cannot be excluded\&. \fIBindings\fR\& is then a list of pairs \fI{Var, SubExpr}\fR\&, associating each variable in the pattern with either the corresponding subexpression of \fIExpr\fR\&, or with the atom \fIany\fR\& if no matching subexpression exists\&. (Recall that variables may not be repeated in a Core Erlang pattern\&.) The list of bindings is given in innermost-first order; this should only be of interest if \fIPattern\fR\& contains one or more alias patterns\&. If the returned value is \fI{true, []}\fR\&, it implies that the pattern and the expression are syntactically identical\&.
+.LP
+Instead of a syntax tree, the atom \fIany\fR\& can be passed for \fIExpr\fR\& (or, more generally, be used for any subtree of \fIExpr\fR\&, in as much the abstract syntax tree implementation allows it); this means that it cannot be decided whether the pattern will match or not, and the corresponding variable bindings will all map to \fIany\fR\&\&. The typical use is for producing bindings for \fIreceive\fR\& clauses\&.
+.LP
+Note: Binary-syntax patterns are never structurally matched against binary-syntax expressions by this function\&.
+.LP
+Examples:
+.RS 2
+.TP 2
+*
+Matching a pattern "\fI{X, Y}\fR\&" against the expression "\fI{foo, f(Z)}\fR\&" yields \fI{true, Bindings}\fR\& where \fIBindings\fR\& associates "\fIX\fR\&" with the subtree "\fIfoo\fR\&" and "\fIY\fR\&" with the subtree "\fIf(Z)\fR\&"\&.
+.LP
+.TP 2
+*
+Matching pattern "\fI{X, {bar, Y}}\fR\&" against expression "\fI{foo, f(Z)}\fR\&" yields \fI{false, Bindings}\fR\& where \fIBindings\fR\& associates "\fIX\fR\&" with the subtree "\fIfoo\fR\&" and "\fIY\fR\&" with \fIany\fR\& (because it is not known if "\fI{foo, Y}\fR\&" might match the run-time value of "\fIf(Z)\fR\&" or not)\&.
+.LP
+.TP 2
+*
+Matching pattern "\fI{foo, bar}\fR\&" against expression "\fI{foo, f()}\fR\&" yields \fI{false, []}\fR\&, telling us that there might be a match, but we cannot deduce any bindings\&.
+.LP
+.TP 2
+*
+Matching \fI{foo, X = {bar, Y}}\fR\& against expression "\fI{foo, {bar, baz}}\fR\&" yields \fI{true, Bindings}\fR\& where \fIBindings\fR\& associates "\fIY\fR\&" with "\fIbaz\fR\&", and "\fIX\fR\&" with "\fI{bar, baz}\fR\&"\&.
+.LP
+.TP 2
+*
+Matching a pattern "\fI{X, Y}\fR\&" against \fIany\fR\& yields \fI{false, Bindings}\fR\& where \fIBindings\fR\& associates both "\fIX\fR\&" and "\fIY\fR\&" with \fIany\fR\&\&.
+.LP
+.RE
+
+.RE
+.LP
+.B
+match_list(Patterns::[cerl()], Exprs::[Expr]) -> none | {true, Bindings} | {false, Bindings}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Expr = any | cerl()
+.br
+Bindings = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+Like \fImatch/2\fR\&, but matching a sequence of patterns against a sequence of expressions\&. Passing an empty list for \fIExprs\fR\& is equivalent to passing a list of \fIany\fR\& atoms of the same length as \fIPatterns\fR\&\&.
+.LP
+\fISee also:\fR\& match/2\&.
+.RE
+.LP
+.B
+reduce(Cs::Clauses) -> {true, {Clause, Bindings}} | {false, Clauses}
+.br
+.RS
+.LP
+Equivalent to reduce(Cs, [])\&.
+.RE
+.LP
+.B
+reduce(Clauses::[Clause], Exprs::[Expr]) -> {true, {Clause, Bindings}} | {false, [Clause]}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Clause = cerl()
+.br
+Expr = any | cerl()
+.br
+Bindings = [{cerl(), cerl()}]
+.br
+.RE
+.RE
+.RS
+.LP
+Selects a single clause, if possible, or otherwise reduces the list of selectable clauses\&. The input is a list \fIClauses\fR\& of abstract clauses (i\&.e\&., syntax trees of type \fIclause\fR\&), and a list of switch expressions \fIExprs\fR\&\&. The function tries to uniquely select a single clause or discard unselectable clauses, with respect to the switch expressions\&. All abstract clauses in the list must have the same number of patterns\&. If \fIExprs\fR\& is not the empty list, it must have the same length as the number of patterns in each clause; see \fImatch_list/2\fR\& for details\&.
+.LP
+A clause can only be selected if its guard expression always yields the atom \fItrue\fR\&, and a clause whose guard expression always yields the atom \fIfalse\fR\& can never be selected\&. Other guard expressions are considered to have unknown value; cf\&. \fIeval_guard/1\fR\&\&.
+.LP
+If a particular clause can be selected, the function returns \fI{true, {Clause, Bindings}}\fR\&, where \fIClause\fR\& is the selected clause and \fIBindings\fR\& is a list of pairs \fI{Var, SubExpr}\fR\& associating the variables occurring in the patterns of \fIClause\fR\& with the corresponding subexpressions in \fIExprs\fR\&\&. The list of bindings is given in innermost-first order; see the \fImatch/2\fR\& function for details\&.
+.LP
+If no clause could be definitely selected, the function returns \fI{false, NewClauses}\fR\&, where \fINewClauses\fR\& is the list of entries in \fIClauses\fR\& that remain after eliminating unselectable clauses, preserving the relative order\&.
+.LP
+\fISee also:\fR\& eval_guard/1, match/2, match_list/2\&.
+.RE
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

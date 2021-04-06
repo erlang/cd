@@ -1,0 +1,239 @@
+.TH erlc 1 "erts 8.3.5.4" "Ericsson AB" "User Commands"
+.SH NAME
+erlc \- Compiler
+.SH DESCRIPTION
+.LP
+The \fIerlc\fR\& program provides a common way to run all compilers in the Erlang system\&. Depending on the extension of each input file, \fIerlc\fR\& invokes the appropriate compiler\&. Regardless of which compiler is used, the same flags are used to provide parameters, such as include paths and output directory\&.
+.LP
+The current working directory, \fI"\&."\fR\&, is not included in the code path when running the compiler\&. This to avoid loading Beam files from the current working directory that could potentially be in conflict with the compiler or the Erlang/OTP system used by the compiler\&.
+.SH EXPORTS
+.LP
+.B
+erlc flags file1\&.ext file2\&.ext\&.\&.\&.
+.br
+.RS
+.LP
+Compiles one or more files\&. The files must include the extension, for example, \fI\&.erl\fR\& for Erlang source code, or \fI\&.yrl\fR\& for Yecc source code\&. \fIErlc\fR\& uses the extension to invoke the correct compiler\&.
+.RE
+.SH "GENERALLY USEFUL FLAGS"
+
+.LP
+The following flags are supported:
+.RS 2
+.TP 2
+.B
+\fI-I <Directory>\fR\&:
+Instructs the compiler to search for include files in the \fIDirectory\fR\&\&. When encountering an \fI-include\fR\& or \fI-include_lib\fR\& directive, the compiler searches for header files in the following directories:
+.RS 2
+.TP 2
+*
+\fI"\&."\fR\&, the current working directory of the file server
+.LP
+.TP 2
+*
+The base name of the compiled file
+.LP
+.TP 2
+*
+The directories specified using option \fI-I\fR\&; the directory specified last is searched first
+.LP
+.RE
+
+.TP 2
+.B
+\fI-o <Directory>\fR\&:
+The directory where the compiler is to place the output files\&. Defaults to the current working directory\&.
+.TP 2
+.B
+\fI-D<Name>\fR\&:
+Defines a macro\&.
+.TP 2
+.B
+\fI-D<Name>=<Value>\fR\&:
+Defines a macro with the specified value\&. The value can be any Erlang term\&. Depending on the platform, the value may need to be quoted if the shell itself interprets certain characters\&. On Unix, terms containing tuples and lists must be quoted\&. Terms containing spaces must be quoted on all platforms\&.
+.TP 2
+.B
+\fI-W<Error>\fR\&:
+Makes all warnings into errors\&.
+.TP 2
+.B
+\fI-W<Number>\fR\&:
+Sets warning level to \fINumber\fR\&\&. Defaults to \fI1\fR\&\&. To turn off warnings, use \fI-W0\fR\&\&.
+.TP 2
+.B
+\fI-W\fR\&:
+Same as \fI-W1\fR\&\&. Default\&.
+.TP 2
+.B
+\fI-v\fR\&:
+Enables verbose output\&.
+.TP 2
+.B
+\fI-b <Output_type>\fR\&:
+Specifies the type of output file\&. \fIOutput_type\fR\& is the same as the file extension of the output file, but without the period\&. This option is ignored by compilers that have a single output format\&.
+.TP 2
+.B
+\fI-smp\fR\&:
+Compiles using the SMP emulator\&. This is mainly useful for compiling native code, which must be compiled with the same runtime system that it is to be run on\&.
+.TP 2
+.B
+\fI-M\fR\&:
+Produces a Makefile rule to track header dependencies\&. The rule is sent to \fIstdout\fR\&\&. No object file is produced\&.
+.TP 2
+.B
+\fI-MF <Makefile>\fR\&:
+As option \fI-M\fR\&, except that the Makefile is written to \fIMakefile\fR\&\&. No object file is produced\&.
+.TP 2
+.B
+\fI-MD\fR\&:
+Same as \fI-M -MF <File>\&.Pbeam\fR\&\&.
+.TP 2
+.B
+\fI-MT <Target>\fR\&:
+In conjunction with option \fI-M\fR\& or \fI-MF\fR\&, changes the name of the rule emitted to \fITarget\fR\&\&.
+.TP 2
+.B
+\fI-MQ <Target>\fR\&:
+As option \fI-MT\fR\&, except that characters special to \fImake/1\fR\& are quoted\&.
+.TP 2
+.B
+\fI-MP\fR\&:
+In conjunction with option \fI-M\fR\& or \fI-MF\fR\&, adds a phony target for each dependency\&.
+.TP 2
+.B
+\fI-MG\fR\&:
+In conjunction with option \fI-M\fR\& or \fI-MF\fR\&, considers missing headers as generated files and adds them to the dependencies\&.
+.TP 2
+.B
+\fI--\fR\&:
+Signals that no more options will follow\&. The rest of the arguments is treated as filenames, even if they start with hyphens\&.
+.TP 2
+.B
+\fI+<Term>\fR\&:
+A flag starting with a plus (\fI+\fR\&) rather than a hyphen is converted to an Erlang term and passed unchanged to the compiler\&. For example, option \fIexport_all\fR\& for the Erlang compiler can be specified as follows:
+.LP
+.nf
+
+erlc +export_all file.erl
+.fi
+.RS 2
+.LP
+Depending on the platform, the value may need to be quoted if the shell itself interprets certain characters\&. On Unix, terms containing tuples and lists must be quoted\&. Terms containing spaces must be quoted on all platforms\&.
+.RE
+.RE
+.SH "SPECIAL FLAGS"
+
+.LP
+The following flags are useful in special situations, such as rebuilding the OTP system:
+.RS 2
+.TP 2
+.B
+\fI-pa <Directory>\fR\&:
+Appends \fIDirectory\fR\& to the front of the code path in the invoked Erlang emulator\&. This can be used to invoke another compiler than the default one\&.
+.TP 2
+.B
+\fI-pz <Directory>\fR\&:
+Appends \fIDirectory\fR\& to the code path in the invoked Erlang emulator\&.
+.RE
+.SH "SUPPORTED COMPILERS"
+
+.LP
+The following compilers are supported:
+.RS 2
+.TP 2
+.B
+\fI\&.erl\fR\&:
+Erlang source code\&. It generates a \fI\&.beam\fR\& file\&.
+.RS 2
+.LP
+Options \fI-P\fR\&, \fI-E\fR\&, and \fI-S\fR\& are equivalent to \fI+\&'P\&'\fR\&, \fI+\&'E\&'\fR\&, and \fI+\&'S\&'\fR\&, except that it is not necessary to include the single quotes to protect them from the shell\&.
+.RE
+.RS 2
+.LP
+Supported options: \fI-I\fR\&, \fI-o\fR\&, \fI-D\fR\&, \fI-v\fR\&, \fI-W\fR\&, \fI-b\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.S\fR\&:
+Erlang assembler source code\&. It generates a \fI\&.beam\fR\& file\&.
+.RS 2
+.LP
+Supported options: same as for \fI\&.erl\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.core\fR\&:
+Erlang core source code\&. It generates a \fI\&.beam\fR\& file\&.
+.RS 2
+.LP
+Supported options: same as for \fI\&.erl\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.yrl\fR\&:
+Yecc source code\&. It generates an \fI\&.erl\fR\& file\&.
+.RS 2
+.LP
+Use option \fI-I\fR\& with the name of a file to use that file as a customized prologue file (option \fIincludefile\fR\&)\&.
+.RE
+.RS 2
+.LP
+Supported options: \fI-o\fR\&, \fI-v\fR\&, \fI-I\fR\&, \fI-W\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.mib\fR\&:
+MIB for SNMP\&. It generates a \fI\&.bin\fR\& file\&.
+.RS 2
+.LP
+Supported options: \fI-I\fR\&, \fI-o\fR\&, \fI-W\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.bin\fR\&:
+A compiled MIB for SNMP\&. It generates a \fI\&.hrl\fR\& file\&.
+.RS 2
+.LP
+Supported options: \fI-o\fR\&, \fI-v\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.rel\fR\&:
+Script file\&. It generates a boot file\&.
+.RS 2
+.LP
+Use option \fI-I\fR\& to name directories to be searched for application files (equivalent to the \fIpath\fR\& in the option list for \fIsystools:make_script/2\fR\&)\&.
+.RE
+.RS 2
+.LP
+Supported option: \fI-o\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.asn1\fR\&:
+ASN1 file\&. It creates an \fI\&.erl\fR\&, \fI\&.hrl\fR\&, and \fI\&.asn1db\fR\& file from an \fI\&.asn1\fR\& file\&. Also compiles the \fI\&.erl\fR\& using the Erlang compiler unless option \fI+noobj\fR\& is specified\&.
+.RS 2
+.LP
+Supported options: \fI-I\fR\&, \fI-o\fR\&, \fI-b\fR\&, \fI-W\fR\&\&.
+.RE
+.TP 2
+.B
+\fI\&.idl\fR\&:
+IC file\&. It runs the IDL compiler\&.
+.RS 2
+.LP
+Supported options: \fI-I\fR\&, \fI-o\fR\&\&.
+.RE
+.RE
+.SH "ENVIRONMENT VARIABLES"
+
+.RS 2
+.TP 2
+.B
+\fIERLC_EMULATOR\fR\&:
+The command for starting the emulator\&. Defaults to \fIerl\fR\& in the same directory as the \fIerlc\fR\& program itself, or, if it does not exist, \fIerl\fR\& in any of the directories specified in environment variable \fIPATH\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerl(1)\fR\&\fR\&, \fB\fIcompile(3)\fR\&\fR\&, \fB\fIyecc(3)\fR\&\fR\&, \fB\fIsnmp(3)\fR\&\fR\&

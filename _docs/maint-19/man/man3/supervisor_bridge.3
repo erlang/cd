@@ -1,0 +1,158 @@
+.TH supervisor_bridge 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+supervisor_bridge \- Generic supervisor bridge behavior.
+.SH DESCRIPTION
+.LP
+This behavior module provides a supervisor bridge, a process that connects a subsystem not designed according to the OTP design principles to a supervision tree\&. The supervisor bridge sits between a supervisor and the subsystem\&. It behaves like a real supervisor to its own supervisor, but has a different interface than a real supervisor to the subsystem\&. For more information, see \fB Supervisor Behaviour\fR\& in OTP Design Principles\&.
+.LP
+A supervisor bridge assumes the functions for starting and stopping the subsystem to be located in a callback module exporting a predefined set of functions\&.
+.LP
+The \fB\fIsys(3)\fR\&\fR\& module can be used for debugging a supervisor bridge\&.
+.LP
+Unless otherwise stated, all functions in this module fail if the specified supervisor bridge does not exist or if bad arguments are specified\&.
+.SH EXPORTS
+.LP
+.nf
+
+.B
+start_link(Module, Args) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+start_link(SupBridgeName, Module, Args) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SupBridgeName = {local, Name} | {global, Name}
+.br
+Name = atom()
+.br
+Module = module()
+.br
+Args = term()
+.br
+Result = {ok, Pid} | ignore | {error, Error}
+.br
+Error = {already_started, Pid} | term()
+.br
+Pid = pid()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a supervisor bridge process, linked to the calling process, which calls \fIModule:init/1\fR\& to start the subsystem\&. To ensure a synchronized startup procedure, this function does not return until \fIModule:init/1\fR\& has returned\&.
+.RS 2
+.TP 2
+*
+If \fISupBridgeName={local,Name}\fR\&, the supervisor bridge is registered locally as \fIName\fR\& using \fIregister/2\fR\&\&.
+.LP
+.TP 2
+*
+If \fISupBridgeName={global,Name}\fR\&, the supervisor bridge is registered globally as \fIName\fR\& using \fB\fIglobal:register_name/2\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+If \fISupBridgeName={via,Module,Name}\fR\&, the supervisor bridge is registered as \fIName\fR\& using a registry represented by Module\&. The \fIModule\fR\& callback is to export functions \fIregister_name/2\fR\&, \fIunregister_name/1\fR\&, and \fIsend/2\fR\&, which are to behave like the corresponding functions in \fB\fIglobal\fR\&\fR\&\&. Thus, \fI{via,global,GlobalName}\fR\& is a valid reference\&.
+.LP
+.RE
+
+.LP
+If no name is provided, the supervisor bridge is not registered\&.
+.LP
+\fIModule\fR\& is the name of the callback module\&.
+.LP
+\fIArgs\fR\& is an arbitrary term that is passed as the argument to \fIModule:init/1\fR\&\&.
+.RS 2
+.TP 2
+*
+If the supervisor bridge and the subsystem are successfully started, the function returns \fI{ok,Pid}\fR\&, where \fIPid\fR\& is is the pid of the supervisor bridge\&.
+.LP
+.TP 2
+*
+If there already exists a process with the specified \fISupBridgeName\fR\&, the function returns \fI{error,{already_started,Pid}}\fR\&, where \fIPid\fR\& is the pid of that process\&.
+.LP
+.TP 2
+*
+If \fIModule:init/1\fR\& returns \fIignore\fR\&, this function returns \fIignore\fR\& as well and the supervisor bridge terminates with reason \fInormal\fR\&\&.
+.LP
+.TP 2
+*
+If \fIModule:init/1\fR\& fails or returns an error tuple or an incorrect value, this function returns \fI{error,Errorr}\fR\&, where \fIError\fR\& is a term with information about the error, and the supervisor bridge terminates with reason \fIError\fR\&\&.
+.LP
+.RE
+
+.RE
+.SH "CALLBACK FUNCTIONS"
+
+.LP
+The following functions must be exported from a \fIsupervisor_bridge\fR\& callback module\&.
+.SH EXPORTS
+.LP
+.B
+Module:init(Args) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Args = term()
+.br
+Result = {ok,Pid,State} | ignore | {error,Error}
+.br
+ Pid = pid()
+.br
+ State = term()
+.br
+ Error = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Whenever a supervisor bridge is started using \fB\fIstart_link/2,3\fR\&\fR\&, this function is called by the new process to start the subsystem and initialize\&.
+.LP
+\fIArgs\fR\& is the \fIArgs\fR\& argument provided to the start function\&.
+.LP
+The function is to return \fI{ok,Pid,State}\fR\&, where \fIPid\fR\& is the pid of the main process in the subsystem and \fIState\fR\& is any term\&.
+.LP
+If later \fIPid\fR\& terminates with a reason \fIReason\fR\&, the supervisor bridge terminates with reason \fIReason\fR\& as well\&. If later the supervisor bridge is stopped by its supervisor with reason \fIReason\fR\&, it calls \fIModule:terminate(Reason,State)\fR\& to terminate\&.
+.LP
+If the initialization fails, the function is to return \fI{error,Error}\fR\&, where \fIError\fR\& is any term, or \fIignore\fR\&\&.
+.RE
+.LP
+.B
+Module:terminate(Reason, State)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Reason = shutdown | term()
+.br
+State = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This function is called by the supervisor bridge when it is about to terminate\&. It is to be the opposite of \fIModule:init/1\fR\& and stop the subsystem and do any necessary cleaning up\&. The return value is ignored\&.
+.LP
+\fIReason\fR\& is \fIshutdown\fR\& if the supervisor bridge is terminated by its supervisor\&. If the supervisor bridge terminates because a a linked process (apart from the main process of the subsystem) has terminated with reason \fITerm\fR\&, then \fIReason\fR\& becomes \fITerm\fR\&\&.
+.LP
+\fIState\fR\& is taken from the return value of \fIModule:init/1\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIsupervisor(3)\fR\&\fR\&, \fB\fIsys(3)\fR\&\fR\&

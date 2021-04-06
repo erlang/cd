@@ -1,0 +1,176 @@
+.TH wxButton 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxButton \- See external documentation: wxButton.
+.SH DESCRIPTION
+.LP
+See external documentation: wxButton\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxControl\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxButton():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxButton()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent, Id) -> \fBwxButton()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, Id, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Id, Options::[Option]) -> \fBwxButton()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Option = {label, \fBunicode:chardata()\fR\&} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()} | {validator, \fBwx:wx_object()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent, Id) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxButton()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, Id, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxButton()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Option = {label, \fBunicode:chardata()\fR\&} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()} | {validator, \fBwx:wx_object()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getDefaultSize() -> {W::integer(), H::integer()}
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setDefault(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxButton()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setLabel(This, Label) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxButton()\fR\&
+.br
+Label = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxButton()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

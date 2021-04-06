@@ -1,0 +1,96 @@
+.TH wxArtProvider 3 "wx 1.9.1" "" "Erlang Module Definition"
+.SH NAME
+wxArtProvider \- See external documentation: wxArtProvider.
+.SH DESCRIPTION
+.LP
+See external documentation: wxArtProvider\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxArtProvider():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+getBitmap(Id) -> wxBitmap:wxBitmap()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Id = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to getBitmap(Id, [])\&.
+.RE
+.LP
+.B
+getBitmap(Id, Options::[Option]) -> wxBitmap:wxBitmap()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Id = unicode:chardata()
+.br
+Option = {client, unicode:chardata()} | {size, {W::integer(), H::integer()}}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getIcon(Id) -> wxIcon:wxIcon()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Id = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to getIcon(Id, [])\&.
+.RE
+.LP
+.B
+getIcon(Id, Options::[Option]) -> wxIcon:wxIcon()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Id = unicode:chardata()
+.br
+Option = {client, unicode:chardata()} | {size, {W::integer(), H::integer()}}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

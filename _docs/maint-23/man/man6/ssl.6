@@ -1,0 +1,97 @@
+.TH ssl 7 "ssl 10.1" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+ssl \- The ssl application provides secure communication over
+  sockets.
+.SH DESCRIPTION
+.LP
+The ssl application is an implementation of the SSL, TLS and DTLS protocols in Erlang\&.
+.LP
+For current statement of standards compliance see the User\&'s Guide\&.
+.SH "DEPENDENCIES"
+
+.LP
+The SSL application uses the \fIpublic_key\fR\&, \fIasn1\fR\& and Crypto application to handle public keys and encryption, hence these applications must be loaded for the SSL application to work\&. In an embedded environment this means they must be started with \fIapplication:start/[1,2]\fR\& before the SSL application is started\&.
+.SH "CONFIGURATION"
+
+.LP
+The application environment configuration parameters in this section are defined for the SSL application\&. For more information about configuration parameters, see the application(3) manual page in Kernel\&.
+.LP
+The environment parameters can be set on the command line, for example:
+.LP
+\fIerl -ssl protocol_version "[\&'tlsv1\&.2\&', \&'tlsv1\&.1\&']"\fR\&
+.RS 2
+.TP 2
+.B
+\fIprotocol_version = \fR\&ssl:ssl_tls_protocol()\fI<optional>\fR\&:
+Protocol supported by started clients and servers\&. If this option is not set, it defaults to all TLS protocols currently supported, more might be configurable, by the SSL application\&. This option can be overridden by the version option to \fIssl:connect/[2,3]\fR\& and \fIssl:listen/2\fR\&\&.
+.TP 2
+.B
+\fIdtls_protocol_version = \fR\&ssl:dtls_protocol()\fI<optional>\fR\&:
+Protocol supported by started clients and servers\&. If this option is not set, it defaults to all DTLS protocols currently supported, more might be configurable, by the SSL application\&. This option can be overridden by the version option to \fIssl:connect/[2,3]\fR\& and \fIssl:listen/2\fR\&\&.
+.TP 2
+.B
+\fIsession_lifetime = integer() <optional>\fR\&:
+Maximum lifetime of the session data in seconds\&. Defaults to 24 hours which is the maximum recommended lifetime by RFC 5246\&. However sessions may be invalidated earlier due to the maximum limitation of the session cache table\&.
+.TP 2
+.B
+\fIsession_cb = atom() <optional>\fR\&:
+Name of the session cache callback module that implements the \fIssl_session_cache_api\fR\& behavior\&. Defaults to \fIssl_session_cache\fR\&\&.
+.TP 2
+.B
+\fIsession_cb_init_args = proplist:proplist() <optional>\fR\&:
+List of extra user-defined arguments to the \fIinit\fR\& function in the session cache callback module\&. Defaults to \fI[]\fR\&\&.
+.TP 2
+.B
+\fIsession_cache_client_max = integer() <optional>\fR\&
+.br
+:
+Limits the growth of the clients session cache, that is how many sessions towards servers that are cached to be used by new client connections\&. If the maximum number of sessions is reached, the current cache entries will be invalidated regardless of their remaining lifetime\&. Defaults to 1000\&. Recommended ssl-8\&.2\&.1 or later for this option to work as intended\&.
+.TP 2
+.B
+\fIsession_cache_server_max = integer() <optional>\fR\&:
+Limits the growth of the servers session cache, that is how many client sessions are cached by the server\&. If the maximum number of sessions is reached, the current cache entries will be invalidated regardless of their remaining lifetime\&. Defaults to 1000\&. Recommended ssl-8\&.2\&.1 or later for this option to work as intended\&.
+.TP 2
+.B
+\fIssl_pem_cache_clean = integer() <optional>\fR\&:
+Number of milliseconds between PEM cache validations\&. Defaults to 2 minutes\&.ssl:clear_pem_cache/0
+.TP 2
+.B
+\fIbypass_pem_cache = boolean() <optional>\fR\&:
+Introduced in ssl-8\&.0\&.2\&. Disables the PEM-cache\&. Can be used as a workaround for the PEM-cache bottleneck before ssl-8\&.1\&.1\&. Defaults to false\&.
+.TP 2
+.B
+\fIalert_timeout = integer() <optional>\fR\&:
+Number of milliseconds between sending of a fatal alert and closing the connection\&. Waiting a little while improves the peers chances to properly receiving the alert so it may shutdown gracefully\&. Defaults to 5000 milliseconds\&.
+.TP 2
+.B
+\fIinternal_active_n = integer() <optional>\fR\&:
+For TLS connections this value is used to handle the internal socket\&. As the implementation was changed from an active once to an active N behavior (N = 100), for performance reasons, this option exist for possible tweaking or restoring of the old behavior (internal_active_n = 1) in unforeseen scenarios\&. The option will not affect erlang distribution over TLS that will always run in active N mode\&. Added in ssl-9\&.1 (OTP-21\&.2)\&.
+.TP 2
+.B
+\fIserver_session_tickets_amount = integer() <optional>\fR\&:
+Number of session tickets sent by the server\&. It must be greater than 0\&. Defaults to 3\&.
+.TP 2
+.B
+\fIserver_session_ticket_lifetime = integer() <optional>\fR\&:
+Lifetime of session tickets sent by the server\&. Servers must not use any value greater than 604800 seconds (7 days)\&. Expired tickets are automatically removed\&. Defaults to 7200 seconds (2 hours)\&.
+.TP 2
+.B
+\fIserver_session_ticket_store_size = integer() <optional>\fR\&:
+Sets the maximum size of the server session ticket store (stateful tickets)\&. Defaults to 1000\&. Size limit is enforced by dropping old tickets\&.
+.TP 2
+.B
+\fIclient_session_ticket_lifetime = integer() <optional>\fR\&:
+Lifetime of session tickets in the client ticket store\&. Expired tickets are automatically removed\&. Defaults to 7200 seconds (2 hours)\&.
+.TP 2
+.B
+\fIclient_session_ticket_store_size = integer() <optional>\fR\&:
+Sets the maximum size of the client session ticket store\&. Defaults to 1000\&. Size limit is enforced by dropping old tickets\&.
+.RE
+.SH "ERROR LOGGER AND EVENT HANDLERS"
+
+.LP
+The SSL application uses OTP logger\&. TLS/DTLS alerts are logged on notice level\&. Unexpected errors are logged on error level\&. These log entries will by default end up in the default Erlang log\&. The option \fIlog_level\fR\& may be used to in run-time to set the log level of a specific TLS connection, which is handy when you want to use level debug to inspect the TLS handshake setup\&.
+.SH "SEE ALSO"
+
+.LP
+application(3)

@@ -1,0 +1,183 @@
+.TH etop 3 "observer 2.3.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+etop \- Erlang Top is a tool for presenting information about Erlang 
+  processes similar to the information presented by "top" in UNIX.
+.SH DESCRIPTION
+.LP
+Start Erlang Top with the provided scripts \fIetop\fR\&\&. This starts a hidden Erlang node that connects to the node to be measured\&. The measured node is specified with option \fI-node\fR\&\&. If the measured node has a different cookie than the default cookie for the user who invokes the script, the cookie must be explicitly specified with option \fI-setcookie\fR\&\&.
+.LP
+Under Windows, batch file \fIetop\&.bat\fR\& can be used\&.
+.LP
+When executing the \fIetop\fR\& script, configuration parameters can be specified as command-line options, for example, \fIetop -node testnode@myhost -setcookie MyCookie\fR\&\&. The following configuration parameters exist for the tool:
+.RS 2
+.TP 2
+.B
+\fInode\fR\&:
+The measured node\&.
+.RS 2
+.LP
+Value: \fIatom()\fR\&
+.RE
+.RS 2
+.LP
+Mandatory
+.RE
+.TP 2
+.B
+\fIsetcookie\fR\&:
+Cookie to use for the \fIetop\fR\& node\&. Must be same as the cookie on the measured node\&.
+.RS 2
+.LP
+Value: \fIatom()\fR\&
+.RE
+.TP 2
+.B
+\fIlines\fR\&:
+Number of lines (processes) to display\&.
+.RS 2
+.LP
+Value: \fIinteger()\fR\&
+.RE
+.RS 2
+.LP
+Default: \fI10\fR\&
+.RE
+.TP 2
+.B
+\fIinterval\fR\&:
+Time interval (in seconds) between each update of the display\&.
+.RS 2
+.LP
+Value: \fIinteger()\fR\&
+.RE
+.RS 2
+.LP
+Default: \fI5\fR\&
+.RE
+.TP 2
+.B
+\fIaccumulate\fR\&:
+If \fItrue\fR\&, the execution time and reductions are accumulated\&.
+.RS 2
+.LP
+Value: \fIboolean()\fR\&
+.RE
+.RS 2
+.LP
+Default: \fIfalse\fR\&
+.RE
+.TP 2
+.B
+\fIsort\fR\&:
+Identifies what information to sort by\&.
+.RS 2
+.LP
+Value: \fIruntime | reductions | memory | msg_q\fR\&
+.RE
+.RS 2
+.LP
+Default: \fIruntime\fR\& (\fIreductions\fR\& if \fItracing=off\fR\&)
+.RE
+.TP 2
+.B
+\fItracing\fR\&:
+\fIetop\fR\& uses the Erlang trace facility, and thus no other tracing is possible on the measured node while \fIetop\fR\& is running, unless this option is set to \fIoff\fR\&\&. Also helpful if the \fIetop\fR\& tracing causes too high load on the measured node\&. With tracing off, runtime is not measured\&.
+.RS 2
+.LP
+Value: \fIon | off\fR\&
+.RE
+.RS 2
+.LP
+Default: \fIon\fR\&
+.RE
+.RE
+.LP
+For detalis about Erlang Top, see the \fBUser\&'s Guide\fR\&\&.
+.SH EXPORTS
+.LP
+.B
+start() -> ok
+.br
+.RS
+.LP
+Starts \fIetop\fR\&\&. Notice that \fIetop\fR\& is preferably started with the \fIetop\fR\& script\&.
+.RE
+.LP
+.B
+start(Options) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Options = [Option]
+.br
+Option = {Key, Value}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts \fIetop\fR\&\&. To view the possible options, use \fB\fIhelp/0\fR\&\fR\&\&.
+.RE
+.LP
+.B
+help() -> ok
+.br
+.RS
+.LP
+Displays the help of \fIetop\fR\& and its options\&.
+.RE
+.LP
+.B
+config(Key,Value) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = ok | {error,Reason}
+.br
+Key = lines | interval | accumulate | sort
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Changes the configuration parameters of the tool during runtime\&. Allowed parameters are \fIlines\fR\&, \fIinterval\fR\&, \fIaccumulate\fR\&, and \fIsort\fR\&\&.
+.RE
+.LP
+.B
+dump(File) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = ok | {error,Reason}
+.br
+File = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Dumps the current display to a text file\&.
+.RE
+.LP
+.B
+stop() -> stop
+.br
+.RS
+.LP
+Terminates \fIetop\fR\&\&.
+.RE

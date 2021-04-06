@@ -1,0 +1,598 @@
+.TH wxListbook 3 "wx 1.9.1" "" "Erlang Module Definition"
+.SH NAME
+wxListbook \- See external documentation: wxListbook.
+.SH DESCRIPTION
+.LP
+See external documentation: wxListbook\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+wxControl 
+.br
+wxWindow 
+.br
+wxEvtHandler 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxListbook():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> wxListbook()
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent, Id) -> wxListbook()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to new(Parent, Id, [])\&.
+.RE
+.LP
+.B
+new(Parent, Id, Options::[Option]) -> wxListbook()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+addPage(This, Page, Text) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+Page = wxWindow:wxWindow()
+.br
+Text = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to addPage(This, Page, Text, [])\&.
+.RE
+.LP
+.B
+addPage(This, Page, Text, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+Page = wxWindow:wxWindow()
+.br
+Text = unicode:chardata()
+.br
+Option = {bSelect, boolean()} | {imageId, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+advanceSelection(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to advanceSelection(This, [])\&.
+.RE
+.LP
+.B
+advanceSelection(This, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+Option = {forward, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+assignImageList(This, ImageList) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+ImageList = wxImageList:wxImageList()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent, Id) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to create(This, Parent, Id, [])\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+Parent = wxWindow:wxWindow()
+.br
+Id = integer()
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deleteAllPages(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deletePage(This, N) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+removePage(This, N) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getCurrentPage(This) -> wxWindow:wxWindow()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getImageList(This) -> wxImageList:wxImageList()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPage(This, N) -> wxWindow:wxWindow()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageImage(This, N) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageText(This, N) -> unicode:charlist()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSelection(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hitTest(This, Pt) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::integer(), Flags::integer()}
+.br
+This = wxListbook()
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+insertPage(This, N, Page, Text) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+Page = wxWindow:wxWindow()
+.br
+Text = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to insertPage(This, N, Page, Text, [])\&.
+.RE
+.LP
+.B
+insertPage(This, N, Page, Text, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+Page = wxWindow:wxWindow()
+.br
+Text = unicode:chardata()
+.br
+Option = {bSelect, boolean()} | {imageId, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setImageList(This, ImageList) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+ImageList = wxImageList:wxImageList()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageSize(This, Size) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+Size = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageImage(This, N, ImageId) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+ImageId = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageText(This, N, StrText) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+StrText = unicode:chardata()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSelection(This, N) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+changeSelection(This, N) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxListbook()
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::wxListbook()) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

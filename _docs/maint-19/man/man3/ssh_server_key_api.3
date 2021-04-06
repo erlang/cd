@@ -1,0 +1,99 @@
+.TH ssh_server_key_api 3 "ssh 4.4.2.4" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_server_key_api \- 
+    -behaviour(ssh_server_key_api).
+  
+.SH DESCRIPTION
+.LP
+Behaviour describing the API for public key handling of an SSH server\&. By implementing the callbacks defined in this behavior, the public key handling of an SSH server can be customized\&. By default the SSH application implements this behavior with help of the standard OpenSSH files, see the \fB ssh(6)\fR\& application manual\&.
+.SH "DATA TYPES"
+
+.LP
+Type definitions that are used more than once in this module, or abstractions to indicate the intended use of the data type, or both\&. For more details on public key data types, refer to Section 2 Public Key Records in the \fB public_key user\&'s guide\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIboolean() =\fR\&:
+\fItrue | false\fR\&
+.TP 2
+.B
+\fIstring() =\fR\&:
+\fI[byte()]\fR\&
+.TP 2
+.B
+\fIpublic_key() =\fR\&:
+\fI#\&'RSAPublicKey\&'{}| {integer(), #\&'Dss-Parms\&'{}}| term()\fR\&
+.TP 2
+.B
+\fIprivate_key() =\fR\&:
+\fI#\&'RSAPrivateKey\&'{} | #\&'DSAPrivateKey\&'{} | term()\fR\&
+.TP 2
+.B
+\fIpublic_key_algorithm() =\fR\&:
+\fI\&'ssh-rsa\&'| \&'ssh-dss\&' | atom()\fR\&
+.RE
+.SH EXPORTS
+.LP
+.B
+Module:host_key(Algorithm, DaemonOptions) -> {ok, Key} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = public_key_algorithm()
+.br
+.RS 2
+Host key algorithm\&. Is to support \fI\&'ssh-rsa\&' | \&'ssh-dss\&'\fR\&, but more algorithms can be handled\&.
+.RE
+DaemonOptions = proplists:proplist()
+.br
+.RS 2
+Options provided to \fBssh:daemon/[2,3]\fR\&\&.
+.RE
+Key = private_key()
+.br
+.RS 2
+Private key of the host matching the \fIAlgorithm\fR\&\&.
+.RE
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches the private key of the host\&.
+.RE
+.LP
+.B
+Module:is_auth_key(Key, User, DaemonOptions) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = public_key()
+.br
+.RS 2
+Normally an RSA or DSA public key, but handling of other public keys can be added
+.RE
+User = string()
+.br
+.RS 2
+User owning the public key\&.
+.RE
+DaemonOptions = proplists:proplist()
+.br
+.RS 2
+Options provided to \fBssh:daemon/[2,3]\fR\&\&.
+.RE
+Result = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+Checks if the user key is authorized\&.
+.RE

@@ -1,0 +1,457 @@
+.TH queue 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+queue \- Abstract data type for FIFO queues.
+.SH DESCRIPTION
+.LP
+This module provides (double-ended) FIFO queues in an efficient manner\&.
+.LP
+All functions fail with reason \fIbadarg\fR\& if arguments are of wrong type, for example, queue arguments are not queues, indexes are not integers, and list arguments are not lists\&. Improper lists cause internal crashes\&. An index out of range for a queue also causes a failure with reason \fIbadarg\fR\&\&.
+.LP
+Some functions, where noted, fail with reason \fIempty\fR\& for an empty queue\&.
+.LP
+The data representing a queue as used by this module is to be regarded as opaque by other modules\&. Any code assuming knowledge of the format is running on thin ice\&.
+.LP
+All operations has an amortized O(1) running time, except \fB\fIfilter/2\fR\&\fR\&, \fB\fIjoin/2\fR\&\fR\&, \fB\fIlen/1\fR\&\fR\&, \fB\fImember/2\fR\&\fR\&, \fB\fIsplit/2\fR\&\fR\& that have O(n)\&. To minimize the size of a queue minimizing the amount of garbage built by queue operations, the queues do not contain explicit length information, and that is why \fIlen/1\fR\& is O(n)\&. If better performance for this particular operation is essential, it is easy for the caller to keep track of the length\&.
+.LP
+Queues are double-ended\&. The mental picture of a queue is a line of people (items) waiting for their turn\&. The queue front is the end with the item that has waited the longest\&. The queue rear is the end an item enters when it starts to wait\&. If instead using the mental picture of a list, the front is called head and the rear is called tail\&.
+.LP
+Entering at the front and exiting at the rear are reverse operations on the queue\&.
+.LP
+This module has three sets of interface functions: the "Original API", the "Extended API", and the "Okasaki API"\&.
+.LP
+The "Original API" and the "Extended API" both use the mental picture of a waiting line of items\&. Both have reverse operations suffixed "_r"\&.
+.LP
+The "Original API" item removal functions return compound terms with both the removed item and the resulting queue\&. The "Extended API" contains alternative functions that build less garbage and functions for just inspecting the queue ends\&. Also the "Okasaki API" functions build less garbage\&.
+.LP
+The "Okasaki API" is inspired by "Purely Functional Data Structures" by Chris Okasaki\&. It regards queues as lists\&. This API is by many regarded as strange and avoidable\&. For example, many reverse operations have lexically reversed names, some with more readable but perhaps less understandable aliases\&.
+.SH "ORIGINAL API"
+
+.SH DATA TYPES
+.nf
+
+\fBqueue(Item)\fR\&
+.br
+.fi
+.RS
+.LP
+As returned by \fB\fInew/0\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBqueue()\fR\& = \fBqueue\fR\&(term())
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+filter(Fun, Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Fun = fun((Item) -> boolean() | [Item])
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of calling \fIFun(Item)\fR\& on all items in \fIQ1\fR\&, in order from front to rear\&.
+.LP
+If \fIFun(Item)\fR\& returns \fItrue\fR\&, \fIItem\fR\& is copied to the result queue\&. If it returns \fIfalse\fR\&, \fIItem\fR\& is not copied\&. If it returns a list, the list elements are inserted instead of \fIItem\fR\& in the result queue\&.
+.LP
+So, \fIFun(Item)\fR\& returning \fI[Item]\fR\& is thereby semantically equivalent to returning \fItrue\fR\&, just as returning \fI[]\fR\& is semantically equivalent to returning \fIfalse\fR\&\&. But returning a list builds more garbage than returning an atom\&.
+.RE
+.LP
+.nf
+
+.B
+from_list(L :: [Item]) -> queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue containing the items in \fIL\fR\& in the same order; the head item of the list becomes the front item of the queue\&.
+.RE
+.LP
+.nf
+
+.B
+in(Item, Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Inserts \fIItem\fR\& at the rear of queue \fIQ1\fR\&\&. Returns the resulting queue \fIQ2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+in_r(Item, Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Inserts \fIItem\fR\& at the front of queue \fIQ1\fR\&\&. Returns the resulting queue \fIQ2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_empty(Q :: queue()) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Tests if \fIQ\fR\& is empty and returns \fItrue\fR\& if so, otherwise otherwise\&.
+.RE
+.LP
+.nf
+
+.B
+is_queue(Term :: term()) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Tests if \fITerm\fR\& is a queue and returns \fItrue\fR\& if so, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+join(Q1 :: queue(Item), Q2 :: queue(Item)) -> Q3 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ3\fR\& that is the result of joining \fIQ1\fR\& and \fIQ2\fR\& with \fIQ1\fR\& in front of \fIQ2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+len(Q :: queue()) -> integer() >= 0
+.br
+.fi
+.br
+.RS
+.LP
+Calculates and returns the length of queue \fIQ\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+member(Item, Q :: queue(Item)) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIItem\fR\& matches some element in \fIQ\fR\&, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+new() -> queue()
+.br
+.fi
+.br
+.RS
+.LP
+Returns an empty queue\&.
+.RE
+.LP
+.nf
+
+.B
+out(Q1 :: queue(Item)) ->
+.B
+       {{value, Item}, Q2 :: queue(Item)} |
+.B
+       {empty, Q1 :: queue(Item)}
+.br
+.fi
+.br
+.RS
+.LP
+Removes the item at the front of queue \fIQ1\fR\&\&. Returns tuple \fI{{value, Item}, Q2}\fR\&, where \fIItem\fR\& is the item removed and \fIQ2\fR\& is the resulting queue\&. If \fIQ1\fR\& is empty, tuple \fI{empty, Q1}\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+out_r(Q1 :: queue(Item)) ->
+.B
+         {{value, Item}, Q2 :: queue(Item)} |
+.B
+         {empty, Q1 :: queue(Item)}
+.br
+.fi
+.br
+.RS
+.LP
+Removes the item at the rear of queue \fIQ1\fR\&\&. Returns tuple \fI{{value, Item}, Q2}\fR\&, where \fIItem\fR\& is the item removed and \fIQ2\fR\& is the new queue\&. If \fIQ1\fR\& is empty, tuple \fI{empty, Q1}\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+reverse(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& containing the items of \fIQ1\fR\& in the reverse order\&.
+.RE
+.LP
+.nf
+
+.B
+split(N :: integer() >= 0, Q1 :: queue(Item)) ->
+.B
+         {Q2 :: queue(Item), Q3 :: queue(Item)}
+.br
+.fi
+.br
+.RS
+.LP
+Splits \fIQ1\fR\& in two\&. The \fIN\fR\& front items are put in \fIQ2\fR\& and the rest in \fIQ3\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+to_list(Q :: queue(Item)) -> [Item]
+.br
+.fi
+.br
+.RS
+.LP
+Returns a list of the items in the queue in the same order; the front item of the queue becomes the head of the list\&.
+.RE
+.SH "EXTENDED API"
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+drop(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of removing the front item from \fIQ1\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ1\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+drop_r(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of removing the rear item from \fIQ1\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ1\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+get(Q :: queue(Item)) -> Item
+.br
+.fi
+.br
+.RS
+.LP
+Returns \fIItem\fR\& at the front of queue \fIQ\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+get_r(Q :: queue(Item)) -> Item
+.br
+.fi
+.br
+.RS
+.LP
+Returns \fIItem\fR\& at the rear of queue \fIQ\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+peek(Q :: queue(Item)) -> empty | {value, Item}
+.br
+.fi
+.br
+.RS
+.LP
+Returns tuple \fI{value, Item}\fR\&, where \fIItem\fR\& is the front item of \fIQ\fR\&, or \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+peek_r(Q :: queue(Item)) -> empty | {value, Item}
+.br
+.fi
+.br
+.RS
+.LP
+Returns tuple \fI{value, Item}\fR\&, where \fIItem\fR\& is the rear item of \fIQ\fR\&, or \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.SH "OKASAKI API"
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+cons(Item, Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Inserts \fIItem\fR\& at the head of queue \fIQ1\fR\&\&. Returns the new queue \fIQ2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+daeh(Q :: queue(Item)) -> Item
+.br
+.fi
+.br
+.RS
+.LP
+Returns the tail item of queue \fIQ\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+head(Q :: queue(Item)) -> Item
+.br
+.fi
+.br
+.RS
+.LP
+Returns \fIItem\fR\& from the head of queue \fIQ\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+init(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of removing the tail item from \fIQ1\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ1\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+lait(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of removing the tail item from \fIQ1\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ1\fR\& is empty\&.
+.LP
+The name \fIlait/1\fR\& is a misspelling - do not use it anymore\&.
+.RE
+.LP
+.nf
+
+.B
+last(Q :: queue(Item)) -> Item
+.br
+.fi
+.br
+.RS
+.LP
+Returns the tail item of queue \fIQ\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+liat(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of removing the tail item from \fIQ1\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ1\fR\& is empty\&.
+.RE
+.LP
+.nf
+
+.B
+snoc(Q1 :: queue(Item), Item) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Inserts \fIItem\fR\& as the tail item of queue \fIQ1\fR\&\&. Returns the new queue \fIQ2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+tail(Q1 :: queue(Item)) -> Q2 :: queue(Item)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a queue \fIQ2\fR\& that is the result of removing the head item from \fIQ1\fR\&\&.
+.LP
+Fails with reason \fIempty\fR\& if \fIQ1\fR\& is empty\&.
+.RE

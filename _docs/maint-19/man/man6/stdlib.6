@@ -1,0 +1,59 @@
+.TH STDLIB 7 "stdlib 3.3" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+STDLIB \- The STDLIB application.
+.SH DESCRIPTION
+.LP
+The STDLIB application is mandatory in the sense that the minimal system based on Erlang/OTP consists of Kernel and STDLIB\&. The STDLIB application contains no services\&.
+.SH "CONFIGURATION"
+
+.LP
+The following configuration parameters are defined for the STDLIB application\&. For more information about configuration parameters, see the \fB\fIapp(4)\fR\&\fR\& module in Kernel\&.
+.RS 2
+.TP 2
+.B
+\fIshell_esc = icl | abort\fR\&:
+Can be used to change the behavior of the Erlang shell when \fI^G\fR\& is pressed\&.
+.TP 2
+.B
+\fIrestricted_shell = module()\fR\&:
+Can be used to run the Erlang shell in restricted mode\&.
+.TP 2
+.B
+\fIshell_catch_exception = boolean()\fR\&:
+Can be used to set the exception handling of the evaluator process of Erlang shell\&.
+.TP 2
+.B
+\fIshell_history_length = integer() >= 0\fR\&:
+Can be used to determine how many commands are saved by the Erlang shell\&.
+.TP 2
+.B
+\fIshell_prompt_func = {Mod, Func} | default\fR\&:
+where
+.RS 2
+.TP 2
+*
+\fIMod = atom()\fR\&
+.LP
+.TP 2
+*
+\fIFunc = atom()\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Can be used to set a customized Erlang shell prompt function\&.
+.RE
+.TP 2
+.B
+\fIshell_saved_results = integer() >= 0\fR\&:
+Can be used to determine how many results are saved by the Erlang shell\&.
+.TP 2
+.B
+\fIshell_strings = boolean()\fR\&:
+Can be used to determine how the Erlang shell outputs lists of integers\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIapp(4)\fR\&\fR\&, \fB\fIapplication(3)\fR\&\fR\&, \fBshell(3)\fR\&

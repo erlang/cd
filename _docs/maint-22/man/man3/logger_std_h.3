@@ -1,0 +1,184 @@
+.TH logger_std_h 3 "kernel 6.5.2.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+logger_std_h \- Standard handler for Logger.
+.SH DESCRIPTION
+.LP
+This is the standard handler for Logger\&. Multiple instances of this handler can be added to Logger, and each instance prints logs to \fIstandard_io\fR\&, \fIstandard_error\fR\&, or to file\&.
+.LP
+The handler has an overload protection mechanism that keeps the handler process and the Kernel application alive during high loads of log events\&. How overload protection works, and how to configure it, is described in the \fB\fIUser\&'s Guide\fR\&\fR\&\&.
+.LP
+To add a new instance of the standard handler, use \fB\fIlogger:add_handler/3\fR\&\fR\&\&. The handler configuration argument is a map which can contain general configuration parameters, as documented in the \fB\fIUser\&'s Guide\fR\&\fR\&, and handler specific parameters\&. The specific data is stored in a sub map with the key \fIconfig\fR\&, and can contain the following parameters:
+.RS 2
+.TP 2
+.B
+\fItype = standard_io | standard_error | file\fR\&:
+Specifies the log destination\&.
+.RS 2
+.LP
+The value is set when the handler is added, and it cannot be changed in runtime\&.
+.RE
+.RS 2
+.LP
+Defaults to \fIstandard_io\fR\&, unless parameter \fB\fIfile\fR\&\fR\& is given, in which case it defaults to \fIfile\fR\&\&.
+.RE
+.TP 2
+.B
+\fIfile = \fR\&\fB\fIfile:filename()\fR\&\fR\&:
+This specifies the name of the log file when the handler is of type \fIfile\fR\&\&.
+.RS 2
+.LP
+The value is set when the handler is added, and it cannot be changed in runtime\&.
+.RE
+.RS 2
+.LP
+Defaults to the same name as the handler identity, in the current directory\&.
+.RE
+.TP 2
+.B
+\fImodes = [\fR\&\fB\fIfile:mode()\fR\&\fR\&\fI]\fR\&:
+This specifies the file modes to use when opening the log file, see \fB\fIfile:open/2\fR\&\fR\&\&. If \fImodes\fR\& are not specified, the default list used is \fI[raw,append,delayed_write]\fR\&\&. If \fImodes\fR\& are specified, the list replaces the default modes list with the following adjustments:
+.RS 2
+.TP 2
+*
+ If \fIraw\fR\& is not found in the list, it is added\&. 
+.LP
+.TP 2
+*
+ If none of \fIwrite\fR\&, \fIappend\fR\& or \fIexclusive\fR\& is found in the list, \fIappend\fR\& is added\&.
+.LP
+.TP 2
+*
+If none of \fIdelayed_write\fR\& or \fI{delayed_write,Size,Delay}\fR\& is found in the list, \fIdelayed_write\fR\& is added\&.
+.LP
+.RE
+
+.RS 2
+.LP
+Log files are always UTF-8 encoded\&. The encoding cannot be changed by setting the mode \fI{encoding,Encoding}\fR\&\&.
+.RE
+.RS 2
+.LP
+The value is set when the handler is added, and it cannot be changed in runtime\&.
+.RE
+.RS 2
+.LP
+Defaults to \fI[raw,append,delayed_write]\fR\&\&.
+.RE
+.TP 2
+.B
+\fImax_no_bytes = pos_integer() | infinity\fR\&:
+This parameter specifies if the log file should be rotated or not\&. The value \fIinfinity\fR\& means the log file will grow indefinitely, while an integer value specifies at which file size (bytes) the file is rotated\&.
+.RS 2
+.LP
+Defaults to \fIinfinity\fR\&\&.
+.RE
+.TP 2
+.B
+\fImax_no_files = non_neg_integer()\fR\&:
+This parameter specifies the number of rotated log file archives to keep\&. This has meaning only if \fB\fImax_no_bytes\fR\&\fR\& is set to an integer value\&.
+.RS 2
+.LP
+The log archives are named \fIFileName\&.0\fR\&, \fIFileName\&.1\fR\&, \&.\&.\&. \fIFileName\&.N\fR\&, where \fIFileName\fR\& is the name of the current log file\&. \fIFileName\&.0\fR\& is the newest of the archives\&. The maximum value for \fIN\fR\& is the value of \fImax_no_files\fR\& minus 1\&.
+.RE
+.RS 2
+.LP
+Notice that setting this value to \fI0\fR\& does not turn of rotation\&. It only specifies that no archives are kept\&.
+.RE
+.RS 2
+.LP
+Defaults to \fI0\fR\&\&.
+.RE
+.TP 2
+.B
+\fIcompress_on_rotate = boolean()\fR\&:
+This parameter specifies if the rotated log file archives shall be compressed or not\&. If set to \fItrue\fR\&, all archives are compressed with \fIgzip\fR\&, and renamed to \fIFileName\&.N\&.gz\fR\&
+.RS 2
+.LP
+\fIcompress_on_rotate\fR\& has no meaning if \fB\fImax_no_bytes\fR\&\fR\& has the value \fIinfinity\fR\&\&.
+.RE
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIfile_check = non_neg_integer()\fR\&:
+When \fIlogger_std_h\fR\& logs to a file, it reads the file information of the log file prior to each write operation\&. This is to make sure the file still exists and has the same inode as when it was opened\&. This implies some performance loss, but ensures that no log events are lost in the case when the file has been removed or renamed by an external actor\&.
+.RS 2
+.LP
+In order to allow minimizing the performance loss, the \fIfile_check\fR\& parameter can be set to a positive integer value, \fIN\fR\&\&. The handler will then skip reading the file information prior to writing, as long as no more than \fIN\fR\& milliseconds have passed since it was last read\&.
+.RE
+.RS 2
+.LP
+Notice that the risk of loosing log events grows when the \fIfile_check\fR\& value grows\&.
+.RE
+.RS 2
+.LP
+Defaults to 0\&.
+.RE
+.TP 2
+.B
+\fIfilesync_repeat_interval = pos_integer() | no_repeat\fR\&:
+This value, in milliseconds, specifies how often the handler does a file sync operation to write buffered data to disk\&. The handler attempts the operation repeatedly, but only performs a new sync if something has actually been logged\&.
+.RS 2
+.LP
+If \fIno_repeat\fR\& is set as value, the repeated file sync operation is disabled, and it is the operating system settings that determine how quickly or slowly data is written to disk\&. The user can also call the \fB\fIfilesync/1\fR\&\fR\& function to perform a file sync\&.
+.RE
+.RS 2
+.LP
+Defaults to \fI5000\fR\& milliseconds\&.
+.RE
+.RE
+.LP
+Other configuration parameters exist, to be used for customizing the overload protection behaviour\&. The same parameters are used both in the standard handler and the disk_log handler, and are documented in the \fB\fIUser\&'s Guide\fR\&\fR\&\&.
+.LP
+Notice that if changing the configuration of the handler in runtime, the \fItype\fR\&, \fIfile\fR\&, or \fImodes\fR\& parameters must not be modified\&.
+.LP
+Example of adding a standard handler:
+.LP
+.nf
+
+logger:add_handler(my_standard_h, logger_std_h,
+                   #{config => #{file => "./system_info.log",
+                                 filesync_repeat_interval => 1000}}).
+    
+.fi
+.LP
+To set the default handler, that starts initially with the Kernel application, to log to file instead of \fIstandard_io\fR\&, change the Kernel default logger configuration\&. Example:
+.LP
+.nf
+
+erl -kernel logger '[{handler,default,logger_std_h,
+                      #{config => #{file => "./log.log"}}}]'
+    
+.fi
+.LP
+An example of how to replace the standard handler with a disk_log handler at startup is found in the \fB\fIlogger_disk_log_h\fR\&\fR\& manual\&.
+.SH EXPORTS
+.LP
+.nf
+
+.B
+filesync(Name) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom()
+.br
+Reason = handler_busy | {badarg, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Write buffered data to disk\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIlogger(3)\fR\&\fR\&, \fB\fIlogger_disk_log_h(3)\fR\&\fR\&

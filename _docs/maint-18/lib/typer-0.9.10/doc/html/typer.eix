@@ -1,0 +1,6 @@
+%% 
+%% Search data file for typer 0.9.10
+%% generated June 15, 2018
+%% 
+{"TypEr_app.html", {app, "typer"}, ["TypEr"]}.
+{notused, application, ["typer"]}.

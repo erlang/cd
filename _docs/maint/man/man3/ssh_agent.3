@@ -1,0 +1,207 @@
+.TH ssh_agent 3 "ssh 4.10.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_agent \- Callback module for using an SSH agent instead of the default ssh_file callback.
+.SH DESCRIPTION
+.LP
+This module defines a callback handler for the communication with an SSH Agent and can be used to replace the default callback\&. This allows to issue signing requests to an agent that stores SSH private keys to perform authentication\&.
+.LP
+Ssh_agent implements the ssh_client_key_api, to allow it to be used by setting the option \fIkey_cb\fR\& when starting a client (with for example ssh:connect, ssh:shell )\&.
+.LP
+.nf
+
+      {key_cb, {ssh_agent, []}}
+    
+.fi
+.LP
+The agent communication is established through a UNIX domain socket\&. By default, the socket path will be fetched from the \fISSH_AUTH_SOCK\fR\& enviroment variable, which is the default socket path in the agent implementation of OpenSSH\&.
+.LP
+In order to set a different socket path the \fIsocket_path\fR\& option can be set\&.
+.LP
+.nf
+
+      {key_cb, {ssh_agent, [{socket_path, SocketPath}]}}
+    
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The functions are \fICallbacks\fR\&  for the SSH app\&. They are not intended to be called from the user\&'s code!
+
+.SH DATA TYPES
+.SS Options for the ssh_agent callback module
+.nf
+
+\fBsocket_path_option()\fR\& = {socket_path, string()}
+.br
+.fi
+.RS
+.LP
+Sets the socket path for the communication with the agent\&.
+.RE
+.nf
+
+\fBtimeout_option()\fR\& = {timeout, integer()}
+.br
+.fi
+.RS
+.LP
+Sets the time-out in milliseconds when communicating with the agent via the socket\&. The default value is \fI1000\fR\&\&.
+.RE
+.nf
+
+\fBcall_ssh_file_option()\fR\& = {call_ssh_file, atom()}
+.br
+.fi
+.RS
+.LP
+The module which the \fIadd_host_key\fR\& and \fIis_host_key\fR\& callbacks are delegated to\&. Defaults to the ssh_file module\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+add_host_key(Host :: string(),
+.B
+             PublicKey :: public_key:public_key(),
+.B
+             Options) ->
+.B
+                ok | {error, Error :: term()}
+.br
+.fi
+.br
+.nf
+
+.B
+add_host_key(Host,
+.B
+             Port :: inet:port_number(),
+.B
+             PublicKey :: public_key:public_key(),
+.B
+             Options) ->
+.B
+                Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = 
+.br
+    inet:ip_address() |
+.br
+    inet:hostname() |
+.br
+    [inet:ip_address() | inet:hostname()]
+.br
+Options = 
+.br
+    ssh_client_key_api:client_key_cb_options(call_ssh_file_option())
+.br
+Result = ok | {error, Error :: term()}
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is delegated to the ssh_file module\&.
+.RE
+.LP
+.nf
+
+.B
+is_host_key(Key :: public_key:public_key(),
+.B
+            Host :: string(),
+.B
+            Algorithm :: ssh:pubkey_alg(),
+.B
+            Options) ->
+.B
+               boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+is_host_key(Key :: public_key:public_key(),
+.B
+            Host,
+.B
+            Port :: inet:port_number(),
+.B
+            Algorithm :: ssh:pubkey_alg(),
+.B
+            Options) ->
+.B
+               boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = 
+.br
+    inet:ip_address() |
+.br
+    inet:hostname() |
+.br
+    [inet:ip_address() | inet:hostname()]
+.br
+Options = 
+.br
+    ssh_client_key_api:client_key_cb_options(call_ssh_file_option())
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is delegated to the ssh_file module\&.
+.RE
+.LP
+.nf
+
+.B
+user_key(Algorithm :: ssh:pubkey_alg(), Options) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = 
+.br
+    {ok, public_key:private_key()} |
+.br
+    {ok, {ssh2_pubkey, PubKeyBlob :: binary()}} |
+.br
+    {error, string()}
+.br
+Options = 
+.br
+    ssh_client_key_api:client_key_cb_options(socket_path_option() |
+.br
+                                             timeout_option())
+.br
+.RE
+.RE
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in ssh_client_key_api, Module:user_key/2\&.
+.RE

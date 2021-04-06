@@ -1,0 +1,399 @@
+.TH kernel 7 "kernel 5.2.0.1" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+kernel \- The Kernel application.
+.SH DESCRIPTION
+.LP
+The Kernel application has all the code necessary to run the Erlang runtime system: file servers, code servers, and so on\&.
+.LP
+The Kernel application is the first application started\&. It is mandatory in the sense that the minimal system based on Erlang/OTP consists of Kernel and STDLIB\&. Kernel contains the following functional areas:
+.RS 2
+.TP 2
+*
+Start, stop, supervision, configuration, and distribution of applications
+.LP
+.TP 2
+*
+Code loading
+.LP
+.TP 2
+*
+Logging
+.LP
+.TP 2
+*
+Error logging
+.LP
+.TP 2
+*
+Global name service
+.LP
+.TP 2
+*
+Supervision of Erlang/OTP
+.LP
+.TP 2
+*
+Communication with sockets
+.LP
+.TP 2
+*
+Operating system interface
+.LP
+.RE
+
+.SH "ERROR LOGGER EVENT HANDLERS"
+
+.LP
+Two standard error logger event handlers are defined in the Kernel application\&. These are described in \fB\fIerror_logger(3)\fR\&\fR\&\&.
+.SH "CONFIGURATION"
+
+.LP
+The following configuration parameters are defined for the Kernel application\&. For more information about configuration parameters, see file \fB\fIapp(4)\fR\&\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIbrowser_cmd = string() | {M,F,A}\fR\&:
+When pressing the \fIHelp\fR\& button in a tool such as Debugger, the help text (an HTML file \fIFile\fR\&) is by default displayed in a Netscape browser, which is required to be operational\&. This parameter can be used to change the command for how to display the help text if another browser than Netscape is preferred, or if another platform than Unix or Windows is used\&.
+.RS 2
+.LP
+If set to a string \fICommand\fR\&, the command \fI"Command File"\fR\& is evaluated using \fB\fIos:cmd/1\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+If set to a module-function-args tuple, \fI{M,F,A}\fR\&, the call \fIapply(M,F,[File|A])\fR\& is evaluated\&.
+.RE
+.TP 2
+.B
+\fIdistributed = [Distrib]\fR\&:
+Specifies which applications that are distributed and on which nodes they are allowed to execute\&. In this parameter:
+.RS 2
+.TP 2
+*
+\fIDistrib = {App,Nodes} | {App,Time,Nodes}\fR\&
+.LP
+.TP 2
+*
+\fIApp = atom()\fR\&
+.LP
+.TP 2
+*
+\fITime = integer()>0\fR\&
+.LP
+.TP 2
+*
+\fINodes = [node() | {node(),\&.\&.\&.,node()}]\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+The parameter is described in \fB\fIapplication:load/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIdist_auto_connect = Value\fR\&:
+Specifies when nodes are automatically connected\&. If this parameter is not specified, a node is always automatically connected, for example, when a message is to be sent to that node\&. \fIValue\fR\& is one of:
+.RS 2
+.TP 2
+.B
+\fInever\fR\&:
+Connections are never automatically established, they must be explicitly connected\&. See \fB\fInet_kernel(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fIonce\fR\&:
+Connections are established automatically, but only once per node\&. If a node goes down, it must thereafter be explicitly connected\&. See \fB\fInet_kernel(3)\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIpermissions = [Perm]\fR\&:
+Specifies the default permission for applications when they are started\&. In this parameter:
+.RS 2
+.TP 2
+*
+\fIPerm = {ApplName,Bool}\fR\&
+.LP
+.TP 2
+*
+\fIApplName = atom()\fR\&
+.LP
+.TP 2
+*
+\fIBool = boolean()\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Permissions are described in \fB\fIapplication:permit/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIerror_logger = Value\fR\&:
+\fIValue\fR\& is one of:
+.RS 2
+.TP 2
+.B
+\fItty\fR\&:
+Installs the standard event handler, which prints error reports to \fIstdio\fR\&\&. This is the default option\&.
+.TP 2
+.B
+\fI{file, FileName}\fR\&:
+Installs the standard event handler, which prints error reports to file \fIFileName\fR\&, where \fIFileName\fR\& is a string\&.
+.TP 2
+.B
+\fIfalse\fR\&:
+No standard event handler is installed, but the initial, primitive event handler is kept, printing raw event messages to \fItty\fR\&\&.
+.TP 2
+.B
+\fIsilent\fR\&:
+Error logging is turned off\&.
+.RE
+.TP 2
+.B
+\fIerror_logger_format_depth = Depth\fR\&:
+
+.RS 2
+.LP
+Can be used to limit the size of the formatted output from the error logger event handlers\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This configuration parameter was introduced in OTP 18\&.1 and is experimental\&. Based on user feedback, it can be changed or improved in future releases, for example, to gain better control over how to limit the size of the formatted output\&. We have no plans to remove this new feature entirely, unless it turns out to be useless\&.
+
+.RS 2
+.LP
+\fIDepth\fR\& is a positive integer representing the maximum depth to which terms are printed by the error logger event handlers included in OTP\&. This configuration parameter is used by the two event handlers defined by the Kernel application and the two event handlers in the SASL application\&. (If you have implemented your own error handlers, this configuration parameter has no effect on them\&.)
+.RE
+.RS 2
+.LP
+\fIDepth\fR\& is used as follows: Format strings passed to the event handlers are rewritten\&. The format controls \fI~p\fR\& and \fI~w\fR\& are replaced with \fI~P\fR\& and \fI~W\fR\&, respectively, and \fIDepth\fR\& is used as the depth parameter\&. For details, see \fB\fIio:format/2\fR\&\fR\& in STDLIB\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+A reasonable starting value for \fIDepth\fR\& is \fI30\fR\&\&. We recommend to test crashing various processes in your application, examine the logs from the crashes, and then increase or decrease the value\&.
+
+.TP 2
+.B
+\fIglobal_groups = [GroupTuple]\fR\&:
+
+.RS 2
+.LP
+Defines global groups, see \fB\fIglobal_group(3)\fR\&\fR\&\&. In this parameter:
+.RE
+.RS 2
+.TP 2
+*
+\fIGroupTuple = {GroupName, [Node]} | {GroupName, PublishType, [Node]}\fR\&
+.LP
+.TP 2
+*
+\fIGroupName = atom()\fR\&
+.LP
+.TP 2
+*
+\fIPublishType = normal | hidden\fR\&
+.LP
+.TP 2
+*
+\fINode = node()\fR\&
+.LP
+.RE
+
+.TP 2
+.B
+\fIinet_default_connect_options = [{Opt, Val}]\fR\&:
+Specifies default options for \fIconnect\fR\& sockets, see \fB\fIinet(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fIinet_default_listen_options = [{Opt, Val}]\fR\&:
+Specifies default options for \fIlisten\fR\& (and \fIaccept\fR\&) sockets, see \fB\fIinet(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI{inet_dist_use_interface, ip_address()}\fR\&:
+If the host of an Erlang node has many network interfaces, this parameter specifies which one to listen on\&. For the type definition of \fIip_address()\fR\&, see \fB\fIinet(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI{inet_dist_listen_min, First}\fR\& and \fI{inet_dist_listen_max, Last}\fR\&:
+Defines the \fIFirst\&.\&.Last\fR\& port range for the listener socket of a distributed Erlang node\&.
+.TP 2
+.B
+\fI{inet_dist_listen_options, Opts}\fR\&:
+
+.RS 2
+.LP
+Defines a list of extra socket options to be used when opening the listening socket for a distributed Erlang node\&. See \fB\fIgen_tcp:listen/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fI{inet_dist_connect_options, Opts}\fR\&:
+
+.RS 2
+.LP
+Defines a list of extra socket options to be used when connecting to other distributed Erlang nodes\&. See \fB\fIgen_tcp:connect/4\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIinet_parse_error_log = silent\fR\&:
+If set, no \fIerror_logger\fR\& messages are generated when erroneous lines are found and skipped in the various Inet configuration files\&.
+.TP 2
+.B
+\fIinetrc = Filename\fR\&:
+The name (string) of an Inet user configuration file\&. For details, see section \fB\fIInet Configuration\fR\&\fR\& in the ERTS User\&'s Guide\&.
+.TP 2
+.B
+\fInet_setuptime = SetupTime\fR\&:
+
+.RS 2
+.LP
+\fISetupTime\fR\& must be a positive integer or floating point number, and is interpreted as the maximum allowed time for each network operation during connection setup to another Erlang node\&. The maximum allowed value is \fI120\fR\&\&. If higher values are specified, \fI120\fR\& is used\&. Default is 7 seconds if the variable is not specified, or if the value is incorrect (for example, not a number)\&.
+.RE
+.RS 2
+.LP
+Notice that this value does not limit the total connection setup time, but rather each individual network operation during the connection setup and handshake\&.
+.RE
+.TP 2
+.B
+\fInet_ticktime = TickTime\fR\&:
+
+.RS 2
+.LP
+Specifies the \fInet_kernel\fR\& tick time\&. \fITickTime\fR\& is specified in seconds\&. Once every \fITickTime/4\fR\& second, all connected nodes are ticked (if anything else is written to a node)\&. If nothing is received from another node within the last four tick times, that node is considered to be down\&. This ensures that nodes that are not responding, for reasons such as hardware errors, are considered to be down\&.
+.RE
+.RS 2
+.LP
+The time \fIT\fR\&, in which a node that is not responding is detected, is calculated as \fIMinT < T < MaxT\fR\&, where:
+.RE
+.LP
+.nf
+
+MinT = TickTime - TickTime / 4
+MaxT = TickTime + TickTime / 4
+.fi
+.RS 2
+.LP
+\fITickTime\fR\& defaults to \fI60\fR\& (seconds)\&. Thus, \fI45 < T < 75\fR\& seconds\&.
+.RE
+.RS 2
+.LP
+Notice that \fIall\fR\& communicating nodes are to have the \fIsame\fR\& \fITickTime\fR\& value specified\&.
+.RE
+.RS 2
+.LP
+Normally, a terminating node is detected immediately\&.
+.RE
+.TP 2
+.B
+\fIshutdown_timeout = integer() | infinity\fR\&:
+Specifies the time \fIapplication_controller\fR\& waits for an application to terminate during node shutdown\&. If the timer expires, \fIapplication_controller\fR\& brutally kills \fIapplication_master\fR\& of the hanging application\&. If this parameter is undefined, it defaults to \fIinfinity\fR\&\&.
+.TP 2
+.B
+\fIsync_nodes_mandatory = [NodeName]\fR\&:
+Specifies which other nodes that \fImust\fR\& be alive for this node to start properly\&. If some node in the list does not start within the specified time, this node does not start either\&. If this parameter is undefined, it defaults to \fI[]\fR\&\&.
+.TP 2
+.B
+\fIsync_nodes_optional = [NodeName]\fR\&:
+Specifies which other nodes that \fIcan\fR\& be alive for this node to start properly\&. If some node in this list does not start within the specified time, this node starts anyway\&. If this parameter is undefined, it defaults to the empty list\&.
+.TP 2
+.B
+\fIsync_nodes_timeout = integer() | infinity\fR\&:
+Specifies the time (in milliseconds) that this node waits for the mandatory and optional nodes to start\&. If this parameter is undefined, no node synchronization is performed\&. This option ensures that \fIglobal\fR\& is synchronized\&.
+.TP 2
+.B
+\fIstart_dist_ac = true | false\fR\&:
+Starts the \fIdist_ac\fR\& server if the parameter is \fItrue\fR\&\&. This parameter is to be set to \fItrue\fR\& for systems using distributed applications\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&. If this parameter is undefined, the server is started if parameter \fIdistributed\fR\& is set\&.
+.RE
+.TP 2
+.B
+\fIstart_boot_server = true | false\fR\&:
+Starts the \fIboot_server\fR\& if the parameter is \fItrue\fR\& (see \fB\fIerl_boot_server(3)\fR\&\fR\&)\&. This parameter is to be set to \fItrue\fR\& in an embedded system using this service\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIboot_server_slaves = [SlaveIP]\fR\&:
+If configuration parameter \fIstart_boot_server\fR\& is \fItrue\fR\&, this parameter can be used to initialize \fIboot_server\fR\& with a list of slave IP addresses:
+.RS 2
+.LP
+\fISlaveIP = string() | atom | {integer(),integer(),integer(),integer()}\fR\&,
+.RE
+.RS 2
+.LP
+where \fI0 <= integer() <=255\fR\&\&.
+.RE
+.RS 2
+.LP
+Examples of \fISlaveIP\fR\& in atom, string, and tuple form:
+.RE
+.RS 2
+.LP
+\fI\&'150\&.236\&.16\&.70\&', "150,236,16,70", {150,236,16,70}\fR\&\&.
+.RE
+.RS 2
+.LP
+Defaults to \fI[]\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstart_disk_log = true | false\fR\&:
+Starts the \fIdisk_log_server\fR\& if the parameter is \fItrue\fR\& (see \fB\fIdisk_log(3)\fR\&\fR\&)\&. This parameter is to be set to \fItrue\fR\& in an embedded system using this service\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstart_pg2 = true | false\fR\&:
+
+.RS 2
+.LP
+Starts the \fIpg2\fR\& server (see \fB\fIpg2(3)\fR\&\fR\&) if the parameter is \fItrue\fR\&\&. This parameter is to be set to \fItrue\fR\& in an embedded system that uses this service\&.
+.RE
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstart_timer = true | false\fR\&:
+Starts the \fItimer_server\fR\& if the parameter is \fItrue\fR\& (see \fB\fItimer(3)\fR\&\fR\&)\&. This parameter is to be set to \fItrue\fR\& in an embedded system using this service\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIshutdown_func = {Mod, Func}\fR\&:
+Where:
+.RS 2
+.TP 2
+*
+\fIMod = atom()\fR\&
+.LP
+.TP 2
+*
+\fIFunc = atom()\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Sets a function that \fIapplication_controller\fR\& calls when it starts to terminate\&. The function is called as \fIMod:Func(Reason)\fR\&, where \fIReason\fR\& is the terminate reason for \fIapplication_controller\fR\&, and it must return as soon as possible for \fIapplication_controller\fR\& to terminate properly\&.
+.RE
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIapp(4)\fR\&\fR\&, \fB\fIapplication(3)\fR\&\fR\&, \fB\fIcode(3)\fR\&\fR\&, \fB\fIdisk_log(3)\fR\&\fR\&, \fB\fIerl_boot_server(3)\fR\&\fR\&, \fB\fIerl_ddll(3)\fR\&\fR\&, \fB\fIerror_logger(3)\fR\&\fR\&, \fB\fIfile(3)\fR\&\fR\&, \fB\fIglobal(3)\fR\&\fR\&, \fB\fIglobal_group(3)\fR\&\fR\&, \fB\fIheart(3)\fR\&\fR\&, \fB\fIinet(3)\fR\&\fR\&, \fB\fInet_kernel(3)\fR\&\fR\&, \fB\fIos(3)\fR\&\fR\&, \fB\fIpg2(3)\fR\&\fR\&, \fB\fIrpc(3)\fR\&\fR\&, \fB\fIseq_trace(3)\fR\&\fR\&, \fB\fIuser(3)\fR\&\fR\&, \fB\fItimer(3)\fR\&\fR\&

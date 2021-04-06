@@ -1,0 +1,546 @@
+.TH c 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+c \- Command interface module.
+.SH DESCRIPTION
+.LP
+This module enables users to enter the short form of some commonly used commands\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+These functions are intended for interactive use in the Erlang shell only\&. The module prefix can be omitted\&.
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+bt(Pid) -> ok | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Pid = pid()
+.br
+.RE
+.RE
+.RS
+.LP
+Stack backtrace for a process\&. Equivalent to \fIerlang:process_display(Pid, backtrace)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+c(File) -> {ok, Module} | error
+.br
+.fi
+.br
+.nf
+
+.B
+c(File, Options) -> {ok, Module} | error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+File = \fBfile:name()\fR\&
+.br
+Options = [\fBcompile:option()\fR\&]
+.br
+Module = module()
+.br
+.RE
+.RE
+.RS
+.LP
+Compiles and then purges and loads the code for a file\&. \fIOptions\fR\& defaults to \fI[]\fR\&\&. Compilation is equivalent to:
+.LP
+.nf
+
+compile:file(File, Options ++ [report_errors, report_warnings])
+.fi
+.LP
+Notice that purging the code means that any processes lingering in old code for the module are killed without warning\&. For more information, see \fIcode/3\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+cd(Dir) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Dir = \fBfile:name()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Changes working directory to \fIDir\fR\&, which can be a relative name, and then prints the name of the new working directory\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+2> cd("\&.\&./erlang")\&.
+/home/ron/erlang
+.fi
+.RE
+.LP
+.nf
+
+.B
+flush() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Flushes any messages sent to the shell\&.
+.RE
+.LP
+.nf
+
+.B
+help() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Displays help information: all valid shell internal commands, and commands in this module\&.
+.RE
+.LP
+.nf
+
+.B
+i() -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+ni() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+\fIi/0\fR\& displays system information, listing information about all processes\&. \fIni/0\fR\& does the same, but for all nodes the network\&.
+.RE
+.LP
+.nf
+
+.B
+i(X, Y, Z) -> [{atom(), term()}]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+X = Y = Z = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Displays information about a process, Equivalent to \fIprocess_info(pid(X, Y, Z))\fR\&, but location transparent\&.
+.RE
+.LP
+.nf
+
+.B
+l(Module) -> code:load_ret()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Module = module()
+.br
+.RE
+.RE
+.RS
+.LP
+Purges and loads, or reloads, a module by calling \fIcode:purge(Module)\fR\& followed by \fIcode:load_file(Module)\fR\&\&.
+.LP
+Notice that purging the code means that any processes lingering in old code for the module are killed without warning\&. For more information, see \fIcode/3\fR\&\&.
+.RE
+.LP
+.B
+lc(Files) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Files = [File]
+.br
+File
+.br
+.RE
+.RE
+.RS
+.LP
+Compiles a list of files by calling \fIcompile:file(File, [report_errors, report_warnings])\fR\& for each \fIFile\fR\& in \fIFiles\fR\&\&.
+.LP
+For information about \fIFile\fR\&, see \fB\fIfile:filename()\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+ls() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Lists files in the current directory\&.
+.RE
+.LP
+.nf
+
+.B
+ls(Dir) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Dir = \fBfile:name()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Lists files in directory \fIDir\fR\& or, if \fIDir\fR\& is a file, only lists it\&.
+.RE
+.LP
+.nf
+
+.B
+m() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Displays information about the loaded modules, including the files from which they have been loaded\&.
+.RE
+.LP
+.nf
+
+.B
+m(Module) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Module = module()
+.br
+.RE
+.RE
+.RS
+.LP
+Displays information about \fIModule\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+memory() -> [{Type, Size}]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = atom()
+.br
+Size = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Memory allocation information\&. Equivalent to \fB\fIerlang:memory/0\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+memory(Type) -> Size
+.br
+.fi
+.br
+.nf
+
+.B
+memory(Types) -> [{Type, Size}]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Types = [Type]
+.br
+Type = atom()
+.br
+Size = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Memory allocation information\&. Equivalent to \fB\fIerlang:memory/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+nc(File) -> {ok, Module} | error
+.br
+.fi
+.br
+.nf
+
+.B
+nc(File, Options) -> {ok, Module} | error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+File = \fBfile:name()\fR\&
+.br
+Options = [Option] | Option
+.br
+Option = \fBcompile:option()\fR\&
+.br
+Module = module()
+.br
+.RE
+.RE
+.RS
+.LP
+Compiles and then loads the code for a file on all nodes\&. \fIOptions\fR\& defaults to \fI[]\fR\&\&. Compilation is equivalent to:
+.LP
+.nf
+
+compile:file(File, Options ++ [report_errors, report_warnings])
+.fi
+.RE
+.LP
+.nf
+
+.B
+nl(Module) -> abcast | error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Module = module()
+.br
+.RE
+.RE
+.RS
+.LP
+Loads \fIModule\fR\& on all nodes\&.
+.RE
+.LP
+.nf
+
+.B
+pid(X, Y, Z) -> pid()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+X = Y = Z = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Converts \fIX\fR\&, \fIY\fR\&, \fIZ\fR\& to pid \fI<X\&.Y\&.Z>\fR\&\&. This function is only to be used when debugging\&.
+.RE
+.LP
+.nf
+
+.B
+pwd() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Prints the name of the working directory\&.
+.RE
+.LP
+.nf
+
+.B
+q() -> no_return()
+.br
+.fi
+.br
+.RS
+.LP
+This function is shorthand for \fIinit:stop()\fR\&, that is, it causes the node to stop in a controlled fashion\&.
+.RE
+.LP
+.nf
+
+.B
+regs() -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+nregs() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+\fIregs/0\fR\& displays information about all registered processes\&. \fInregs/0\fR\& does the same, but for all nodes in the network\&.
+.RE
+.LP
+.nf
+
+.B
+uptime() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Prints the node uptime (as specified by \fIerlang:statistics(wall_clock)\fR\&) in human-readable form\&.
+.RE
+.LP
+.B
+xm(ModSpec) -> void()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ModSpec = Module | Filename
+.br
+ Module = atom()
+.br
+ Filename = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Finds undefined functions, unused functions, and calls to deprecated functions in a module by calling \fIxref:m/1\fR\&\&.
+.RE
+.LP
+.B
+y(File) -> YeccRet
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+File = name()
+.br
+YeccRet
+.br
+.RE
+.RE
+.RS
+.LP
+Generates an LALR-1 parser\&. Equivalent to:
+.LP
+.nf
+
+yecc:file(File)
+.fi
+.LP
+For information about \fIFile = name()\fR\&, see \fB\fIfilename(3)\fR\&\fR\&\&. For information about \fIYeccRet\fR\&, see \fB\fIyecc:file/2\fR\&\fR\&\&.
+.RE
+.LP
+.B
+y(File, Options) -> YeccRet
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+File = name()
+.br
+Options, YeccRet
+.br
+.RE
+.RE
+.RS
+.LP
+Generates an LALR-1 parser\&. Equivalent to:
+.LP
+.nf
+
+yecc:file(File, Options)
+.fi
+.LP
+For information about \fIFile = name()\fR\&, see \fB\fIfilename(3)\fR\&\fR\&\&. For information about \fIOptions\fR\& and \fIYeccRet\fR\&, see \fB\fIyecc:file/2\fR\&\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIfilename(3)\fR\&\fR\&, \fB\fIcompile(3)\fR\&\fR\&, \fB\fIerlang(3)\fR\&\fR\&, \fB\fIyecc(3)\fR\&\fR\&, \fB\fIxref(3)\fR\&\fR\&

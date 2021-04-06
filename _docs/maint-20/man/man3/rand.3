@@ -1,0 +1,522 @@
+.TH rand 3 "stdlib 3.4.5" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+rand \- Pseudo random number generation.
+.SH DESCRIPTION
+.LP
+This module provides a pseudo random number generator\&. The module contains a number of algorithms\&. The uniform distribution algorithms use the  xoroshiro116+ and xorshift1024* algorithms by Sebastiano Vigna\&.  The normal distribution algorithm uses the  Ziggurat Method by Marsaglia and Tsang  on top of the uniform distribution algorithm\&.
+.LP
+For some algorithms, jump functions are provided for generating non-overlapping sequences for parallel computations\&. The jump functions perform calculations equivalent to perform a large number of repeated calls for calculating new states\&.
+.LP
+The following algorithms are provided:
+.RS 2
+.TP 2
+.B
+\fIexrop\fR\&:
+Xoroshiro116+, 58 bits precision and period of 2^116-1
+.RS 2
+.LP
+Jump function: equivalent to 2^64 calls
+.RE
+.TP 2
+.B
+\fIexs1024s\fR\&:
+Xorshift1024*, 64 bits precision and a period of 2^1024-1
+.RS 2
+.LP
+Jump function: equivalent to 2^512 calls
+.RE
+.TP 2
+.B
+\fIexsp\fR\&:
+Xorshift116+, 58 bits precision and period of 2^116-1
+.RS 2
+.LP
+Jump function: equivalent to 2^64 calls
+.RE
+.RS 2
+.LP
+This is a corrected version of the previous default algorithm, that now has been superseded by Xoroshiro116+ (\fIexrop\fR\&)\&. Since there is no native 58 bit rotate instruction this algorithm executes a little (say < 15%) faster than \fIexrop\fR\&\&. See the algorithms\&' homepage\&.
+.RE
+.RE
+.LP
+The default algorithm is \fIexrop\fR\& (Xoroshiro116+)\&. If a specific algorithm is required, ensure to always use \fB\fIseed/1\fR\&\fR\& to initialize the state\&.
+.LP
+Undocumented (old) algorithms are deprecated but still implemented so old code relying on them will produce the same pseudo random sequences as before\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+There were a number of problems in the implementation of the now undocumented algorithms, which is why they are deprecated\&. The new algorithms are a bit slower but do not have these problems:
+.LP
+Uniform integer ranges had a skew in the probability distribution that was not noticable for small ranges but for large ranges less than the generator\&'s precision the probability to produce a low number could be twice the probability for a high\&.
+.LP
+Uniform integer ranges larger than or equal to the generator\&'s precision used a floating point fallback that only calculated with 52 bits which is smaller than the requested range and therefore were not all numbers in the requested range even possible to produce\&.
+.LP
+Uniform floats had a non-uniform density so small values i\&.e less than 0\&.5 had got smaller intervals decreasing as the generated value approached 0\&.0 although still uniformly distributed for sufficiently large subranges\&. The new algorithms produces uniformly distributed floats on the form N * 2\&.0^(-53) hence equally spaced\&.
+
+.LP
+Every time a random number is requested, a state is used to calculate it and a new state is produced\&. The state can either be implicit or be an explicit argument and return value\&.
+.LP
+The functions with implicit state use the process dictionary variable \fIrand_seed\fR\& to remember the current state\&.
+.LP
+If a process calls \fB\fIuniform/0\fR\&\fR\& or \fB\fIuniform/1\fR\&\fR\& without setting a seed first, \fB\fIseed/1\fR\&\fR\& is called automatically with the default algorithm and creates a non-constant seed\&.
+.LP
+The functions with explicit state never use the process dictionary\&.
+.LP
+\fIExamples:\fR\&
+.LP
+Simple use; creates and seeds the default algorithm with a non-constant seed if not already done:
+.LP
+.nf
+
+R0 = rand:uniform(),
+R1 = rand:uniform(),
+.fi
+.LP
+Use a specified algorithm:
+.LP
+.nf
+
+_ = rand:seed(exs1024s),
+R2 = rand:uniform(),
+.fi
+.LP
+Use a specified algorithm with a constant seed:
+.LP
+.nf
+
+_ = rand:seed(exs1024s, {123, 123534, 345345}),
+R3 = rand:uniform(),
+.fi
+.LP
+Use the functional API with a non-constant seed:
+.LP
+.nf
+
+S0 = rand:seed_s(exrop),
+{R4, S1} = rand:uniform_s(S0),
+.fi
+.LP
+Create a standard normal deviate:
+.LP
+.nf
+
+{SND0, S2} = rand:normal_s(S1),
+.fi
+.LP
+Create a normal deviate with mean -3 and variance 0\&.5:
+.LP
+.nf
+
+{ND0, S3} = rand:normal_s(-3, 0.5, S2),
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The builtin random number generator algorithms are not cryptographically strong\&. If a cryptographically strong random number generator is needed, use something like \fB\fIcrypto:rand_seed/0\fR\&\fR\&\&.
+
+.LP
+For all these generators the lowest bit(s) has got a slightly less random behaviour than all other bits\&. 1 bit for \fIexrop\fR\& (and \fIexsp\fR\&), and 3 bits for \fIexs1024s\fR\&\&. See for example the explanation in the  Xoroshiro128+  generator source code:
+.LP
+.nf
+
+Beside passing BigCrush, this generator passes the PractRand test suite
+up to (and included) 16TB, with the exception of binary rank tests,
+which fail due to the lowest bit being an LFSR; all other bits pass all
+tests. We suggest to use a sign test to extract a random Boolean value.
+.fi
+.LP
+If this is a problem; to generate a boolean use something like this:
+.LP
+.nf
+(rand:uniform(16) > 8)
+.fi
+.LP
+And for a general range, with \fIN = 1\fR\& for \fIexrop\fR\&, and \fIN = 3\fR\& for \fIexs1024s\fR\&:
+.LP
+.nf
+(((rand:uniform(Range bsl N) - 1) bsr N) + 1)
+.fi
+.LP
+The floating point generating functions in this module waste the lowest bits when converting from an integer so they avoid this snag\&.
+.SH DATA TYPES
+.nf
+
+\fBbuiltin_alg()\fR\& = 
+.br
+    exs64 | exsplus | exsp | exs1024 | exs1024s | exrop
+.br
+.fi
+.nf
+
+\fBalg()\fR\& = \fBbuiltin_alg()\fR\& | atom()
+.br
+.fi
+.nf
+
+\fBalg_handler()\fR\& = 
+.br
+    #{type := \fBalg()\fR\&,
+.br
+      bits => integer() >= 0,
+.br
+      weak_low_bits => integer() >= 0,
+.br
+      max => integer() >= 0,
+.br
+      next :=
+.br
+          fun((\fBalg_state()\fR\&) -> {integer() >= 0, \fBalg_state()\fR\&}),
+.br
+      uniform => fun((\fBstate()\fR\&) -> {float(), \fBstate()\fR\&}),
+.br
+      uniform_n =>
+.br
+          fun((integer() >= 1, \fBstate()\fR\&) -> {integer() >= 1, \fBstate()\fR\&}),
+.br
+      jump => fun((\fBstate()\fR\&) -> \fBstate()\fR\&)}
+.br
+.fi
+.nf
+
+\fBalg_state()\fR\& = 
+.br
+    \fBexs64_state()\fR\& |
+.br
+    \fBexsplus_state()\fR\& |
+.br
+    \fBexs1024_state()\fR\& |
+.br
+    \fBexrop_state()\fR\& |
+.br
+    term()
+.br
+.fi
+.nf
+
+\fBstate()\fR\& = {\fBalg_handler()\fR\&, \fBalg_state()\fR\&}
+.br
+.fi
+.RS
+.LP
+Algorithm-dependent state\&.
+.RE
+.nf
+
+\fBexport_state()\fR\& = {\fBalg()\fR\&, \fBalg_state()\fR\&}
+.br
+.fi
+.RS
+.LP
+Algorithm-dependent state that can be printed or saved to file\&.
+.RE
+.nf
+
+\fBexs64_state()\fR\&
+.br
+.fi
+.RS
+.LP
+Algorithm specific internal state
+.RE
+.nf
+
+\fBexsplus_state()\fR\&
+.br
+.fi
+.RS
+.LP
+Algorithm specific internal state
+.RE
+.nf
+
+\fBexs1024_state()\fR\&
+.br
+.fi
+.RS
+.LP
+Algorithm specific internal state
+.RE
+.nf
+
+\fBexrop_state()\fR\&
+.br
+.fi
+.RS
+.LP
+Algorithm specific internal state
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+export_seed() -> undefined | export_state()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the random number state in an external format\&. To be used with \fB\fIseed/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+export_seed_s(State :: state()) -> export_state()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the random number generator state in an external format\&. To be used with \fB\fIseed/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+jump() -> NewState :: state()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the state after performing jump calculation to the state in the process dictionary\&.
+.LP
+This function generates a \fInot_implemented\fR\& error exception when the jump function is not implemented for the algorithm specified in the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+jump(State :: state()) -> NewState :: state()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the state after performing jump calculation to the given state\&.
+.LP
+This function generates a \fInot_implemented\fR\& error exception when the jump function is not implemented for the algorithm specified in the state\&.
+.RE
+.LP
+.nf
+
+.B
+normal() -> float()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a standard normal deviate float (that is, the mean is 0 and the standard deviation is 1) and updates the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+normal(Mean :: number(), Variance :: number()) -> float()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a normal N(Mean, Variance) deviate float and updates the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+normal_s(State :: state()) -> {float(), NewState :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified state, a standard normal deviate float (that is, the mean is 0 and the standard deviation is 1) and a new state\&.
+.RE
+.LP
+.nf
+
+.B
+normal_s(Mean :: number(),
+.B
+         Variance :: number(),
+.B
+         State0 :: state()) ->
+.B
+            {float(), NewS :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified state, a normal N(Mean, Variance) deviate float and a new state\&.
+.RE
+.LP
+.nf
+
+.B
+seed(AlgOrStateOrExpState ::
+.B
+         builtin_alg() | state() | export_state()) ->
+.B
+        state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specifed algorithm and time-dependent data if \fIAlgOrStateOrExpState\fR\& is an algorithm\&.
+.LP
+Otherwise recreates the exported seed in the process dictionary, and returns the state\&. See also \fB\fIexport_seed/0\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+seed(Alg :: builtin_alg(),
+.B
+     Seed :: {integer(), integer(), integer()}) ->
+.B
+        state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specified algorithm and integers in the process dictionary and returns the state\&.
+.RE
+.LP
+.nf
+
+.B
+seed_s(AlgOrStateOrExpState ::
+.B
+           builtin_alg() | state() | export_state()) ->
+.B
+          state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specifed algorithm and time-dependent data if \fIAlgOrStateOrExpState\fR\& is an algorithm\&.
+.LP
+Otherwise recreates the exported seed and returns the state\&. See also \fB\fIexport_seed/0\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+seed_s(Alg :: builtin_alg(),
+.B
+       Seed :: {integer(), integer(), integer()}) ->
+.B
+          state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specified algorithm and integers and returns the state\&.
+.RE
+.LP
+.nf
+
+.B
+uniform() -> X :: float()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a random float uniformly distributed in the value range \fI0\&.0 =< X < 1\&.0\fR\& and updates the state in the process dictionary\&.
+.LP
+The generated numbers are on the form N * 2\&.0^(-53), that is; equally spaced in the interval\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This function may return exactly \fI0\&.0\fR\& which can be fatal for certain applications\&. If that is undesired you can use \fI(1\&.0 - rand:uniform())\fR\& to get the interval \fI0\&.0 < X =< 1\&.0\fR\&\&.
+.LP
+If neither endpoint is desired you can test and re-try like this:
+.LP
+.nf
+
+my_uniform() ->
+    case rand:uniform() of
+        0.0 -> my_uniform();
+	X -> X
+    end
+end.
+.fi
+
+.RE
+.LP
+.nf
+
+.B
+uniform(N :: integer() >= 1) -> X :: integer() >= 1
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified integer \fIN >= 1\fR\&, a random integer uniformly distributed in the value range \fI1 =< X =< N\fR\& and updates the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+uniform_s(State :: state()) -> {X :: float(), NewState :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified state, random float uniformly distributed in the value range \fI0\&.0 =< X < 1\&.0\fR\& and a new state\&.
+.LP
+The generated numbers are on the form N * 2\&.0^(-53), that is; equally spaced in the interval\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This function may return exactly \fI0\&.0\fR\& which can be fatal for certain applications\&. If that is undesired you can use \fI(1\&.0 - rand:uniform(State))\fR\& to get the interval \fI0\&.0 < X =< 1\&.0\fR\&\&.
+.LP
+If neither endpoint is desired you can test and re-try like this:
+.LP
+.nf
+
+my_uniform(State) ->
+    case rand:uniform(State) of
+        {0.0, NewState} -> my_uniform(NewState);
+	Result -> Result
+    end
+end.
+.fi
+
+.RE
+.LP
+.nf
+
+.B
+uniform_s(N :: integer() >= 1, State :: state()) ->
+.B
+             {X :: integer() >= 1, NewState :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified integer \fIN >= 1\fR\& and a state, a random integer uniformly distributed in the value range \fI1 =< X =< N\fR\& and a new state\&.
+.RE

@@ -1,0 +1,51 @@
+.TH ct_testspec 3 "common_test 1.14" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ct_testspec \- Parsing of test specifications for Common Test.
+  
+.SH DESCRIPTION
+.LP
+Parsing of test specifications for \fICommon Test\fR\&\&.
+.LP
+This module exports help functions for parsing of test specifications\&.
+.SH EXPORTS
+.LP
+.B
+get_tests(SpecsIn) -> {ok, [{Specs,Tests}]} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SpecsIn = [string()] | [[string()]]
+.br
+Specs = [string()]
+.br
+Test = [{Node,Run,Skip}]
+.br
+Node = atom()
+.br
+Run = {Dir,Suites,Cases}
+.br
+Skip = {Dir,Suites,Comment} | {Dir,Suites,Cases,Comment}
+.br
+Dir = string()
+.br
+Suites = atom | [atom()] | all
+.br
+Cases = atom | [atom()] | all
+.br
+Comment = string()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Parse the given test specification files and return the tests to run and skip\&.
+.LP
+If \fISpecsIn=[Spec1,Spec2,\&.\&.\&.]\fR\&, separate tests will be created per specification\&. If \fISpecsIn=[[Spec1,Spec2,\&.\&.\&.]]\fR\&, all specifications will be merge into one test\&.
+.LP
+For each test, a \fI{Specs,Tests}\fR\& element is returned, where \fISpecs\fR\& is a list of all included test specifications, and \fITests\fR\& specifies actual tests to run/skip per node\&.
+.RE

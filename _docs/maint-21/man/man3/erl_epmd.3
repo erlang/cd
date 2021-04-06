@@ -1,0 +1,163 @@
+.TH erl_epmd 3 "kernel 6.3.1.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_epmd \- 
+    Erlang interface towards epmd
+  
+.SH DESCRIPTION
+.LP
+This module communicates with the EPMD daemon, see \fBepmd\fR\&\&. To implement your own epmd module please see \fBERTS User\&'s Guide: How to Implement an Alternative Service Discovery for Erlang Distribution\fR\&
+.SH EXPORTS
+.LP
+.nf
+
+.B
+start_link() -> {ok, pid()} | ignore | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+This function is invoked as this module is added as a child of the \fIerl_distribution\fR\& supervisor\&.
+.RE
+.LP
+.nf
+
+.B
+register_node(Name, Port) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+register_node(Name, Port, Driver) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = string()
+.br
+Port = integer() >= 0
+.br
+Driver = inet_tcp | inet6_tcp | inet | inet6
+.br
+Creation = integer() >= 0
+.br
+Result = {ok, Creation} | {error, already_registered} | term()
+.br
+.RE
+.RE
+.RS
+.LP
+Registers the node with \fIepmd\fR\& and tells epmd what port will be used for the current node\&. It returns a creation number\&. This number is incremented on each register to help with identifying if a node is reconnecting to epmd\&.
+.RE
+.LP
+.nf
+
+.B
+port_please(Name, Host) -> {ok, Port, Version} | noport
+.br
+.fi
+.br
+.nf
+
+.B
+port_please(Name, Host, Timeout) -> {ok, Port, Version} | noport
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom() | string()
+.br
+Host = atom() | string() | \fBinet:ip_address()\fR\&
+.br
+Timeout = integer() >= 0 | infinity
+.br
+Port = Version = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Requests the distribution port for the given node of an EPMD instance\&. Together with the port it returns a distribution protocol version which has been 5 since Erlang/OTP R6\&.
+.RE
+.LP
+.nf
+
+.B
+address_please(Name, Host, AddressFamily) ->
+.B
+                  Success | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = string()
+.br
+Host = string() | \fBinet:ip_address()\fR\&
+.br
+AddressFamily = inet | inet6
+.br
+Port = Version = integer() >= 0
+.br
+Success = 
+.br
+    {ok, \fBinet:ip_address()\fR\&} |
+.br
+    {ok, \fBinet:ip_address()\fR\&, Port, Version}
+.br
+.RE
+.RE
+.RS
+.LP
+Called by the distribution module\&. Resolves the \fIHost\fR\& to an IP address\&.
+.LP
+Another epmd module may return port and distribution protocol version as well\&.
+.RE
+.LP
+.nf
+
+.B
+names(Host) -> {ok, [{Name, Port}]} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = atom() | string() | \fBinet:ip_address()\fR\&
+.br
+Name = string()
+.br
+Port = integer() >= 0
+.br
+Reason = address | \fBfile:posix()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Called by \fB\fInet_adm:names/0\fR\&\fR\&\&. \fIHost\fR\& defaults to the localhost\&. Returns the names and associated port numbers of the Erlang nodes that \fIepmd\fR\& registered at the specified host\&. Returns \fI{error, address}\fR\& if \fIepmd\fR\& is not operational\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+(arne@dunn)1> erl_epmd:names(localhost)\&.
+{ok,[{"arne",40262}]}
+.fi
+.RE

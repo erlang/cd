@@ -1,0 +1,68 @@
+.TH ssh_sftpd 3 "ssh 4.6.9" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_sftpd \- Specifies the channel process to handle an SFTP subsystem.
+.SH DESCRIPTION
+.LP
+Specifies a channel process to handle an SFTP subsystem\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+\fIsubsystem_spec() =\fR\&:
+\fI{subsystem_name(), {channel_callback(), channel_init_args()}}\fR\&
+.TP 2
+.B
+\fIsubsystem_name() =\fR\&:
+\fI"sftp"\fR\&
+.TP 2
+.B
+\fIchannel_callback() =\fR\&:
+\fIatom()\fR\& - Name of the Erlang module implementing the subsystem using the \fIssh_channel\fR\& behavior, see the \fBssh_channel(3)\fR\& manual page\&.
+.TP 2
+.B
+\fIchannel_init_args() =\fR\&:
+\fIlist()\fR\& - The one given as argument to function \fIsubsystem_spec/1\fR\&\&.
+.RE
+.SH EXPORTS
+.LP
+.B
+subsystem_spec(Options) -> subsystem_spec()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Options = [{Option, Value}]
+.br
+.RE
+.RE
+.RS
+.LP
+Is to be used together with \fIssh:daemon/[1,2,3]\fR\&
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{cwd, String}\fR\&:
+Sets the initial current working directory for the server\&.
+.TP 2
+.B
+\fI{file_handler, CallbackModule}\fR\&:
+Determines which module to call for accessing the file server\&. The default value is \fIssh_sftpd_file\fR\&, which uses the \fBfile\fR\& and \fBfilelib\fR\& APIs to access the standard OTP file server\&. This option can be used to plug in other file servers\&.
+.TP 2
+.B
+\fI{max_files, Integer}\fR\&:
+The default value is \fI0\fR\&, which means that there is no upper limit\&. If supplied, the number of filenames returned to the SFTP client per \fIREADDIR\fR\& request is limited to at most the given value\&.
+.TP 2
+.B
+\fI{root, String}\fR\&:
+Sets the SFTP root directory\&. Then the user cannot see any files above this root\&. If, for example, the root directory is set to \fI/tmp\fR\&, then the user sees this directory as \fI/\fR\&\&. If the user then writes \fIcd /etc\fR\&, the user moves to \fI/tmp/etc\fR\&\&.
+.TP 2
+.B
+\fI{sftpd_vsn, integer()}\fR\&:
+Sets the SFTP version to use\&. Defaults to 5\&. Version 6 is under development and limited\&.
+.RE
+.RE

@@ -1,0 +1,541 @@
+.TH SSH 7 "ssh 4.6.9" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+SSH \- The ssh application implements the Secure Shell (SSH) protocol and
+  provides an SSH File Transfer Protocol (SFTP) client and server.
+.SH DESCRIPTION
+.LP
+The \fIssh\fR\& application is an implementation of the SSH protocol in Erlang\&. \fIssh\fR\& offers API functions to write customized SSH clients and servers as well as making the Erlang shell available over SSH\&. An SFTP client, \fIssh_sftp\fR\&, and server, \fIssh_sftpd\fR\&, are also included\&.
+.SH "DEPENDENCIES"
+
+.LP
+The \fIssh\fR\& application uses the applications \fBpublic_key\fR\& and \fBcrypto\fR\& to handle public keys and encryption\&. Hence, these applications must be loaded for the \fIssh\fR\& application to work\&. In an embedded environment this means that they must be started with \fBapplication:start/1,2\fR\& before the \fIssh\fR\& application is started\&.
+.SH "CONFIGURATION"
+
+.LP
+The \fIssh\fR\& application does not have an application- specific configuration file, as described in \fBapplication(3)\fR\&\&. However, by default it use the following configuration files from OpenSSH:
+.RS 2
+.TP 2
+*
+\fIknown_hosts\fR\&
+.LP
+.TP 2
+*
+\fIauthorized_keys\fR\&
+.LP
+.TP 2
+*
+\fIauthorized_keys2\fR\&
+.LP
+.TP 2
+*
+\fIid_dsa\fR\&
+.LP
+.TP 2
+*
+\fIid_rsa\fR\&
+.LP
+.TP 2
+*
+\fIid_ecdsa\fR\&
+.LP
+.TP 2
+*
+\fIssh_host_dsa_key\fR\&
+.LP
+.TP 2
+*
+\fIssh_host_rsa_key\fR\&
+.LP
+.TP 2
+*
+\fIssh_host_ecdsa_key\fR\&
+.LP
+.RE
+
+.LP
+By default, \fIssh\fR\& looks for \fIid_dsa\fR\&, \fIid_rsa\fR\&, \fIid_ecdsa_key\fR\&, \fIknown_hosts\fR\&, and \fIauthorized_keys\fR\& in ~/\&.ssh, and for the host key files in \fI/etc/ssh\fR\&\&. These locations can be changed by the options \fIuser_dir\fR\& and \fIsystem_dir\fR\&\&.
+.LP
+Public key handling can also be customized through a callback module that implements the behaviors \fBssh_client_key_api\fR\& and \fBssh_server_key_api\fR\&\&.
+.SH "PUBLIC KEYS"
+
+.LP
+\fIid_dsa\fR\&, \fIid_rsa\fR\& and \fIid_ecdsa\fR\& are the users private key files\&. Notice that the public key is part of the private key so the \fIssh\fR\& application does not use the \fIid_<*>\&.pub\fR\& files\&. These are for the user\&'s convenience when it is needed to convey the user\&'s public key\&.
+.SH "KNOWN HOSTS"
+
+.LP
+The \fIknown_hosts\fR\& file contains a list of approved servers and their public keys\&. Once a server is listed, it can be verified without user interaction\&.
+.SH "AUTHORIZED KEYS"
+
+.LP
+The \fIauthorized_key\fR\& file keeps track of the user\&'s authorized public keys\&. The most common use of this file is to let users log in without entering their password, which is supported by the Erlang \fIssh\fR\& daemon\&.
+.SH "HOST KEYS"
+
+.LP
+RSA, DSA and ECDSA host keys are supported and are expected to be found in files named \fIssh_host_rsa_key\fR\&, \fIssh_host_dsa_key\fR\& and \fIssh_host_ecdsa_key\fR\&\&.
+.SH "ERROR LOGGER AND EVENT HANDLERS"
+
+.LP
+The \fIssh\fR\& application uses the default \fBOTP error logger\fR\& to log unexpected errors or print information about special events\&.
+.SH "SUPPORTED SPECIFICATIONS AND STANDARDS"
+
+.LP
+The supported SSH version is 2\&.0\&.
+.SH "ALGORITHMS"
+
+.LP
+The actual set of algorithms may vary depending on which OpenSSL crypto library that is installed on the machine\&. For the list on a particular installation, use the command \fBssh:default_algorithms/0\fR\&\&. The user may override the default algorithm configuration both on the server side and the client side\&. See the option \fIpreferred_algorithms\fR\& in the \fBssh:daemon/1,2,3\fR\& and \fBssh:connect/3,4\fR\& functions\&.
+.LP
+Supported algorithms are:
+.RS 2
+.TP 2
+.B
+Key exchange algorithms:
+
+.RS 2
+.TP 2
+*
+ecdh-sha2-nistp256
+.LP
+.TP 2
+*
+ecdh-sha2-nistp384
+.LP
+.TP 2
+*
+ecdh-sha2-nistp521
+.LP
+.TP 2
+*
+diffie-hellman-group-exchange-sha1
+.LP
+.TP 2
+*
+diffie-hellman-group-exchange-sha256
+.LP
+.TP 2
+*
+diffie-hellman-group14-sha1
+.LP
+.TP 2
+*
+diffie-hellman-group14-sha256
+.LP
+.TP 2
+*
+diffie-hellman-group16-sha512
+.LP
+.TP 2
+*
+diffie-hellman-group18-sha512
+.LP
+.TP 2
+*
+(diffie-hellman-group1-sha1, retired: can be enabled with the \fIpreferred_algorithms\fR\& option)
+.LP
+.RE
+
+.TP 2
+.B
+Public key algorithms:
+
+.RS 2
+.TP 2
+*
+ecdsa-sha2-nistp256
+.LP
+.TP 2
+*
+ecdsa-sha2-nistp384
+.LP
+.TP 2
+*
+ecdsa-sha2-nistp521
+.LP
+.TP 2
+*
+ssh-rsa
+.LP
+.TP 2
+*
+ssh-dss
+.LP
+.TP 2
+*
+rsa-sha2-256
+.LP
+.TP 2
+*
+rsa-sha2-512
+.LP
+.RE
+
+.TP 2
+.B
+MAC algorithms:
+
+.RS 2
+.TP 2
+*
+hmac-sha2-256
+.LP
+.TP 2
+*
+hmac-sha2-512
+.LP
+.TP 2
+*
+hmac-sha1
+.LP
+.RE
+
+.TP 2
+.B
+Encryption algorithms (ciphers):
+
+.RS 2
+.TP 2
+*
+aes128-gcm@openssh\&.com
+.LP
+.TP 2
+*
+aes256-gcm@openssh\&.com
+.LP
+.TP 2
+*
+aes128-ctr
+.LP
+.TP 2
+*
+aes192-ctr
+.LP
+.TP 2
+*
+aes256-ctr
+.LP
+.TP 2
+*
+aes128-cbc
+.LP
+.TP 2
+*
+3des-cbc
+.LP
+.TP 2
+*
+(AEAD_AES_128_GCM, not enabled per default)
+.LP
+.TP 2
+*
+(AEAD_AES_256_GCM, not enabled per default)
+.LP
+.RE
+
+.RS 2
+.LP
+See the text at the description of \fBthe rfc 5647 further down\fR\& for more information regarding AEAD_AES_*_GCM\&.
+.RE
+.RS 2
+.LP
+Following the internet de-facto standard, the cipher and mac algorithm AEAD_AES_128_GCM is selected when the cipher aes128-gcm@openssh\&.com is negotiated\&. The cipher and mac algorithm AEAD_AES_256_GCM is selected when the cipher aes256-gcm@openssh\&.com is negotiated\&.
+.RE
+.TP 2
+.B
+Compression algorithms:
+
+.RS 2
+.TP 2
+*
+none
+.LP
+.TP 2
+*
+zlib@openssh\&.com
+.LP
+.TP 2
+*
+zlib
+.LP
+.RE
+
+.RE
+.SH "UNICODE SUPPORT"
+
+.LP
+Unicode filenames are supported if the emulator and the underlaying OS support it\&. See section DESCRIPTION in the \fBfile\fR\& manual page in Kernel for information about this subject\&.
+.LP
+The shell and the cli both support unicode\&.
+.SH "RFCS"
+
+.LP
+The following rfc:s are supported:
+.RS 2
+.TP 2
+*
+RFC 4251, The Secure Shell (SSH) Protocol Architecture\&. 
+.RS 2
+.LP
+Except
+.RE
+.RS 2
+.TP 2
+*
+9\&.4\&.6 Host-Based Authentication
+.LP
+.TP 2
+*
+9\&.5\&.2 Proxy Forwarding
+.LP
+.TP 2
+*
+9\&.5\&.3 X11 Forwarding
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 4252, The Secure Shell (SSH) Authentication Protocol\&. 
+.RS 2
+.LP
+Except
+.RE
+.RS 2
+.TP 2
+*
+9\&. Host-Based Authentication: "hostbased"
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 4253, The Secure Shell (SSH) Transport Layer Protocol\&. 
+.RS 2
+.LP
+Except
+.RE
+.RS 2
+.TP 2
+*
+8\&.1\&. diffie-hellman-group1-sha1\&. Disabled by default, can be enabled with the \fIpreferred_algorithms\fR\& option\&.
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 4254, The Secure Shell (SSH) Connection Protocol\&. 
+.RS 2
+.LP
+Except
+.RE
+.RS 2
+.TP 2
+*
+6\&.3\&. X11 Forwarding
+.LP
+.TP 2
+*
+7\&. TCP/IP Port Forwarding
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 4256, Generic Message Exchange Authentication for the Secure Shell Protocol (SSH)\&. 
+.RS 2
+.LP
+Except
+.RE
+.RS 2
+.TP 2
+*
+\fInum-prompts > 1\fR\&
+.LP
+.TP 2
+*
+password changing
+.LP
+.TP 2
+*
+other identification methods than userid-password
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 4419, Diffie-Hellman Group Exchange for the Secure Shell (SSH) Transport Layer Protocol\&. 
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 4716, The Secure Shell (SSH) Public Key File Format\&. 
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 5647, AES Galois Counter Mode for the Secure Shell Transport Layer Protocol\&. 
+.RS 2
+.LP
+There is an ambiguity in the synchronized selection of cipher and mac algorithm\&. This is resolved by OpenSSH in the ciphers aes128-gcm@openssh\&.com and aes256-gcm@openssh\&.com which are implemented\&. If the explicit ciphers and macs AEAD_AES_128_GCM or AEAD_AES_256_GCM are needed, they could be enabled with the option preferred_algorithms\&.
+.RE
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+If the client or the server is not Erlang/OTP, it is the users responsibility to check that other implementation has the same interpretation of AEAD_AES_*_GCM as the Erlang/OTP SSH before enabling them\&. The aes*-gcm@openssh\&.com variants are always safe to use since they lack the ambiguity\&.
+
+.RS 2
+.LP
+The second paragraph in section 5\&.1 is resolved as:
+.RE
+.RS 2
+.TP 2
+*
+If the negotiated cipher is AEAD_AES_128_GCM, the mac algorithm is set to AEAD_AES_128_GCM\&.
+.LP
+.TP 2
+*
+If the negotiated cipher is AEAD_AES_256_GCM, the mac algorithm is set to AEAD_AES_256_GCM\&.
+.LP
+.TP 2
+*
+If the mac algorithm is AEAD_AES_128_GCM, the cipher is set to AEAD_AES_128_GCM\&.
+.LP
+.TP 2
+*
+If the mac algorithm is AEAD_AES_256_GCM, the cipher is set to AEAD_AES_256_GCM\&.
+.LP
+.RE
+
+.RS 2
+.LP
+The first rule that matches when read in order from the top is applied
+.RE
+.LP
+.TP 2
+*
+RFC 5656, Elliptic Curve Algorithm Integration in the Secure Shell Transport Layer\&. 
+.RS 2
+.LP
+Except
+.RE
+.RS 2
+.TP 2
+*
+5\&. ECMQV Key Exchange
+.LP
+.TP 2
+*
+6\&.4\&. ECMQV Key Exchange and Verification Method Name
+.LP
+.TP 2
+*
+7\&.2\&. ECMQV Message Numbers
+.LP
+.TP 2
+*
+10\&.2\&. Recommended Curves
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+RFC 6668, SHA-2 Data Integrity Verification for the Secure Shell (SSH) Transport Layer Protocol 
+.RS 2
+.LP
+Comment: Defines hmac-sha2-256 and hmac-sha2-512
+.RE
+.LP
+.TP 2
+*
+Draft-ietf-curdle-ssh-kex-sha2 (work in progress), Key Exchange (KEX) Method Updates and Recommendations for Secure Shell (SSH)\&. 
+.RS 2
+.LP
+Deviations:
+.RE
+.RS 2
+.TP 2
+*
+The \fIdiffie-hellman-group1-sha1\fR\& is not enabled by default, but is still supported and can be enabled with the option \fIpreferred-algorithms\fR\&
+.LP
+.TP 2
+*
+The questionable sha1-based algorithms \fIdiffie-hellman-group-exchange-sha1\fR\& and \fIdiffie-hellman-group14-sha1\fR\& are still enabled by default for compatibility with ancient clients and servers\&. They can be disabled with the option \fIpreferred-algorithms\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.TP 2
+*
+Draft-ietf-curdle-rsa-sha2 (work in progress), Use of RSA Keys with SHA-2 256 and 512 in Secure Shell (SSH)\&. 
+.LP
+.TP 2
+*
+Draft-ietf-curdle-ssh-ext-info (work in progress), Extension Negotiation in Secure Shell (SSH)\&. 
+.RS 2
+.LP
+Implemented are:
+.RE
+.RS 2
+.TP 2
+*
+The Extension Negotiation Mechanism
+.LP
+.TP 2
+*
+The extension \fIserver-sig-algs\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+
+.RE
+.LP
+.RE
+
+.SH "SEE ALSO"
+
+.LP
+\fBapplication(3)\fR\&

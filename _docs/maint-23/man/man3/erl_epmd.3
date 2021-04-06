@@ -1,0 +1,200 @@
+.TH erl_epmd 3 "kernel 7.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_epmd \- 
+    Erlang interface towards epmd
+  
+.SH DESCRIPTION
+.LP
+This module communicates with the EPMD daemon, see epmd\&. To implement your own epmd module please see ERTS User\&'s Guide: How to Implement an Alternative Node Discovery for Erlang Distribution
+.SH EXPORTS
+.LP
+.nf
+
+.B
+start_link() -> {ok, pid()} | ignore | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+This function is invoked as this module is added as a child of the \fIerl_distribution\fR\& supervisor\&.
+.RE
+.LP
+.nf
+
+.B
+register_node(Name, Port) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+register_node(Name, Port, Driver) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = string()
+.br
+Port = integer() >= 0
+.br
+Driver = inet_tcp | inet6_tcp | inet | inet6
+.br
+Creation = integer() >= 0 | -1
+.br
+Result = {ok, Creation} | {error, already_registered} | term()
+.br
+.RE
+.RE
+.RS
+.LP
+Registers the node with \fIepmd\fR\& and tells epmd what port will be used for the current node\&. It returns a creation number\&. This number is incremented on each register to help with identifying if a node is reconnecting to epmd\&.
+.RE
+.LP
+.nf
+
+.B
+port_please(Name, Host) ->
+.B
+               {ok, Port, Version} |
+.B
+               noport | closed |
+.B
+               {error, term()}
+.br
+.fi
+.br
+.nf
+
+.B
+port_please(Name, Host, Timeout) ->
+.B
+               {port, Port, Version} |
+.B
+               noport | closed |
+.B
+               {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom() | string()
+.br
+Host = atom() | string() | inet:ip_address()
+.br
+Timeout = integer() >= 0 | infinity
+.br
+Port = Version = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Requests the distribution port for the given node of an EPMD instance\&. Together with the port it returns a distribution protocol version which has been 5 since Erlang/OTP R6\&.
+.RE
+.LP
+.nf
+
+.B
+listen_port_please(Name, Host) -> {ok, Port}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom()
+.br
+Host = string() | inet:ip_address()
+.br
+Port = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Called by the distribution module to get which port the local node should listen to when accepting new distribution requests\&.
+.RE
+.LP
+.nf
+
+.B
+address_please(Name, Host, AddressFamily) ->
+.B
+                  Success | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = string()
+.br
+Host = string() | inet:ip_address()
+.br
+AddressFamily = inet | inet6
+.br
+Port = Version = integer() >= 0
+.br
+Success = 
+.br
+    {ok, inet:ip_address()} |
+.br
+    {ok, inet:ip_address(), Port, Version}
+.br
+.RE
+.RE
+.RS
+.LP
+Called by the distribution module to resolves the \fIHost\fR\& to an IP address of a remote node\&.
+.LP
+As an optimization this function may also return the port and version of the remote node\&. If port and version are returned \fIport_please/3\fR\& will not be called\&.
+.RE
+.LP
+.nf
+
+.B
+names(Host) -> {ok, [{Name, Port}]} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = atom() | string() | inet:ip_address()
+.br
+Name = string()
+.br
+Port = integer() >= 0
+.br
+Reason = address | file:posix()
+.br
+.RE
+.RE
+.RS
+.LP
+Called by \fInet_adm:names/0\fR\&\&. \fIHost\fR\& defaults to the localhost\&. Returns the names and associated port numbers of the Erlang nodes that \fIepmd\fR\& registered at the specified host\&. Returns \fI{error, address}\fR\& if \fIepmd\fR\& is not operational\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+(arne@dunn)1> erl_epmd:names(localhost)\&.
+{ok,[{"arne",40262}]}
+.fi
+.RE

@@ -1,0 +1,67 @@
+.TH httpd_custom_api 3 "inets 6.3.9" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+httpd_custom_api \- Behaviour with optional callbacks to customize the inets HTTP server.
+.SH DESCRIPTION
+.LP
+The module implementing this behaviour shall be supplied to to the servers configuration with the option \fB customize\fR\&
+.SH EXPORTS
+.LP
+.B
+response_default_headers() -> [Header] 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Header = {HeaderName :: string(), HeaderValue::string()}
+.br
+.RS 2
+string:to_lower/1 will be performed on the HeaderName
+.RE
+.RE
+.RE
+.RS
+.LP
+Provide default headers for the HTTP servers responses\&. Note that this option may override built-in defaults\&.
+.RE
+.LP
+.B
+response_header({HeaderName, HeaderValue}) -> {true, Header} | false 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Header = {HeaderName :: string(), HeaderValue::string()}
+.br
+.RS 2
+The header name will be in lower case and should not be altered\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+Filter and possible alter HTTP response headers before they are sent to the client\&.
+.RE
+.LP
+.B
+request_header({HeaderName, HeaderValue}) -> {true, Header} | false 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Header = {HeaderName :: string(), HeaderValue::string()}
+.br
+.RS 2
+The header name will be in lower case and should not be altered\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+Filter and possible alter HTTP request headers before they are processed by the server\&.
+.RE

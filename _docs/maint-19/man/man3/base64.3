@@ -1,0 +1,103 @@
+.TH base64 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+base64 \- Provides base64 encode and decode, see
+    RFC 2045.
+.SH DESCRIPTION
+.LP
+Provides base64 encode and decode, see RFC 2045\&.
+.SH DATA TYPES
+.nf
+
+\fBascii_string()\fR\& = [1\&.\&.255]
+.br
+.fi
+.nf
+
+\fBascii_binary()\fR\& = binary()
+.br
+.fi
+.RS
+.LP
+A \fIbinary()\fR\& with ASCII characters in the range 1 to 255\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+decode(Base64) -> Data
+.br
+.fi
+.br
+.nf
+
+.B
+decode_to_string(Base64) -> DataString
+.br
+.fi
+.br
+.nf
+
+.B
+mime_decode(Base64) -> Data
+.br
+.fi
+.br
+.nf
+
+.B
+mime_decode_to_string(Base64) -> DataString
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Base64 = \fBascii_string()\fR\& | \fBascii_binary()\fR\&
+.br
+Data = \fBascii_binary()\fR\&
+.br
+DataString = \fBascii_string()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Decodes a base64-encoded string to plain ASCII\&. See RFC 4648\&.
+.LP
+\fImime_decode/1\fR\& and \fImime_decode_to_string/1\fR\& strip away illegal characters, while \fIdecode/1\fR\& and \fIdecode_to_string/1\fR\& only strip away whitespace characters\&.
+.RE
+.LP
+.nf
+
+.B
+encode(Data) -> Base64
+.br
+.fi
+.br
+.nf
+
+.B
+encode_to_string(Data) -> Base64String
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Data = \fBascii_string()\fR\& | \fBascii_binary()\fR\&
+.br
+Base64 = \fBascii_binary()\fR\&
+.br
+Base64String = \fBascii_string()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Encodes a plain ASCII string into base64\&. The result is 33% larger than the data\&.
+.RE

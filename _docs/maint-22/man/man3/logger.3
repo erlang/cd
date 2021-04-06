@@ -1,0 +1,2085 @@
+.TH logger 3 "kernel 6.5.2.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+logger \- API module for Logger, the standard logging facility
+    in Erlang/OTP.
+.SH DESCRIPTION
+.LP
+This module implements the main API for logging in Erlang/OTP\&. To create a log event, use the \fBAPI functions\fR\& or the log \fBmacros\fR\&, for example:
+.LP
+.nf
+
+?LOG_ERROR("error happened because: ~p", [Reason]).   % With macro
+logger:error("error happened because: ~p", [Reason]). % Without macro
+    
+.fi
+.LP
+To configure the Logger backend, use \fBKernel configuration parameters\fR\& or \fBconfiguration functions\fR\& in the Logger API\&.
+.LP
+By default, the Kernel application installs one log handler at system start\&. This handler is named \fIdefault\fR\&\&. It receives and processes standard log events produced by the Erlang runtime system, standard behaviours and different Erlang/OTP applications\&. The log events are by default printed to the terminal\&.
+.LP
+If you want your systems logs to be printed to a file instead, you must configure the default handler to do so\&. The simplest way is to include the following in your \fB\fIsys\&.config\fR\&\fR\&:
+.LP
+.nf
+
+[{kernel,
+  [{logger,
+    [{handler, default, logger_std_h,
+      #{config => #{file => "path/to/file.log"}}}]}]}].
+      
+.fi
+.LP
+For more information about:
+.RS 2
+.TP 2
+*
+the Logger facility in general, see the \fBUser\&'s Guide\fR\&\&.
+.LP
+.TP 2
+*
+how to configure Logger, see the \fBConfiguration\fR\& section in the User\&'s Guide\&.
+.LP
+.TP 2
+*
+the built-in handlers, see \fBlogger_std_h\fR\& and \fBlogger_disk_log_h\fR\&\&.
+.LP
+.TP 2
+*
+the built-in formatter, see \fBlogger_formatter\fR\&\&.
+.LP
+.TP 2
+*
+built-in filters, see \fBlogger_filters\fR\&\&.
+.LP
+.RE
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Since Logger is new in Erlang/OTP 21\&.0, we do reserve the right to introduce changes to the Logger API and functionality in patches following this release\&. These changes might or might not be backwards compatible with the initial version\&.
+
+.SH DATA TYPES
+.nf
+
+\fBfilter()\fR\& = 
+.br
+    {fun((\fBlog_event()\fR\&, \fBfilter_arg()\fR\&) -> \fBfilter_return()\fR\&),
+.br
+     \fBfilter_arg()\fR\&}
+.br
+.fi
+.RS
+.LP
+A filter which can be installed as a handler filter, or as a primary filter in Logger\&.
+.RE
+.nf
+
+\fBfilter_arg()\fR\& = term()
+.br
+.fi
+.RS
+.LP
+The second argument to the filter fun\&.
+.RE
+.nf
+
+\fBfilter_id()\fR\& = atom()
+.br
+.fi
+.RS
+.LP
+A unique identifier for a filter\&.
+.RE
+.nf
+
+\fBfilter_return()\fR\& = stop | ignore | \fBlog_event()\fR\&
+.br
+.fi
+.RS
+.LP
+The return value from the filter fun\&.
+.RE
+.nf
+
+\fBformatter_config()\fR\& = #{atom() => term()}
+.br
+.fi
+.RS
+.LP
+Configuration data for the formatter\&. See \fB\fIlogger_formatter(3)\fR\&\fR\& for an example of a formatter implementation\&.
+.RE
+.nf
+
+\fBhandler_config()\fR\& = 
+.br
+    #{id => \fBhandler_id()\fR\&,
+.br
+      config => term(),
+.br
+      level => \fBlevel()\fR\& | all | none,
+.br
+      module => module(),
+.br
+      filter_default => log | stop,
+.br
+      filters => [{\fBfilter_id()\fR\&, \fBfilter()\fR\&}],
+.br
+      formatter => {module(), \fBformatter_config()\fR\&}}
+.br
+.fi
+.RS
+.LP
+Handler configuration data for Logger\&. The following default values apply:
+.RS 2
+.TP 2
+*
+\fIlevel => all\fR\&
+.LP
+.TP 2
+*
+\fIfilter_default => log\fR\&
+.LP
+.TP 2
+*
+\fIfilters => []\fR\&
+.LP
+.TP 2
+*
+\fIformatter => {logger_formatter, DefaultFormatterConfig\fR\&}
+.LP
+.RE
+
+.LP
+In addition to these, the following fields are automatically inserted by Logger, values taken from the two first parameters to \fB\fIadd_handler/3\fR\&\fR\&:
+.RS 2
+.TP 2
+*
+\fIid => HandlerId\fR\&
+.LP
+.TP 2
+*
+\fImodule => Module\fR\&
+.LP
+.RE
+
+.LP
+These are read-only and cannot be changed in runtime\&.
+.LP
+Handler specific configuration data is inserted by the handler callback itself, in a sub structure associated with the field named \fIconfig\fR\&\&. See the \fB\fIlogger_std_h(3)\fR\&\fR\& and \fB\fIlogger_disk_log_h(3)\fR\&\fR\& manual pages for information about the specifc configuration for these handlers\&.
+.LP
+See the \fB\fIlogger_formatter(3)\fR\&\fR\& manual page for information about the default configuration for this formatter\&.
+.RE
+.nf
+
+\fBhandler_id()\fR\& = atom()
+.br
+.fi
+.RS
+.LP
+A unique identifier for a handler instance\&.
+.RE
+.nf
+
+\fBlevel()\fR\& = 
+.br
+    emergency | alert | critical | error | warning | notice |
+.br
+    info | debug
+.br
+.fi
+.RS
+.LP
+The severity level for the message to be logged\&.
+.RE
+.nf
+
+\fBlog_event()\fR\& = 
+.br
+    #{level := \fBlevel()\fR\&,
+.br
+      msg :=
+.br
+          {\fBio:format()\fR\&, [term()]} |
+.br
+          {report, \fBreport()\fR\&} |
+.br
+          {string, \fBunicode:chardata()\fR\&},
+.br
+      meta := \fBmetadata()\fR\&}
+.br
+.fi
+.RS
+.LP
+
+.RE
+.nf
+
+\fBmetadata()\fR\& = 
+.br
+    #{pid => pid(),
+.br
+      gl => pid(),
+.br
+      time => \fBtimestamp()\fR\&,
+.br
+      mfa => {module(), atom(), integer() >= 0},
+.br
+      file => \fBfile:filename()\fR\&,
+.br
+      line => integer() >= 0,
+.br
+      domain => [atom()],
+.br
+      report_cb => \fBreport_cb()\fR\&,
+.br
+      atom() => term()}
+.br
+.fi
+.RS
+.LP
+Metadata for the log event\&.
+.LP
+Logger adds the following metadata to each log event:
+.RS 2
+.TP 2
+*
+\fIpid => self()\fR\&
+.LP
+.TP 2
+*
+\fIgl => group_leader()\fR\&
+.LP
+.TP 2
+*
+\fItime => logger:timestamp()\fR\&
+.LP
+.RE
+
+.LP
+When a log macro is used, Logger also inserts location information:
+.RS 2
+.TP 2
+*
+\fImfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY}\fR\&
+.LP
+.TP 2
+*
+\fIfile => ?FILE\fR\&
+.LP
+.TP 2
+*
+\fIline => ?LINE\fR\&
+.LP
+.RE
+
+.LP
+You can add custom metadata, either by specifying a map as the last parameter to any of the log macros or the API functions, or by setting process metadata with \fB\fIset_process_metadata/1\fR\&\fR\& or \fB\fIupdate_process_metadata/1\fR\&\fR\&\&.
+.LP
+Logger merges all the metadata maps before forwarding the log event to the handlers\&. If the same keys occur, values from the log call overwrite process metadata, which in turn overwrite values set by Logger\&.
+.LP
+The following custom metadata keys have special meaning:
+.RS 2
+.TP 2
+.B
+\fIdomain\fR\&:
+The value associated with this key is used by filters for grouping log events originating from, for example, specific functional areas\&. See \fB\fIlogger_filters:domain/2\fR\&\fR\& for a description of how this field can be used\&.
+.TP 2
+.B
+\fIreport_cb\fR\&:
+If the log message is specified as a \fB\fIreport()\fR\&\fR\&, the \fIreport_cb\fR\& key can be associated with a fun (report callback) that converts the report to a format string and arguments, or directly to a string\&. See the type definition of \fB\fIreport_cb()\fR\&\fR\&, and section \fBLog Message\fR\& in the User\&'s Guide for more information about report callbacks\&.
+.RE
+.RE
+.nf
+
+\fBmsg_fun()\fR\& = 
+.br
+    fun((term()) ->
+.br
+            {\fBio:format()\fR\&, [term()]} |
+.br
+            \fBreport()\fR\& |
+.br
+            \fBunicode:chardata()\fR\&)
+.br
+.fi
+.RS
+.LP
+
+.RE
+.nf
+
+\fBolp_config()\fR\& = 
+.br
+    #{sync_mode_qlen => integer() >= 0,
+.br
+      drop_mode_qlen => integer() >= 1,
+.br
+      flush_qlen => integer() >= 1,
+.br
+      burst_limit_enable => boolean(),
+.br
+      burst_limit_max_count => integer() >= 1,
+.br
+      burst_limit_window_time => integer() >= 1,
+.br
+      overload_kill_enable => boolean(),
+.br
+      overload_kill_qlen => integer() >= 1,
+.br
+      overload_kill_mem_size => integer() >= 1,
+.br
+      overload_kill_restart_after => integer() >= 0 | infinity}
+.br
+.fi
+.RS
+.LP
+
+.RE
+.nf
+
+\fBprimary_config()\fR\& = 
+.br
+    #{level => \fBlevel()\fR\& | all | none,
+.br
+      filter_default => log | stop,
+.br
+      filters => [{\fBfilter_id()\fR\&, \fBfilter()\fR\&}]}
+.br
+.fi
+.RS
+.LP
+Primary configuration data for Logger\&. The following default values apply:
+.RS 2
+.TP 2
+*
+\fIlevel => info\fR\&
+.LP
+.TP 2
+*
+\fIfilter_default => log\fR\&
+.LP
+.TP 2
+*
+\fIfilters => []\fR\&
+.LP
+.RE
+
+.RE
+.nf
+
+\fBreport()\fR\& = map() | [{atom(), term()}]
+.br
+.fi
+.RS
+.LP
+
+.RE
+.nf
+
+\fBreport_cb()\fR\& = 
+.br
+    fun((\fBreport()\fR\&) -> {\fBio:format()\fR\&, [term()]}) |
+.br
+    fun((\fBreport()\fR\&, \fBreport_cb_config()\fR\&) -> \fBunicode:chardata()\fR\&)
+.br
+.fi
+.RS
+.LP
+A fun which converts a \fB\fIreport()\fR\&\fR\& to a format string and arguments, or directly to a string\&. See section \fBLog Message\fR\& in the User\&'s Guide for more information\&.
+.RE
+.nf
+
+\fBreport_cb_config()\fR\& = 
+.br
+    #{depth := integer() >= 1 | unlimited,
+.br
+      chars_limit := integer() >= 1 | unlimited,
+.br
+      single_line := boolean()}
+.br
+.fi
+.RS
+.LP
+
+.RE
+.nf
+
+\fBtimestamp()\fR\& = integer()
+.br
+.fi
+.RS
+.LP
+A timestamp produced with \fB\fIlogger:timestamp()\fR\&\fR\&\&.
+.RE
+.SH "MACROS"
+
+.LP
+The following macros are defined in \fIlogger\&.hrl\fR\&, which is included in a module with the directive
+.LP
+.nf
+
+    -include_lib("kernel/include/logger.hrl").
+.fi
+.RS 2
+.TP 2
+*
+\fI?LOG_EMERGENCY(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_EMERGENCY(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_ALERT(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_ALERT(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_CRITICAL(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_CRITICAL(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_ERROR(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_ERROR(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_WARNING(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_WARNING(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_NOTICE(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_NOTICE(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_INFO(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_INFO(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_DEBUG(StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG_DEBUG(FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG(Level,StringOrReport[,Metadata])\fR\&
+.LP
+.TP 2
+*
+\fI?LOG(Level,FunOrFormat,Args[,Metadata])\fR\&
+.LP
+.RE
+
+.LP
+All macros expand to a call to Logger, where \fILevel\fR\& is taken from the macro name, or from the first argument in the case of the \fI?LOG\fR\& macro\&. Location data is added to the metadata as described under the \fB\fImetadata()\fR\&\fR\& type definition\&.
+.LP
+The call is wrapped in a case statement and will be evaluated only if \fILevel\fR\& is equal to or below the configured log level\&.
+.SH "LOGGING API FUNCTIONS"
+
+.SH EXPORTS
+.LP
+.B
+emergency(StringOrReport[,Metadata])
+.br
+.B
+emergency(Format,Args[,Metadata])
+.br
+.B
+emergency(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(emergency,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+alert(StringOrReport[,Metadata])
+.br
+.B
+alert(Format,Args[,Metadata])
+.br
+.B
+alert(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(alert,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+critical(StringOrReport[,Metadata])
+.br
+.B
+critical(Format,Args[,Metadata])
+.br
+.B
+critical(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(critical,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+error(StringOrReport[,Metadata])
+.br
+.B
+error(Format,Args[,Metadata])
+.br
+.B
+error(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(error,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+warning(StringOrReport[,Metadata])
+.br
+.B
+warning(Format,Args[,Metadata])
+.br
+.B
+warning(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(warning,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+notice(StringOrReport[,Metadata])
+.br
+.B
+notice(Format,Args[,Metadata])
+.br
+.B
+notice(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(notice,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+info(StringOrReport[,Metadata])
+.br
+.B
+info(Format,Args[,Metadata])
+.br
+.B
+info(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(info,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+debug(StringOrReport[,Metadata])
+.br
+.B
+debug(Format,Args[,Metadata])
+.br
+.B
+debug(Fun,FunArgs[,Metadata])
+.br
+.RS
+.LP
+Equivalent to \fB\fIlog(debug,\&.\&.\&.)\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+log(Level, StringOrReport) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+log(Level, StringOrReport, Metadata) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+log(Level, Format, Args) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+log(Level, Fun, FunArgs) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+log(Level, Format, Args, Metadata) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+log(Level, Fun, FunArgs, Metadata) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Level = \fBlevel()\fR\&
+.br
+StringOrReport = \fBunicode:chardata()\fR\& | \fBreport()\fR\&
+.br
+Format = \fBio:format()\fR\&
+.br
+Args = [term()]
+.br
+Fun = \fBmsg_fun()\fR\&
+.br
+FunArgs = term()
+.br
+Metadata = \fBmetadata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Log the given message\&.
+.RE
+.SH "CONFIGURATION API FUNCTIONS"
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+add_handler(HandlerId, Module, Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Module = module()
+.br
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Add a handler with the given configuration\&.
+.LP
+\fIHandlerId\fR\& is a unique identifier which must be used in all subsequent calls referring to this handler\&.
+.RE
+.LP
+.nf
+
+.B
+add_handler_filter(HandlerId, FilterId, Filter) ->
+.B
+                      ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+FilterId = \fBfilter_id()\fR\&
+.br
+Filter = \fBfilter()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Add a filter to the specified handler\&.
+.LP
+The filter fun is called with the log event as the first parameter, and the specified \fIfilter_args()\fR\& as the second parameter\&.
+.LP
+The return value of the fun specifies if a log event is to be discarded or forwarded to the handler callback:
+.RS 2
+.TP 2
+.B
+\fIlog_event()\fR\&:
+The filter \fIpassed\fR\&\&. The next handler filter, if any, is applied\&. If no more filters exist for this handler, the log event is forwarded to the handler callback\&.
+.TP 2
+.B
+\fIstop\fR\&:
+The filter \fIdid not pass\fR\&, and the log event is immediately discarded\&.
+.TP 2
+.B
+\fIignore\fR\&:
+The filter has no knowledge of the log event\&. The next handler filter, if any, is applied\&. If no more filters exist for this handler, the value of the \fIfilter_default\fR\& configuration parameter for the handler specifies if the log event shall be discarded or forwarded to the handler callback\&.
+.RE
+.LP
+See section \fBFilters\fR\& in the User\&'s Guide for more information about filters\&.
+.LP
+Some built-in filters exist\&. These are defined in \fB\fIlogger_filters(3)\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+add_handlers(Application) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Application = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Reads the application configuration parameter \fIlogger\fR\& and calls \fIadd_handlers/1\fR\& with its contents\&.
+.RE
+.LP
+.nf
+
+.B
+add_handlers(HandlerConfig) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerConfig = [\fBconfig_handler()\fR\&]
+.br
+.nf
+\fBconfig_handler()\fR\& = 
+.br
+    {handler, \fBhandler_id()\fR\&, module(), \fBhandler_config()\fR\&}
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+This function should be used by custom Logger handlers to make configuration consistent no matter which handler the system uses\&. Normal usage is to add a call to \fIlogger:add_handlers/1\fR\& just after the processes that the handler needs are started, and pass the application\&'s \fIlogger\fR\& configuration as the argument\&. For example:
+.LP
+.nf
+
+-behaviour(application).
+start(_, []) ->
+    case supervisor:start_link({local, my_sup}, my_sup, []) of
+        {ok, Pid} ->
+            ok = logger:add_handlers(my_app),
+            {ok, Pid, []};
+        Error -> Error
+     end.
+.fi
+.LP
+This reads the \fIlogger\fR\& configuration parameter from the \fImy_app\fR\& application and starts the configured handlers\&. The contents of the configuration use the same rules as the \fBlogger handler configuration\fR\&\&.
+.LP
+If the handler is meant to replace the default handler, the Kernel\&'s default handler have to be disabled before the new handler is added\&. A \fIsys\&.config\fR\& file that disables the Kernel handler and adds a custom handler could look like this:
+.LP
+.nf
+
+[{kernel,
+  [{logger,
+    %% Disable the default Kernel handler
+    [{handler, default, undefined}]}]},
+ {my_app,
+  [{logger,
+    %% Enable this handler as the default
+    [{handler, default, my_handler, #{}}]}]}].
+         
+.fi
+.RE
+.LP
+.nf
+
+.B
+add_primary_filter(FilterId, Filter) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FilterId = \fBfilter_id()\fR\&
+.br
+Filter = \fBfilter()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Add a primary filter to Logger\&.
+.LP
+The filter fun is called with the log event as the first parameter, and the specified \fIfilter_args()\fR\& as the second parameter\&.
+.LP
+The return value of the fun specifies if a log event is to be discarded or forwarded to the handlers:
+.RS 2
+.TP 2
+.B
+\fIlog_event()\fR\&:
+The filter \fIpassed\fR\&\&. The next primary filter, if any, is applied\&. If no more primary filters exist, the log event is forwarded to the handler part of Logger, where handler filters are applied\&.
+.TP 2
+.B
+\fIstop\fR\&:
+The filter \fIdid not pass\fR\&, and the log event is immediately discarded\&.
+.TP 2
+.B
+\fIignore\fR\&:
+The filter has no knowledge of the log event\&. The next primary filter, if any, is applied\&. If no more primary filters exist, the value of the primary \fIfilter_default\fR\& configuration parameter specifies if the log event shall be discarded or forwarded to the handler part\&.
+.RE
+.LP
+See section \fB Filters\fR\& in the User\&'s Guide for more information about filters\&.
+.LP
+Some built-in filters exist\&. These are defined in \fB\fIlogger_filters(3)\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+get_config() ->
+.B
+              #{primary => primary_config(),
+.B
+                handlers => [handler_config()],
+.B
+                proxy => olp_config(),
+.B
+                module_levels =>
+.B
+                    [{module(), level() | all | none}]}
+.br
+.fi
+.br
+.RS
+.LP
+Look up all current Logger configuration, including primary, handler, and proxy configuration, and module level settings\&.
+.RE
+.LP
+.nf
+
+.B
+get_handler_config() -> [Config]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Look up the current configuration for all handlers\&.
+.RE
+.LP
+.nf
+
+.B
+get_handler_config(HandlerId) -> {ok, Config} | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Look up the current configuration for the given handler\&.
+.RE
+.LP
+.nf
+
+.B
+get_handler_ids() -> [HandlerId]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Look up the identities for all installed handlers\&.
+.RE
+.LP
+.nf
+
+.B
+get_primary_config() -> Config
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBprimary_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Look up the current primary configuration for Logger\&.
+.RE
+.LP
+.nf
+
+.B
+get_proxy_config() -> Config
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBolp_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Look up the current configuration for the Logger proxy\&.
+.LP
+For more information about the proxy, see section \fBLogger Proxy\fR\& in the Kernel User\&'s Guide\&.
+.RE
+.LP
+.nf
+
+.B
+get_module_level() -> [{Module, Level}]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Module = module()
+.br
+Level = \fBlevel()\fR\& | all | none
+.br
+.RE
+.RE
+.RS
+.LP
+Look up all current module levels\&. Returns a list containing one \fI{Module,Level}\fR\& element for each module for which the module level was previously set with \fB\fIset_module_level/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+get_module_level(Modules) -> [{Module, Level}]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Modules = [Module] | Module
+.br
+Module = module()
+.br
+Level = \fBlevel()\fR\& | all | none
+.br
+.RE
+.RE
+.RS
+.LP
+Look up the current level for the given modules\&. Returns a list containing one \fI{Module,Level}\fR\& element for each of the given modules for which the module level was previously set with \fB\fIset_module_level/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+get_process_metadata() -> Meta | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Meta = \fBmetadata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Retrieve data set with \fB\fIset_process_metadata/1\fR\&\fR\& or \fB\fIupdate_process_metadata/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+i() -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+i(What) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+What = primary | handlers | proxy | modules | \fBhandler_id()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Pretty print the Logger configuration\&.
+.RE
+.LP
+.nf
+
+.B
+remove_handler(HandlerId) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Remove the handler identified by \fIHandlerId\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+remove_handler_filter(HandlerId, FilterId) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+FilterId = \fBfilter_id()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Remove the filter identified by \fIFilterId\fR\& from the handler identified by \fIHandlerId\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+remove_primary_filter(FilterId) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FilterId = \fBfilter_id()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Remove the primary filter identified by \fIFilterId\fR\& from Logger\&.
+.RE
+.LP
+.nf
+
+.B
+set_application_level(Application, Level) ->
+.B
+                         ok | {error, not_loaded}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Application = atom()
+.br
+Level = \fBlevel()\fR\& | all | none
+.br
+.RE
+.RE
+.RS
+.LP
+Set the log level for all the modules of the specified application\&.
+.LP
+This function is a convenience function that calls \fBlogger:set_module_level/2\fR\& for each module associated with an application\&.
+.RE
+.LP
+.nf
+
+.B
+set_handler_config(HandlerId, Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Set configuration data for the specified handler\&. This overwrites the current handler configuration\&.
+.LP
+To modify the existing configuration, use \fB\fIupdate_handler_config/2\fR\&\fR\&, or, if a more complex merge is needed, read the current configuration with \fB\fIget_handler_config/1\fR\&\fR\&, then do the merge before writing the new configuration back with this function\&.
+.LP
+If a key is removed compared to the current configuration, and the key is known by Logger, the default value is used\&. If it is a custom key, then it is up to the handler implementation if the value is removed or a default value is inserted\&.
+.RE
+.LP
+.nf
+
+.B
+set_handler_config(HandlerId, Key :: level, Level) -> Return
+.br
+.fi
+.br
+.nf
+
+.B
+set_handler_config(HandlerId,
+.B
+                   Key :: filter_default,
+.B
+                   FilterDefault) ->
+.B
+                      Return
+.br
+.fi
+.br
+.nf
+
+.B
+set_handler_config(HandlerId, Key :: filters, Filters) -> Return
+.br
+.fi
+.br
+.nf
+
+.B
+set_handler_config(HandlerId, Key :: formatter, Formatter) ->
+.B
+                      Return
+.br
+.fi
+.br
+.nf
+
+.B
+set_handler_config(HandlerId, Key :: config, Config) -> Return
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Level = \fBlevel()\fR\& | all | none
+.br
+FilterDefault = log | stop
+.br
+Filters = [{\fBfilter_id()\fR\&, \fBfilter()\fR\&}]
+.br
+Formatter = {module(), \fBformatter_config()\fR\&}
+.br
+Config = term()
+.br
+Return = ok | {error, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Add or update configuration data for the specified handler\&. If the given \fIKey\fR\& already exists, its associated value will be changed to the given value\&. If it does not exist, it will be added\&.
+.LP
+If the value is incomplete, which for example can be the case for the \fIconfig\fR\& key, it is up to the handler implementation how the unspecified parts are set\&. For all handlers in the Kernel application, unspecified data for the \fIconfig\fR\& key is set to default values\&. To update only specified data, and keep the existing configuration for the rest, use \fB\fIupdate_handler_config/3\fR\&\fR\&\&.
+.LP
+See the definition of the \fB\fIhandler_config()\fR\&\fR\& type for more information about the different parameters\&.
+.RE
+.LP
+.nf
+
+.B
+set_primary_config(Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBprimary_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Set primary configuration data for Logger\&. This overwrites the current configuration\&.
+.LP
+To modify the existing configuration, use \fB\fIupdate_primary_config/1\fR\&\fR\&, or, if a more complex merge is needed, read the current configuration with \fB\fIget_primary_config/0\fR\&\fR\&, then do the merge before writing the new configuration back with this function\&.
+.LP
+If a key is removed compared to the current configuration, the default value is used\&.
+.RE
+.LP
+.nf
+
+.B
+set_primary_config(Key :: level, Level) -> ok | {error, term()}
+.br
+.fi
+.br
+.nf
+
+.B
+set_primary_config(Key :: filter_default, FilterDefault) ->
+.B
+                      ok | {error, term()}
+.br
+.fi
+.br
+.nf
+
+.B
+set_primary_config(Key :: filters, Filters) ->
+.B
+                      ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Level = \fBlevel()\fR\& | all | none
+.br
+FilterDefault = log | stop
+.br
+Filters = [{\fBfilter_id()\fR\&, \fBfilter()\fR\&}]
+.br
+.RE
+.RE
+.RS
+.LP
+Add or update primary configuration data for Logger\&. If the given \fIKey\fR\& already exists, its associated value will be changed to the given value\&. If it does not exist, it will be added\&.
+.RE
+.LP
+.nf
+
+.B
+set_proxy_config(Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBolp_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Set configuration data for the Logger proxy\&. This overwrites the current proxy configuration\&. Keys that are not specified in the \fIConfig\fR\& map gets default values\&.
+.LP
+To modify the existing configuration, use \fB\fIupdate_proxy_config/1\fR\&\fR\&, or, if a more complex merge is needed, read the current configuration with \fB\fIget_proxy_config/0\fR\&\fR\&, then do the merge before writing the new configuration back with this function\&.
+.LP
+For more information about the proxy, see section \fBLogger Proxy\fR\& in the Kernel User\&'s Guide\&.
+.RE
+.LP
+.nf
+
+.B
+set_module_level(Modules, Level) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Modules = [module()] | module()
+.br
+Level = \fBlevel()\fR\& | all | none
+.br
+.RE
+.RE
+.RS
+.LP
+Set the log level for the specified modules\&.
+.LP
+The log level for a module overrides the primary log level of Logger for log events originating from the module in question\&. Notice, however, that it does not override the level configuration for any handler\&.
+.LP
+For example: Assume that the primary log level for Logger is \fIinfo\fR\&, and there is one handler, \fIh1\fR\&, with level \fIinfo\fR\& and one handler, \fIh2\fR\&, with level \fIdebug\fR\&\&.
+.LP
+With this configuration, no debug messages will be logged, since they are all stopped by the primary log level\&.
+.LP
+If the level for \fImymodule\fR\& is now set to \fIdebug\fR\&, then debug events from this module will be logged by the handler \fIh2\fR\&, but not by handler \fIh1\fR\&\&.
+.LP
+Debug events from other modules are still not logged\&.
+.LP
+To change the primary log level for Logger, use \fB\fIset_primary_config(level, Level)\fR\&\fR\&\&.
+.LP
+To change the log level for a handler, use \fB\fIset_handler_config(HandlerId, level, Level)\fR\&\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The originating module for a log event is only detected if the key \fImfa\fR\& exists in the metadata, and is associated with \fI{Module, Function, Arity}\fR\&\&. When log macros are used, this association is automatically added to all log events\&. If an API function is called directly, without using a macro, the logging client must explicitly add this information if module levels shall have any effect\&.
+
+.RE
+.LP
+.nf
+
+.B
+set_process_metadata(Meta) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Meta = \fBmetadata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Set metadata which Logger shall automatically insert in all log events produced on the current process\&.
+.LP
+Location data produced by the log macros, and/or metadata given as argument to the log call (API function or macro), are merged with the process metadata\&. If the same keys occur, values from the metadata argument to the log call overwrite values from the process metadata, which in turn overwrite values from the location data\&.
+.LP
+Subsequent calls to this function overwrites previous data set\&. To update existing data instead of overwriting it, see \fB\fIupdate_process_metadata/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+unset_application_level(Application) -> ok | {error, not_loaded}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Application = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Unset the log level for all the modules of the specified application\&.
+.LP
+This function is a convinience function that calls \fBlogger:unset_module_level/2\fR\& for each module associated with an application\&.
+.RE
+.LP
+.nf
+
+.B
+unset_module_level() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Remove module specific log settings\&. After this, the primary log level is used for all modules\&.
+.RE
+.LP
+.nf
+
+.B
+unset_module_level(Modules) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Modules = [module()] | module()
+.br
+.RE
+.RE
+.RS
+.LP
+Remove module specific log settings\&. After this, the primary log level is used for the specified modules\&.
+.RE
+.LP
+.nf
+
+.B
+unset_process_metadata() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Delete data set with \fB\fIset_process_metadata/1\fR\&\fR\& or \fB\fIupdate_process_metadata/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+update_formatter_config(HandlerId, FormatterConfig) ->
+.B
+                           ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+FormatterConfig = \fBformatter_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Update the formatter configuration for the specified handler\&.
+.LP
+The new configuration is merged with the existing formatter configuration\&.
+.LP
+To overwrite the existing configuration without any merge, use
+.LP
+.nf
+
+\fBset_handler_config(HandlerId, formatter, {FormatterModule, FormatterConfig})\fR\&.
+.fi
+.RE
+.LP
+.nf
+
+.B
+update_formatter_config(HandlerId, Key, Value) ->
+.B
+                           ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Key = atom()
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Update the formatter configuration for the specified handler\&.
+.LP
+This is equivalent to
+.LP
+.nf
+
+\fBupdate_formatter_config(HandlerId, #{Key => Value})\fR\&
+.fi
+.RE
+.LP
+.nf
+
+.B
+update_handler_config(HandlerId, Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Update configuration data for the specified handler\&. This function behaves as if it was implemented as follows:
+.LP
+.nf
+
+{ok, {_, Old}} = logger:get_handler_config(HandlerId),
+logger:set_handler_config(HandlerId, maps:merge(Old, Config)).
+	
+.fi
+.LP
+To overwrite the existing configuration without any merge, use \fB\fIset_handler_config/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+update_handler_config(HandlerId, Key :: level, Level) -> Return
+.br
+.fi
+.br
+.nf
+
+.B
+update_handler_config(HandlerId,
+.B
+                      Key :: filter_default,
+.B
+                      FilterDefault) ->
+.B
+                         Return
+.br
+.fi
+.br
+.nf
+
+.B
+update_handler_config(HandlerId, Key :: filters, Filters) ->
+.B
+                         Return
+.br
+.fi
+.br
+.nf
+
+.B
+update_handler_config(HandlerId, Key :: formatter, Formatter) ->
+.B
+                         Return
+.br
+.fi
+.br
+.nf
+
+.B
+update_handler_config(HandlerId, Key :: config, Config) -> Return
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HandlerId = \fBhandler_id()\fR\&
+.br
+Level = \fBlevel()\fR\& | all | none
+.br
+FilterDefault = log | stop
+.br
+Filters = [{\fBfilter_id()\fR\&, \fBfilter()\fR\&}]
+.br
+Formatter = {module(), \fBformatter_config()\fR\&}
+.br
+Config = term()
+.br
+Return = ok | {error, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Add or update configuration data for the specified handler\&. If the given \fIKey\fR\& already exists, its associated value will be changed to the given value\&. If it does not exist, it will be added\&.
+.LP
+If the value is incomplete, which for example can be the case for the \fIconfig\fR\& key, it is up to the handler implementation how the unspecified parts are set\&. For all handlers in the Kernel application, unspecified data for the \fIconfig\fR\& key is not changed\&. To reset unspecified data to default values, use \fB\fIset_handler_config/3\fR\&\fR\&\&.
+.LP
+See the definition of the \fB\fIhandler_config()\fR\&\fR\& type for more information about the different parameters\&.
+.RE
+.LP
+.nf
+
+.B
+update_primary_config(Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBprimary_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Update primary configuration data for Logger\&. This function behaves as if it was implemented as follows:
+.LP
+.nf
+
+Old = logger:get_primary_config(),
+logger:set_primary_config(maps:merge(Old, Config)).
+	
+.fi
+.LP
+To overwrite the existing configuration without any merge, use \fB\fIset_primary_config/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+update_process_metadata(Meta) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Meta = \fBmetadata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Set or update metadata to use when logging from current process
+.LP
+If process metadata exists for the current process, this function behaves as if it was implemented as follows:
+.LP
+.nf
+
+logger:set_process_metadata(maps:merge(logger:get_process_metadata(), Meta)).
+	
+.fi
+.LP
+If no process metadata exists, the function behaves as \fB\fIset_process_metadata/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+update_proxy_config(Config) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBolp_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Update configuration data for the Logger proxy\&. This function behaves as if it was implemented as follows:
+.LP
+.nf
+
+Old = logger:get_proxy_config(),
+logger:set_proxy_config(maps:merge(Old, Config)).
+	
+.fi
+.LP
+To overwrite the existing configuration without any merge, use \fB\fIset_proxy_config/1\fR\&\fR\&\&.
+.LP
+For more information about the proxy, see section \fBLogger Proxy\fR\& in the Kernel User\&'s Guide\&.
+.RE
+.SH "MISCELLANEOUS API FUNCTIONS"
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+compare_levels(Level1, Level2) -> eq | gt | lt
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Level1 = Level2 = \fBlevel()\fR\& | all | none
+.br
+.RE
+.RE
+.RS
+.LP
+Compare the severity of two log levels\&. Returns \fIgt\fR\& if \fILevel1\fR\& is more severe than \fILevel2\fR\&, \fIlt\fR\& if \fILevel1\fR\& is less severe, and \fIeq\fR\& if the levels are equal\&.
+.RE
+.LP
+.nf
+
+.B
+format_report(Report) -> FormatArgs
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Report = \fBreport()\fR\&
+.br
+FormatArgs = {\fBio:format()\fR\&, [term()]}
+.br
+.RE
+.RE
+.RS
+.LP
+Convert a log message on report form to \fI{Format, Args}\fR\&\&. This is the default report callback used by \fB\fIlogger_formatter(3)\fR\&\fR\& when no custom report callback is found\&. See section \fBLog Message\fR\& in the Kernel User\&'s Guide for information about report callbacks and valid forms of log messages\&.
+.LP
+The function produces lines of \fIKey: Value\fR\& from key-value lists\&. Strings are printed with \fI~ts\fR\& and other terms with \fI~tp\fR\&\&.
+.LP
+If \fIReport\fR\& is a map, it is converted to a key-value list before formatting as such\&.
+.RE
+.LP
+.nf
+
+.B
+timestamp() -> timestamp()
+.br
+.fi
+.br
+.RS
+.LP
+Return a timestamp that can be inserted as the \fItime\fR\& field in the meta data for a log event\&. It is produced with \fB\fIos:system_time(microsecond)\fR\&\fR\&\&.
+.LP
+Notice that Logger automatically inserts a timestamp in the meta data unless it already exists\&. This function is exported for the rare case when the timestamp must be taken at a different point in time than when the log event is issued\&.
+.RE
+.SH "HANDLER CALLBACK FUNCTIONS"
+
+.LP
+The following functions are to be exported from a handler callback module\&.
+.SH EXPORTS
+.LP
+.B
+HModule:adding_handler(Config1) -> {ok, Config2} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config1 = Config2 = \fBhandler_config()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is optional\&.
+.LP
+The function is called on a temporary process when an new handler is about to be added\&. The purpose is to verify the configuration and initiate all resources needed by the handler\&.
+.LP
+The handler identity is associated with the \fIid\fR\& key in \fIConfig1\fR\&\&.
+.LP
+If everything succeeds, the callback function can add possible default values or internal state values to the configuration, and return the adjusted map in \fI{ok,Config2}\fR\&\&.
+.LP
+If the configuration is faulty, or if the initiation fails, the callback function must return \fI{error,Reason}\fR\&\&.
+.RE
+.LP
+.B
+HModule:changing_config(SetOrUpdate, OldConfig, NewConfig) -> {ok, Config} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SetOrUpdate = set | update
+.br
+OldConfig = NewConfig = Config = \fBhandler_config()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is optional\&.
+.LP
+The function is called on a temporary process when the configuration for a handler is about to change\&. The purpose is to verify and act on the new configuration\&.
+.LP
+\fIOldConfig\fR\& is the existing configuration and \fINewConfig\fR\& is the new configuration\&.
+.LP
+The handler identity is associated with the \fIid\fR\& key in \fIOldConfig\fR\&\&.
+.LP
+\fISetOrUpdate\fR\& has the value \fIset\fR\& if the configuration change originates from a call to \fB\fIset_handler_config/2,3\fR\&\fR\&, and \fIupdate\fR\& if it originates from \fB\fIupdate_handler_config/2,3\fR\&\fR\&\&. The handler can use this parameteter to decide how to update the value of the \fIconfig\fR\& field, that is, the handler specific configuration data\&. Typically, if \fISetOrUpdate\fR\& equals \fIset\fR\&, values that are not specified must be given their default values\&. If \fISetOrUpdate\fR\& equals \fIupdate\fR\&, the values found in \fIOldConfig\fR\& must be used instead\&.
+.LP
+If everything succeeds, the callback function must return a possibly adjusted configuration in \fI{ok,Config}\fR\&\&.
+.LP
+If the configuration is faulty, the callback function must return \fI{error,Reason}\fR\&\&.
+.RE
+.LP
+.B
+HModule:filter_config(Config) -> FilteredConfig
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = FilteredConfig = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is optional\&.
+.LP
+The function is called when one of the Logger API functions for fetching the handler configuration is called, for example \fB\fIlogger:get_handler_config/1\fR\&\fR\&\&.
+.LP
+It allows the handler to remove internal data fields from its configuration data before it is returned to the caller\&.
+.RE
+.LP
+.B
+HModule:log(LogEvent, Config) -> void()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+LogEvent = \fBlog_event()\fR\&
+.br
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is mandatory\&.
+.LP
+The function is called when all primary filters and all handler filters for the handler in question have passed for the given log event\&. It is called on the client process, that is, the process that issued the log event\&.
+.LP
+The handler identity is associated with the \fIid\fR\& key in \fIConfig\fR\&\&.
+.LP
+The handler must log the event\&.
+.LP
+The return value from this function is ignored by Logger\&.
+.RE
+.LP
+.B
+HModule:removing_handler(Config) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Config = \fBhandler_config()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is optional\&.
+.LP
+The function is called on a temporary process when a handler is about to be removed\&. The purpose is to release all resources used by the handler\&.
+.LP
+The handler identity is associated with the \fIid\fR\& key in \fIConfig\fR\&\&.
+.LP
+The return value is ignored by Logger\&.
+.RE
+.SH "FORMATTER CALLBACK FUNCTIONS"
+
+.LP
+The following functions are to be exported from a formatter callback module\&.
+.SH EXPORTS
+.LP
+.B
+FModule:check_config(FConfig) -> ok | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FConfig = \fBformatter_config()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is optional\&.
+.LP
+The function is called by a Logger when formatter configuration is set or modified\&. The formatter must validate the given configuration and return \fIok\fR\& if it is correct, and \fI{error,Reason}\fR\& if it is faulty\&.
+.LP
+The following Logger API functions can trigger this callback:
+.RS 2
+.TP 2
+*
+\fB\fIlogger:add_handler/3\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIlogger:set_handler_config/2,3\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIlogger:update_handler_config/2,3\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIlogger:update_formatter_config/2\fR\&\fR\&
+.LP
+.RE
+
+.LP
+See \fB\fIlogger_formatter(3)\fR\&\fR\& for an example implementation\&. \fIlogger_formatter\fR\& is the default formatter used by Logger\&.
+.RE
+.LP
+.B
+FModule:format(LogEvent, FConfig) -> FormattedLogEntry
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+LogEvent = \fBlog_event()\fR\&
+.br
+FConfig = \fBformatter_config()\fR\&
+.br
+FormattedLogEntry = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+This callback function is mandatory\&.
+.LP
+The function can be called by a log handler to convert a log event term to a printable string\&. The returned value can, for example, be printed as a log entry to the console or a file using \fB\fIio:put_chars/1,2\fR\&\fR\&\&.
+.LP
+See \fB\fIlogger_formatter(3)\fR\&\fR\& for an example implementation\&. \fIlogger_formatter\fR\& is the default formatter used by Logger\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIconfig(4)\fR\&\fR\&, \fB\fIerlang(3)\fR\&\fR\&, \fB\fIio(3)\fR\&\fR\&, \fB\fIlogger_disk_log_h(3)\fR\&\fR\&, \fB\fIlogger_filters(3)\fR\&\fR\&, \fB\fIlogger_formatter(3)\fR\&\fR\&, \fB\fIlogger_std_h(3)\fR\&\fR\&, \fB\fIunicode(3)\fR\&\fR\& 

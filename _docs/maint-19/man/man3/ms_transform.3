@@ -1,0 +1,611 @@
+.TH ms_transform 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ms_transform \- A parse transformation that translates fun syntax into match
+    specifications.
+.SH DESCRIPTION
+.LP
+This module provides the parse transformation that makes calls to \fB\fIets\fR\&\fR\& and \fB\fIdbg:fun2ms/1\fR\&\fR\& translate into literal match specifications\&. It also provides the back end for the same functions when called from the Erlang shell\&.
+.LP
+The translation from funs to match specifications is accessed through the two "pseudo functions" \fB\fIets:fun2ms/1\fR\&\fR\& and \fB\fIdbg:fun2ms/1\fR\&\fR\&\&.
+.LP
+As everyone trying to use \fB\fIets:select/2\fR\&\fR\& or \fB\fIdbg\fR\&\fR\& seems to end up reading this manual page, this description is an introduction to the concept of match specifications\&.
+.LP
+Read the whole manual page if it is the first time you are using the transformations\&.
+.LP
+Match specifications are used more or less as filters\&. They resemble usual Erlang matching in a list comprehension or in a fun used with \fB\fIlists:foldl/3\fR\&\fR\&, and so on\&. However, the syntax of pure match specifications is awkward, as they are made up purely by Erlang terms, and the language has no syntax to make the match specifications more readable\&.
+.LP
+As the execution and structure of the match specifications are like that of a fun, it is more straightforward to write it using the familiar fun syntax and to have that translated into a match specification automatically\&. A real fun is clearly more powerful than the match specifications allow, but bearing the match specifications in mind, and what they can do, it is still more convenient to write it all as a fun\&. This module contains the code that translates the fun syntax into match specification terms\&.
+.SH "EXAMPLE 1"
+
+.LP
+Using \fB\fIets:select/2\fR\&\fR\& and a match specification, one can filter out rows of a table and construct a list of tuples containing relevant parts of the data in these rows\&. One can use \fB\fIets:foldl/3\fR\&\fR\& instead, but the \fIets:select/2\fR\& call is far more efficient\&. Without the translation provided by \fIms_transform\fR\&, one must struggle with writing match specifications terms to accommodate this\&.
+.LP
+Consider a simple table of employees:
+.LP
+.nf
+
+-record(emp, {empno,     %Employee number as a string, the key
+              surname,   %Surname of the employee
+              givenname, %Given name of employee
+              dept,      %Department, one of {dev,sales,prod,adm}
+              empyear}). %Year the employee was employed
+.fi
+.LP
+We create the table using:
+.LP
+.nf
+
+ets:new(emp_tab, [{keypos,#emp.empno},named_table,ordered_set]).
+.fi
+.LP
+We fill the table with randomly chosen data:
+.LP
+.nf
+
+[{emp,"011103","Black","Alfred",sales,2000},
+ {emp,"041231","Doe","John",prod,2001},
+ {emp,"052341","Smith","John",dev,1997},
+ {emp,"076324","Smith","Ella",sales,1995},
+ {emp,"122334","Weston","Anna",prod,2002},
+ {emp,"535216","Chalker","Samuel",adm,1998},
+ {emp,"789789","Harrysson","Joe",adm,1996},
+ {emp,"963721","Scott","Juliana",dev,2003},
+ {emp,"989891","Brown","Gabriel",prod,1999}]
+.fi
+.LP
+Assuming that we want the employee numbers of everyone in the sales department, there are several ways\&.
+.LP
+\fIets:match/2\fR\& can be used:
+.LP
+.nf
+
+1> ets:match(emp_tab, {\&'_\&', \&'$1\&', \&'_\&', \&'_\&', sales, \&'_\&'})\&.
+[["011103"],["076324"]]
+.fi
+.LP
+\fIets:match/2\fR\& uses a simpler type of match specification, but it is still unreadable, and one has little control over the returned result\&. It is always a list of lists\&.
+.LP
+\fB\fIets:foldl/3\fR\&\fR\& or \fB\fIets:foldr/3\fR\&\fR\& can be used to avoid the nested lists:
+.LP
+.nf
+
+ets:foldr(fun(#emp{empno = E, dept = sales},Acc) -> [E | Acc];
+             (_,Acc) -> Acc
+          end,
+          [],
+          emp_tab).
+.fi
+.LP
+The result is \fI["011103","076324"]\fR\&\&. The fun is straightforward, so the only problem is that all the data from the table must be transferred from the table to the calling process for filtering\&. That is inefficient compared to the \fIets:match/2\fR\& call where the filtering can be done "inside" the emulator and only the result is transferred to the process\&.
+.LP
+Consider a "pure" \fIets:select/2\fR\& call that does what \fIets:foldr\fR\& does:
+.LP
+.nf
+
+ets:select(emp_tab, [{#emp{empno = '$1', dept = sales, _='_'},[],['$1']}]).
+.fi
+.LP
+Although the record syntax is used, it is still hard to read and even harder to write\&. The first element of the tuple, \fI#emp{empno = \&'$1\&', dept = sales, _=\&'_\&'}\fR\&, tells what to match\&. Elements not matching this are not returned, as in the \fIets:match/2\fR\& example\&. The second element, the empty list, is a list of guard expressions, which we do not need\&. The third element is the list of expressions constructing the return value (in ETS this is almost always a list containing one single term)\&. In our case \fI\&'$1\&'\fR\& is bound to the employee number in the head (first element of the tuple), and hence the employee number is returned\&. The result is \fI["011103","076324"]\fR\&, as in the \fIets:foldr/3\fR\& example, but the result is retrieved much more efficiently in terms of execution speed and memory consumption\&.
+.LP
+Using \fIets:fun2ms/1\fR\&, we can combine the ease of use of the \fIets:foldr/3\fR\& and the efficiency of the pure \fIets:select/2\fR\& example:
+.LP
+.nf
+
+-include_lib("stdlib/include/ms_transform.hrl").
+
+ets:select(emp_tab, ets:fun2ms(
+                      fun(#emp{empno = E, dept = sales}) ->
+                              E
+                      end)).
+.fi
+.LP
+This example requires no special knowledge of match specifications to understand\&. The head of the fun matches what you want to filter out and the body returns what you want returned\&. As long as the fun can be kept within the limits of the match specifications, there is no need to transfer all table data to the process for filtering as in the \fIets:foldr/3\fR\& example\&. It is easier to read than the \fIets:foldr/3\fR\& example, as the select call in itself discards anything that does not match, while the fun of the \fIets:foldr/3\fR\& call needs to handle both the elements matching and the ones not matching\&.
+.LP
+In the \fIets:fun2ms/1\fR\& example above, it is needed to include \fIms_transform\&.hrl\fR\& in the source code, as this is what triggers the parse transformation of the \fIets:fun2ms/1\fR\& call to a valid match specification\&. This also implies that the transformation is done at compile time (except when called from the shell) and therefore takes no resources in runtime\&. That is, although you use the more intuitive fun syntax, it gets as efficient in runtime as writing match specifications by hand\&.
+.SH "EXAMPLE 2"
+
+.LP
+Assume that we want to get all the employee numbers of employees hired before year 2000\&. Using \fIets:match/2\fR\& is not an alternative here, as relational operators cannot be expressed there\&. Once again, \fIets:foldr/3\fR\& can do it (slowly, but correct):
+.LP
+.nf
+
+ets:foldr(fun(#emp{empno = E, empyear = Y},Acc) when Y < 2000 -> [E | Acc];
+                  (_,Acc) -> Acc
+          end,
+          [],
+          emp_tab).    
+.fi
+.LP
+The result is \fI["052341","076324","535216","789789","989891"]\fR\&, as expected\&. The equivalent expression using a handwritten match specification would look like this:
+.LP
+.nf
+
+ets:select(emp_tab, [{#emp{empno = '$1', empyear = '$2', _='_'},
+                     [{'<', '$2', 2000}],
+                     ['$1']}]).    
+.fi
+.LP
+This gives the same result\&. \fI[{\&'<\&', \&'$2\&', 2000}]\fR\& is in the guard part and therefore discards anything that does not have an \fIempyear\fR\& (bound to \fI\&'$2\&'\fR\& in the head) less than 2000, as the guard in the \fIfoldr/3\fR\& example\&.
+.LP
+We write it using \fIets:fun2ms/1\fR\&:
+.LP
+.nf
+
+-include_lib("stdlib/include/ms_transform.hrl").
+
+ets:select(emp_tab, ets:fun2ms(
+                      fun(#emp{empno = E, empyear = Y}) when Y < 2000 ->
+                           E
+                      end)).    
+.fi
+.SH "EXAMPLE 3"
+
+.LP
+Assume that we want the whole object matching instead of only one element\&. One alternative is to assign a variable to every part of the record and build it up once again in the body of the fun, but the following is easier:
+.LP
+.nf
+
+ets:select(emp_tab, ets:fun2ms(
+                      fun(Obj = #emp{empno = E, empyear = Y}) 
+                         when Y < 2000 ->
+                              Obj
+                      end)).
+.fi
+.LP
+As in ordinary Erlang matching, you can bind a variable to the whole matched object using a "match inside the match", that is, a \fI=\fR\&\&. Unfortunately in funs translated to match specifications, it is allowed only at the "top-level", that is, matching the \fIwhole\fR\& object arriving to be matched into a separate variable\&. If you are used to writing match specifications by hand, we mention that variable A is simply translated into \&'$_\&'\&. Alternatively, pseudo function \fIobject/0\fR\& also returns the whole matched object, see section \fB Warnings and Restrictions\fR\&\&.
+.SH "EXAMPLE 4"
+
+.LP
+This example concerns the body of the fun\&. Assume that all employee numbers beginning with zero (\fI0\fR\&) must be changed to begin with one (\fI1\fR\&) instead, and that we want to create the list \fI[{<Old empno>,<New empno>}]\fR\&:
+.LP
+.nf
+
+ets:select(emp_tab, ets:fun2ms(
+                      fun(#emp{empno = [$0 | Rest] }) ->
+                              {[$0|Rest],[$1|Rest]}
+                      end)).
+.fi
+.LP
+This query hits the feature of partially bound keys in table type \fIordered_set\fR\&, so that not the whole table needs to be searched, only the part containing keys beginning with \fI0\fR\& is looked into\&.
+.SH "EXAMPLE 5"
+
+.LP
+The fun can have many clauses\&. Assume that we want to do the following:
+.RS 2
+.TP 2
+*
+If an employee started before 1997, return the tuple \fI{inventory, <employee number>}\fR\&\&.
+.LP
+.TP 2
+*
+If an employee started 1997 or later, but before 2001, return \fI{rookie, <employee number>}\fR\&\&.
+.LP
+.TP 2
+*
+For all other employees, return \fI{newbie, <employee number>}\fR\&, except for those named \fISmith\fR\& as they would be affronted by anything other than the tag \fIguru\fR\& and that is also what is returned for their numbers: \fI{guru, <employee number>}\fR\&\&.
+.LP
+.RE
+
+.LP
+This is accomplished as follows:
+.LP
+.nf
+
+ets:select(emp_tab, ets:fun2ms(
+                      fun(#emp{empno = E, surname = "Smith" }) ->
+                              {guru,E};
+                         (#emp{empno = E, empyear = Y}) when Y < 1997  ->
+                              {inventory, E};
+                         (#emp{empno = E, empyear = Y}) when Y > 2001  ->
+                              {newbie, E};
+                         (#emp{empno = E, empyear = Y}) -> % 1997 -- 2001
+                              {rookie, E}
+                      end)).    
+.fi
+.LP
+The result is as follows:
+.LP
+.nf
+
+[{rookie,"011103"},
+ {rookie,"041231"},
+ {guru,"052341"},
+ {guru,"076324"},
+ {newbie,"122334"},
+ {rookie,"535216"},
+ {inventory,"789789"},
+ {newbie,"963721"},
+ {rookie,"989891"}]
+.fi
+.SH "USEFUL BIFS"
+
+.LP
+What more can you do? A simple answer is: see the documentation of \fBmatch specifications\fR\& in ERTS User\&'s Guide\&. However, the following is a brief overview of the most useful "built-in functions" that you can use when the fun is to be translated into a match specification by \fB\fIets:fun2ms/1\fR\&\fR\&\&. It is not possible to call other functions than those allowed in match specifications\&. No "usual" Erlang code can be executed by the fun that is translated by \fIets:fun2ms/1\fR\&\&. The fun is limited exactly to the power of the match specifications, which is unfortunate, but the price one must pay for the execution speed of \fIets:select/2\fR\& compared to \fIets:foldl/foldr\fR\&\&.
+.LP
+The head of the fun is a head matching (or mismatching) \fIone\fR\& parameter, one object of the table we select from\&. The object is always a single variable (can be \fI_\fR\&) or a tuple, as ETS, Dets, and Mnesia tables include that\&. The match specification returned by \fIets:fun2ms/1\fR\& can be used with \fIdets:select/2\fR\& and \fImnesia:select/2\fR\&, and with \fIets:select/2\fR\&\&. The use of \fI=\fR\& in the head is allowed (and encouraged) at the top-level\&.
+.LP
+The guard section can contain any guard expression of Erlang\&. The following is a list of BIFs and expressions:
+.RS 2
+.TP 2
+*
+Type tests: \fIis_atom\fR\&, \fIis_float\fR\&, \fIis_integer\fR\&, \fIis_list\fR\&, \fIis_number\fR\&, \fIis_pid\fR\&, \fIis_port\fR\&, \fIis_reference\fR\&, \fIis_tuple\fR\&, \fIis_binary\fR\&, \fIis_function\fR\&, \fIis_record\fR\&
+.LP
+.TP 2
+*
+Boolean operators: \fInot\fR\&, \fIand\fR\&, \fIor\fR\&, \fIandalso\fR\&, \fIorelse\fR\&
+.LP
+.TP 2
+*
+Relational operators: >, >=, <, =<, =:=, ==, =/=, /=
+.LP
+.TP 2
+*
+Arithmetics: \fI+\fR\&, \fI-\fR\&, \fI*\fR\&, \fIdiv\fR\&, \fIrem\fR\&
+.LP
+.TP 2
+*
+Bitwise operators: \fIband\fR\&, \fIbor\fR\&, \fIbxor\fR\&, \fIbnot\fR\&, \fIbsl\fR\&, \fIbsr\fR\&
+.LP
+.TP 2
+*
+The guard BIFs: \fIabs\fR\&, \fIelement\fR\&, \fIhd\fR\&, \fIlength\fR\&, \fInode\fR\&, \fIround\fR\&, \fIsize\fR\&, \fItl\fR\&, \fItrunc\fR\&, \fIself\fR\&
+.LP
+.RE
+
+.LP
+Contrary to the fact with "handwritten" match specifications, the \fIis_record\fR\& guard works as in ordinary Erlang code\&.
+.LP
+Semicolons (\fI;\fR\&) in guards are allowed, the result is (as expected) one "match specification clause" for each semicolon-separated part of the guard\&. The semantics is identical to the Erlang semantics\&.
+.LP
+The body of the fun is used to construct the resulting value\&. When selecting from tables, one usually construct a suiting term here, using ordinary Erlang term construction, like tuple parentheses, list brackets, and variables matched out in the head, possibly with the occasional constant\&. Whatever expressions are allowed in guards are also allowed here, but no special functions exist except \fIobject\fR\& and \fIbindings\fR\& (see further down), which returns the whole matched object and all known variable bindings, respectively\&.
+.LP
+The \fIdbg\fR\& variants of match specifications have an imperative approach to the match specification body, the ETS dialect has not\&. The fun body for \fIets:fun2ms/1\fR\& returns the result without side effects\&. As matching (\fI=\fR\&) in the body of the match specifications is not allowed (for performance reasons) the only thing left, more or less, is term construction\&.
+.SH "EXAMPLE WITH DBG"
+
+.LP
+This section describes the slightly different match specifications translated by \fB\fIdbg:fun2ms/1\fR\&\fR\&\&.
+.LP
+The same reasons for using the parse transformation apply to \fIdbg\fR\&, maybe even more, as filtering using Erlang code is not a good idea when tracing (except afterwards, if you trace to file)\&. The concept is similar to that of \fIets:fun2ms/1\fR\& except that you usually use it directly from the shell (which can also be done with \fIets:fun2ms/1\fR\&)\&.
+.LP
+The following is an example module to trace on:
+.LP
+.nf
+
+-module(toy).
+
+-export([start/1, store/2, retrieve/1]).
+
+start(Args) ->
+    toy_table = ets:new(toy_table, Args).
+
+store(Key, Value) ->
+    ets:insert(toy_table, {Key,Value}).
+
+retrieve(Key) ->
+    [{Key, Value}] = ets:lookup(toy_table, Key),
+    Value.
+.fi
+.LP
+During model testing, the first test results in \fI{badmatch,16}\fR\& in \fI{toy,start,1}\fR\&, why?
+.LP
+We suspect the \fIets:new/2\fR\& call, as we match hard on the return value, but want only the particular \fInew/2\fR\& call with \fItoy_table\fR\& as first parameter\&. So we start a default tracer on the node:
+.LP
+.nf
+
+1> dbg:tracer()\&.
+{ok,<0.88.0>}
+.fi
+.LP
+We turn on call tracing for all processes, we want to make a pretty restrictive trace pattern, so there is no need to call trace only a few processes (usually it is not):
+.LP
+.nf
+
+2> dbg:p(all,call)\&.
+{ok,[{matched,nonode@nohost,25}]}
+.fi
+.LP
+We specify the filter, we want to view calls that resemble \fIets:new(toy_table, <something>)\fR\&:
+.LP
+.nf
+
+3> dbg:tp(ets,new,dbg:fun2ms(fun([toy_table,_]) -> true end))\&.
+{ok,[{matched,nonode@nohost,1},{saved,1}]}
+.fi
+.LP
+As can be seen, the fun used with \fIdbg:fun2ms/1\fR\& takes a single list as parameter instead of a single tuple\&. The list matches a list of the parameters to the traced function\&. A single variable can also be used\&. The body of the fun expresses, in a more imperative way, actions to be taken if the fun head (and the guards) matches\&. \fItrue\fR\& is returned here, only because the body of a fun cannot be empty\&. The return value is discarded\&.
+.LP
+The following trace output is received during test:
+.LP
+.nf
+
+(<0.86.0>) call ets:new(toy_table, [ordered_set])    
+.fi
+.LP
+Assume that we have not found the problem yet, and want to see what \fIets:new/2\fR\& returns\&. We use a slightly different trace pattern:
+.LP
+.nf
+
+4> dbg:tp(ets,new,dbg:fun2ms(fun([toy_table,_]) -> return_trace() end))\&.
+.fi
+.LP
+The following trace output is received during test:
+.LP
+.nf
+
+(<0.86.0>) call ets:new(toy_table,[ordered_set])
+(<0.86.0>) returned from ets:new/2 -> 24    
+.fi
+.LP
+The call to \fIreturn_trace\fR\& results in a trace message when the function returns\&. It applies only to the specific function call triggering the match specification (and matching the head/guards of the match specification)\&. This is by far the most common call in the body of a \fIdbg\fR\& match specification\&.
+.LP
+The test now fails with \fI{badmatch,24}\fR\& because the atom \fItoy_table\fR\& does not match the number returned for an unnamed table\&. So, the problem is found, the table is to be named, and the arguments supplied by the test program do not include \fInamed_table\fR\&\&. We rewrite the start function:
+.LP
+.nf
+
+start(Args) ->
+    toy_table = ets:new(toy_table, [named_table|Args]).
+.fi
+.LP
+With the same tracing turned on, the following trace output is received:
+.LP
+.nf
+
+(<0.86.0>) call ets:new(toy_table,[named_table,ordered_set])
+(<0.86.0>) returned from ets:new/2 -> toy_table    
+.fi
+.LP
+Assume that the module now passes all testing and goes into the system\&. After a while, it is found that table \fItoy_table\fR\& grows while the system is running and that there are many elements with atoms as keys\&. We expected only integer keys and so does the rest of the system, but clearly not the entire system\&. We turn on call tracing and try to see calls to the module with an atom as the key:
+.LP
+.nf
+
+1> dbg:tracer()\&.
+{ok,<0.88.0>}
+2> dbg:p(all,call)\&.
+{ok,[{matched,nonode@nohost,25}]}
+3> dbg:tpl(toy,store,dbg:fun2ms(fun([A,_]) when is_atom(A) -> true end))\&.
+{ok,[{matched,nonode@nohost,1},{saved,1}]}
+.fi
+.LP
+We use \fIdbg:tpl/3\fR\& to ensure to catch local calls (assume that the module has grown since the smaller version and we are unsure if this inserting of atoms is not done locally)\&. When in doubt, always use local call tracing\&.
+.LP
+Assume that nothing happens when tracing in this way\&. The function is never called with these parameters\&. We conclude that someone else (some other module) is doing it and realize that we must trace on \fIets:insert/2\fR\& and want to see the calling function\&. The calling function can be retrieved using the match specification function \fIcaller\fR\&\&. To get it into the trace message, the match specification function \fImessage\fR\& must be used\&. The filter call looks like this (looking for calls to \fIets:insert/2\fR\&):
+.LP
+.nf
+
+4> dbg:tpl(ets,insert,dbg:fun2ms(fun([toy_table,{A,_}]) when is_atom(A) -> 
+ message(caller()) 
+ end))\&. 
+{ok,[{matched,nonode@nohost,1},{saved,2}]}
+.fi
+.LP
+The caller is now displayed in the "additional message" part of the trace output, and the following is displayed after a while:
+.LP
+.nf
+
+(<0.86.0>) call ets:insert(toy_table,{garbage,can}) ({evil_mod,evil_fun,2})    
+.fi
+.LP
+You have realized that function \fIevil_fun\fR\& of the \fIevil_mod\fR\& module, with arity \fI2\fR\&, is causing all this trouble\&.
+.LP
+This example illustrates the most used calls in match specifications for \fIdbg\fR\&\&. The other, more esoteric, calls are listed and explained in \fBMatch specifications in Erlang\fR\& in ERTS User\&'s Guide, as they are beyond the scope of this description\&.
+.SH "WARNINGS AND RESTRICTIONS"
+
+.LP
+The following warnings and restrictions apply to the funs used in with \fIets:fun2ms/1\fR\& and \fIdbg:fun2ms/1\fR\&\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+To use the pseudo functions triggering the translation, ensure to include the header file \fIms_transform\&.hrl\fR\& in the source code\&. Failure to do so possibly results in runtime errors rather than compile time, as the expression can be valid as a plain Erlang program without translation\&.
+
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+The fun must be literally constructed inside the parameter list to the pseudo functions\&. The fun cannot be bound to a variable first and then passed to \fIets:fun2ms/1\fR\& or \fIdbg:fun2ms/1\fR\&\&. For example, \fIets:fun2ms(fun(A) -> A end)\fR\& works, but not \fIF = fun(A) -> A end, ets:fun2ms(F)\fR\&\&. The latter results in a compile-time error if the header is included, otherwise a runtime error\&.
+
+.LP
+Many restrictions apply to the fun that is translated into a match specification\&. To put it simple: you cannot use anything in the fun that you cannot use in a match specification\&. This means that, among others, the following restrictions apply to the fun itself:
+.RS 2
+.TP 2
+*
+Functions written in Erlang cannot be called, neither can local functions, global functions, or real funs\&.
+.LP
+.TP 2
+*
+Everything that is written as a function call is translated into a match specification call to a built-in function, so that the call \fIis_list(X)\fR\& is translated to \fI{\&'is_list\&', \&'$1\&'}\fR\& (\fI\&'$1\&'\fR\& is only an example, the numbering can vary)\&. If one tries to call a function that is not a match specification built-in, it causes an error\&.
+.LP
+.TP 2
+*
+Variables occurring in the head of the fun are replaced by match specification variables in the order of occurrence, so that fragment \fIfun({A,B,C})\fR\& is replaced by \fI{\&'$1\&', \&'$2\&', \&'$3\&'}\fR\&, and so on\&. Every occurrence of such a variable in the match specification is replaced by a match specification variable in the same way, so that the fun \fIfun({A,B}) when is_atom(A) -> B end\fR\& is translated into \fI[{{\&'$1\&',\&'$2\&'},[{is_atom,\&'$1\&'}],[\&'$2\&']}]\fR\&\&.
+.LP
+.TP 2
+*
+Variables that are not included in the head are imported from the environment and made into match specification \fIconst\fR\& expressions\&. Example from the shell:
+.LP
+.nf
+
+1> X = 25\&.
+25
+2> ets:fun2ms(fun({A,B}) when A > X -> B end)\&.
+[{{'$1','$2'},[{'>','$1',{const,25}}],['$2']}]
+.fi
+.LP
+.TP 2
+*
+Matching with \fI=\fR\& cannot be used in the body\&. It can only be used on the top-level in the head of the fun\&. Example from the shell again:
+.LP
+.nf
+
+1> ets:fun2ms(fun({A,[B|C]} = D) when A > B -> D end)\&.
+[{{'$1',['$2'|'$3']},[{'>','$1','$2'}],['$_']}]
+2> ets:fun2ms(fun({A,[B|C]=D}) when A > B -> D end)\&.
+Error: fun with head matching ('=' in head) cannot be translated into 
+match_spec 
+{error,transform_error}
+3> ets:fun2ms(fun({A,[B|C]}) when A > B -> D = [B|C], D end)\&.
+Error: fun with body matching ('=' in body) is illegal as match_spec
+{error,transform_error}
+.fi
+.RS 2
+.LP
+All variables are bound in the head of a match specification, so the translator cannot allow multiple bindings\&. The special case when matching is done on the top-level makes the variable bind to \fI\&'$_\&'\fR\& in the resulting match specification\&. It is to allow a more natural access to the whole matched object\&. Pseudo function \fIobject()\fR\& can be used instead, see below\&.
+.RE
+.RS 2
+.LP
+The following expressions are translated equally:
+.RE
+.LP
+.nf
+
+ets:fun2ms(fun({a,_} = A) -> A end).
+ets:fun2ms(fun({a,_}) -> object() end).
+.fi
+.LP
+.TP 2
+*
+The special match specification variables \fI\&'$_\&'\fR\& and \fI\&'$*\&'\fR\& can be accessed through the pseudo functions \fIobject()\fR\& (for \fI\&'$_\&'\fR\&) and \fIbindings()\fR\& (for \fI\&'$*\&'\fR\&)\&. As an example, one can translate the following \fIets:match_object/2\fR\& call to a \fIets:select/2\fR\& call:
+.LP
+.nf
+
+ets:match_object(Table, {'$1',test,'$2'}). 
+.fi
+.RS 2
+.LP
+This is the same as:
+.RE
+.LP
+.nf
+
+ets:select(Table, ets:fun2ms(fun({A,test,B}) -> object() end)).
+.fi
+.RS 2
+.LP
+In this simple case, the former expression is probably preferable in terms of readability\&.
+.RE
+.RS 2
+.LP
+The \fIets:select/2\fR\& call conceptually looks like this in the resulting code:
+.RE
+.LP
+.nf
+
+ets:select(Table, [{{'$1',test,'$2'},[],['$_']}]).
+.fi
+.RS 2
+.LP
+Matching on the top-level of the fun head can be a more natural way to access \fI\&'$_\&'\fR\&, see above\&.
+.RE
+.LP
+.TP 2
+*
+Term constructions/literals are translated as much as is needed to get them into valid match specification\&. This way tuples are made into match specification tuple constructions (a one element tuple containing the tuple) and constant expressions are used when importing variables from the environment\&. Records are also translated into plain tuple constructions, calls to element, and so on\&. The guard test \fIis_record/2\fR\& is translated into match specification code using the three parameter version that is built into match specification, so that \fIis_record(A,t)\fR\& is translated into \fI{is_record,\&'$1\&',t,5}\fR\& if the record size of record type \fIt\fR\& is 5\&.
+.LP
+.TP 2
+*
+Language constructions such as \fIcase\fR\&, \fIif\fR\&, and \fIcatch\fR\& that are not present in match specifications are not allowed\&.
+.LP
+.TP 2
+*
+If header file \fIms_transform\&.hrl\fR\& is not included, the fun is not translated, which can result in a \fIruntime error\fR\& (depending on whether the fun is valid in a pure Erlang context)\&.
+.RS 2
+.LP
+Ensure that the header is included when using \fIets\fR\& and \fIdbg:fun2ms/1\fR\& in compiled code\&.
+.RE
+.LP
+.TP 2
+*
+If pseudo function triggering the translation is \fIets:fun2ms/1\fR\&, the head of the fun must contain a single variable or a single tuple\&. If the pseudo function is \fIdbg:fun2ms/1\fR\&, the head of the fun must contain a single variable or a single list\&.
+.LP
+.RE
+
+.LP
+The translation from funs to match specifications is done at compile time, so runtime performance is not affected by using these pseudo functions\&.
+.LP
+For more information about match specifications, see the \fBMatch specifications in Erlang\fR\& in ERTS User\&'s Guide\&.
+.SH EXPORTS
+.LP
+.nf
+
+.B
+format_error(Error) -> Chars
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Error = {error, module(), term()}
+.br
+Chars = \fBio_lib:chars()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Takes an error code returned by one of the other functions in the module and creates a textual description of the error\&.
+.RE
+.LP
+.nf
+
+.B
+parse_transform(Forms, Options) -> Forms2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = Forms2 = [\fBerl_parse:abstract_form()\fR\& | \fBerl_parse:form_info()\fR\&]
+.br
+Options = term()
+.br
+.RS 2
+Option list, required but not used\&. 
+.RE
+.RE
+.RE
+.RS
+.LP
+Implements the transformation at compile time\&. This function is called by the compiler to do the source code transformation if and when header file \fIms_transform\&.hrl\fR\& is included in the source code\&.
+.LP
+For information about how to use this parse transformation, see \fB\fIets\fR\&\fR\& and \fB\fIdbg:fun2ms/1\fR\&\fR\&\&.
+.LP
+For a description of match specifications, see section \fB Match Specification in Erlang\fR\& in ERTS User\&'s Guide\&.
+.RE
+.LP
+.nf
+
+.B
+transform_from_shell(Dialect, Clauses, BoundEnvironment) -> term()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Dialect = ets | dbg
+.br
+Clauses = [\fBerl_parse:abstract_clause()\fR\&]
+.br
+BoundEnvironment = \fBerl_eval:binding_struct()\fR\&
+.br
+.RS 2
+List of variable bindings in the shell environment\&.
+.RE
+.RE
+.RE
+.RS
+.LP
+Implements the transformation when the \fIfun2ms/1\fR\& functions are called from the shell\&. In this case, the abstract form is for one single fun (parsed by the Erlang shell)\&. All imported variables are to be in the key-value list passed as \fIBoundEnvironment\fR\&\&. The result is a term, normalized, that is, not in abstract format\&.
+.RE

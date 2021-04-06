@@ -1,0 +1,803 @@
+.TH ct_hooks 3 "common_test 1.19" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ct_hooks \- A callback interface on top of Common Test.
+.SH DESCRIPTION
+.LP
+The \fICommon Test Hook (CTH)\fR\& framework allows extensions of the default behavior of \fICommon Test\fR\& by callbacks before and after all test suite calls\&. It is intended for advanced users of \fICommon Test\fR\& who want to abstract out behavior that is common to multiple test suites\&.
+.LP
+In brief, CTH allows you to:
+.RS 2
+.TP 2
+*
+Manipulate the runtime configuration before each suite configuration call\&.
+.LP
+.TP 2
+*
+Manipulate the return of all suite configuration calls and by extension the result of the test themselves\&.
+.LP
+.RE
+
+.LP
+The following sections describe the mandatory and optional CTH functions that \fICommon Test\fR\& calls during test execution\&. For more details, see section Common Test Hooks in the User\&'s Guide\&.
+.LP
+For information about how to add a CTH to your suite, see section Installing a CTH in the User\&'s Guide\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+For a minimal example of a CTH, see section Example CTH in the User\&'s Guide\&.
+
+.SH "CALLBACK FUNCTIONS"
+
+.LP
+The following functions define the callback interface for a CTH\&.
+.SH EXPORTS
+.LP
+.B
+Module:init(Id, Opts) -> {ok, State} | {ok, State, Priority}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Id = reference() | term()
+.br
+Opts = term()
+.br
+State = term()
+.br
+Priority = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+MANDATORY
+.LP
+This function is always called before any other callback function\&. Use it to initiate any common state\&. It is to return a state for this CTH\&.
+.LP
+\fIId\fR\& is either the return value of \fIct_hooks:id/1\fR\&, or a \fIreference\fR\& (created using erlang:make_ref/0 in ERTS) if \fIct_hooks:id/1\fR\& is not implemented\&.
+.LP
+\fIPriority\fR\& is the relative priority of this hook\&. Hooks with a lower priority are executed first\&. If no priority is specified, it is set to \fI0\fR\&\&.
+.LP
+For details about when \fIinit\fR\& is called, see section CTH Scope in the User\&'s Guide\&.
+.RE
+.LP
+.B
+Module:post_groups(SuiteName, GroupDefs) -> NewGroupDefs
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+GroupDefs = NewGroupDefs = [Group]
+.br
+Group = {GroupName,Properties,GroupsAndTestCases}
+.br
+GroupName = atom()
+.br
+Properties = [parallel | sequence | Shuffle | {GroupRepeatType,N}]
+.br
+GroupsAndTestCases = [Group | {group,GroupName} | TestCase | {testcase,TestCase,TCRepeatProps}]
+.br
+TestCase = atom()
+.br
+TCRepeatProps = [{repeat,N} | {repeat_until_ok,N} | {repeat_until_fail,N}]
+.br
+Shuffle = shuffle | {shuffle,Seed}
+.br
+Seed = {integer(),integer(),integer()}
+.br
+GroupRepeatType = repeat | repeat_until_all_ok | repeat_until_all_fail | repeat_until_any_ok | repeat_until_any_fail
+.br
+N = integer() | forever
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIgroups/0\fR\&\&. It is used to modify the test group definitions, for instance to add or remove groups or change group properties\&.
+.LP
+\fIGroupDefs\fR\& is what \fIgroups/0\fR\& returned, that is, a list of group definitions\&.
+.LP
+\fINewGroupDefs\fR\& is the possibly modified version of this list\&.
+.LP
+This function is called only if the CTH is added before \fIinit_per_suite\fR\& is run\&. For details, see section CTH Scope in the User\&'s Guide\&.
+.LP
+Notice that for CTHs that are installed by means of the \fIsuite/0\fR\& function, \fIpost_groups/2\fR\& is called before the \fIinit/2\fR\& hook function\&. However, for CTHs that are installed by means of the CT start flag, the \fIinit/2\fR\& function is called first\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Prior to each test execution, Common Test does a simulated test run in order to count test suites, groups and cases for logging purposes\&. This causes the \fIpost_groups/2\fR\& hook function to always be called twice\&. For this reason, side effects are best avoided in this callback\&.
+
+.RE
+.LP
+.B
+Module:post_all(SuiteName, Return, GroupDefs) -> NewReturn
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+Return = NewReturn = Tests | {skip,Reason}
+.br
+Tests = [TestCase | {testcase,TestCase,TCRepeatProps} | {group,GroupName} | {group,GroupName,Properties} | {group,GroupName,Properties,SubGroups}]
+.br
+TestCase = atom()
+.br
+TCRepeatProps = [{repeat,N} | {repeat_until_ok,N} | {repeat_until_fail,N}]
+.br
+GroupName = atom()
+.br
+Properties = GroupProperties | default
+.br
+SubGroups = [{GroupName,Properties} | {GroupName,Properties,SubGroups}]
+.br
+Shuffle = shuffle | {shuffle,Seed}
+.br
+Seed = {integer(),integer(),integer()}
+.br
+GroupRepeatType = repeat | repeat_until_all_ok | repeat_until_all_fail | repeat_until_any_ok | repeat_until_any_fail
+.br
+N = integer() | forever
+.br
+GroupDefs = NewGroupDefs = [Group]
+.br
+Group = {GroupName,GroupProperties,GroupsAndTestCases}
+.br
+GroupProperties = [parallel | sequence | Shuffle | {GroupRepeatType,N}]
+.br
+GroupsAndTestCases = [Group | {group,GroupName} | TestCase]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIall/0\fR\&\&. It is used to modify the set of test cases and test group to be executed, for instance to add or remove test cases and groups, change group properties, or even skip all tests in the suite\&.
+.LP
+\fIReturn\fR\& is what \fIall/0\fR\& returned, that is, a list of test cases and groups to be executed, or a tuple \fI{skip,Reason}\fR\&\&.
+.LP
+\fIGroupDefs\fR\& is what \fIgroups/0\fR\& or the \fIpost_groups/2\fR\& hook returned, that is, a list of group definitions\&.
+.LP
+\fINewReturn\fR\& is the possibly modified version of \fIReturn\fR\&\&.
+.LP
+This function is called only if the CTH is added before \fIinit_per_suite\fR\& is run\&. For details, see section CTH Scope in the User\&'s Guide\&.
+.LP
+Notice that for CTHs that are installed by means of the \fIsuite/0\fR\& function, \fIpost_all/2\fR\& is called before the \fIinit/2\fR\& hook function\&. However, for CTHs that are installed by means of the CT start flag, the \fIinit/2\fR\& function is called first\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Prior to each test execution, Common Test does a simulated test run in order to count test suites, groups and cases for logging purposes\&. This causes the \fIpost_all/3\fR\& hook function to always be called twice\&. For this reason, side effects are best avoided in this callback\&.
+
+.RE
+.LP
+.B
+Module:pre_init_per_suite(SuiteName, InitData, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+InitData = Config | SkipOrFail
+.br
+Config = NewConfig = [{Key,Value}]
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {Return, NewCTHState}
+.br
+Return = NewConfig | SkipOrFail
+.br
+SkipOrFail = {fail, Reason} | {skip, Reason}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called before \fIinit_per_suite\fR\& if it exists\&. It typically contains initialization/logging that must be done before \fIinit_per_suite\fR\& is called\&. If \fI{skip,Reason}\fR\& or \fI{fail,Reason}\fR\& is returned, \fIinit_per_suite\fR\& and all test cases of the suite are skipped and \fIReason\fR\& printed in the overview log of the suite\&.
+.LP
+\fISuiteName\fR\& is the name of the suite to be run\&.
+.LP
+\fIInitData\fR\& is the original configuration list of the test suite, or a \fISkipOrFail\fR\& tuple if a previous CTH has returned this\&.
+.LP
+\fICTHState\fR\& is the current internal state of the CTH\&.
+.LP
+\fIReturn\fR\& is the result of the \fIinit_per_suite\fR\& function\&. If it is \fI{skip,Reason}\fR\& or \fI{fail,Reason}\fR\&, \fIinit_per_suite\fR\& is never called, instead the initiation is considered to be skipped or failed, respectively\&. If a \fINewConfig\fR\& list is returned, \fIinit_per_suite\fR\& is called with that \fINewConfig\fR\& list\&. For more details, see section Pre Hooks in the User\&'s Guide\&.
+.LP
+This function is called only if the CTH is added before \fIinit_per_suite is run\fR\&\&. For details, see section CTH Scope in the User\&'s Guide\&.
+.RE
+.LP
+.B
+Module:post_init_per_suite(SuiteName, Config, Return, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+Config = [{Key,Value}]
+.br
+Return = NewReturn = Config | SkipOrFail | term()
+.br
+SkipOrFail = {fail, Reason} | {skip, Reason} | term()
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewReturn, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIinit_per_suite\fR\& if it exists\&. It typically contains extra checks to ensure that all the correct dependencies are started correctly\&.
+.LP
+\fIReturn\fR\& is what \fIinit_per_suite\fR\& returned, that is, \fI{fail,Reason}\fR\&, \fI{skip,Reason}\fR\&, a \fIConfig\fR\& list, or a term describing how \fIinit_per_suite\fR\& failed\&.
+.LP
+\fINewReturn\fR\& is the possibly modified return value of \fIinit_per_suite\fR\&\&. To recover from a failure in \fIinit_per_suite\fR\&, return \fIConfigList\fR\& with the \fItc_status\fR\& element removed\&. For more details, see  Post Hooks in section "Manipulating Tests" in the User\&'s Guide\&.
+.LP
+\fICTHState\fR\& is the current internal state of the CTH\&.
+.LP
+This function is called only if the CTH is added before or in \fIinit_per_suite\fR\&\&. For details, see section CTH Scope in the User\&'s Guide\&.
+.RE
+.LP
+.B
+Module:pre_init_per_group(SuiteName, GroupName, InitData, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+GroupName = atom()
+.br
+InitData = Config | SkipOrFail
+.br
+Config = NewConfig = [{Key,Value}]
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewConfig | SkipOrFail, NewCTHState}
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called before \fIinit_per_group\fR\& if it exists\&. It behaves the same way as \fIpre_init_per_suite\fR\&, but for function \fIinit_per_group\fR\& instead\&.
+.LP
+If \fIModule:pre_init_per_group/4\fR\& is not exported, common_test will attempt to call \fIModule:pre_init_per_group(GroupName, InitData, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:post_init_per_group(SuiteName, GroupName, Config, Return, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+GroupName = atom()
+.br
+Config = [{Key,Value}]
+.br
+Return = NewReturn = Config | SkipOrFail | term()
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewReturn, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIinit_per_group\fR\& if it exists\&. It behaves the same way as \fIpost_init_per_suite\fR\&, but for function \fIinit_per_group\fR\& instead\&.
+.LP
+If \fIModule:post_init_per_group/5\fR\& is not exported, common_test will attempt to call \fIModule:post_init_per_group(GroupName, Config, Return, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:pre_init_per_testcase(SuiteName, TestcaseName, InitData, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+TestcaseName = atom()
+.br
+InitData = Config | SkipOrFail
+.br
+Config = NewConfig = [{Key,Value}]
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewConfig | SkipOrFail, NewCTHState}
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called before \fIinit_per_testcase\fR\& if it exists\&. It behaves the same way as \fIpre_init_per_suite\fR\&, but for function \fIinit_per_testcase\fR\& instead\&.
+.LP
+If \fIModule:pre_init_per_testcase/4\fR\& is not exported, common_test will attempt to call \fIModule:pre_init_per_testcase(TestcaseName, InitData, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.LP
+CTHs cannot be added here right now\&. That feature may be added in a later release, but it would right now break backwards compatibility\&.
+.RE
+.LP
+.B
+Module:post_init_per_testcase(SuiteName, TestcaseName, Config, Return, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+TestcaseName = atom()
+.br
+Config = [{Key,Value}]
+.br
+Return = NewReturn = Config | SkipOrFail | term()
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewReturn, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIinit_per_testcase\fR\& if it exists\&. It behaves the same way as \fIpost_init_per_suite\fR\&, but for function \fIinit_per_testcase\fR\& instead\&.
+.LP
+If \fIModule:post_init_per_testcase/5\fR\& is not exported, common_test will attempt to call \fIModule:post_init_per_testcase(TestcaseName, Config, Return, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:pre_end_per_testcase(SuiteName, TestcaseName, EndData, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+TestcaseName = atom()
+.br
+EndData = Config
+.br
+Config = NewConfig = [{Key,Value}]
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewConfig, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called before \fIend_per_testcase\fR\& if it exists\&. It behaves the same way as \fIpre_end_per_suite\fR\&, but for function \fIend_per_testcase\fR\& instead\&.
+.LP
+This function cannot change the result of the test case by returning skip or fail tuples, but it may insert items in \fIConfig\fR\& that can be read in \fIend_per_testcase/2\fR\& or in \fIpost_end_per_testcase/5\fR\&\&.
+.LP
+If \fIModule:pre_end_per_testcase/4\fR\& is not exported, common_test will attempt to call \fIModule:pre_end_per_testcase(TestcaseName, EndData, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:post_end_per_testcase(SuiteName, TestcaseName, Config, Return, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+TestcaseName = atom()
+.br
+Config = [{Key,Value}]
+.br
+Return = NewReturn = Config | SkipOrFail | term()
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewReturn, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIend_per_testcase\fR\& if it exists\&. It behaves the same way as \fIpost_end_per_suite\fR\&, but for function \fIend_per_testcase\fR\& instead\&.
+.LP
+If \fIModule:post_end_per_testcase/5\fR\& is not exported, common_test will attempt to call \fIModule:post_end_per_testcase(TestcaseName, Config, Return, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:pre_end_per_group(SuiteName, GroupName, EndData, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+GroupName = atom()
+.br
+EndData = Config | SkipOrFail
+.br
+Config = NewConfig = [{Key,Value}]
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewConfig | SkipOrFail, NewCTHState}
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called before \fIend_per_group\fR\& if it exists\&. It behaves the same way as \fIpre_init_per_suite\fR\&, but for function \fIend_per_group\fR\& instead\&.
+.LP
+If \fIModule:pre_end_per_group/4\fR\& is not exported, common_test will attempt to call \fIModule:pre_end_per_group(GroupName, EndData, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:post_end_per_group(SuiteName, GroupName, Config, Return, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+GroupName = atom()
+.br
+Config = [{Key,Value}]
+.br
+Return = NewReturn = Config | SkipOrFail | term()
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewReturn, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIend_per_group\fR\& if it exists\&. It behaves the same way as \fIpost_init_per_suite\fR\&, but for function end_per_group instead\&.
+.LP
+If \fIModule:post_end_per_group/5\fR\& is not exported, common_test will attempt to call \fIModule:post_end_per_group(GroupName, Config, Return, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:pre_end_per_suite(SuiteName, EndData, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+EndData = Config | SkipOrFail
+.br
+Config = NewConfig = [{Key,Value}]
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewConfig | SkipOrFail, NewCTHState}
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called before \fIend_per_suite\fR\& if it exists\&. It behaves the same way as \fIpre_init_per_suite\fR\&, but for function \fIend_per_suite\fR\& instead\&.
+.RE
+.LP
+.B
+Module:post_end_per_suite(SuiteName, Config, Return, CTHState) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+Config = [{Key,Value}]
+.br
+Return = NewReturn = Config | SkipOrFail | term()
+.br
+SkipOrFail = {fail,Reason} | {skip, Reason}
+.br
+CTHState = NewCTHState = term()
+.br
+Result = {NewReturn, NewCTHState}
+.br
+Key = atom()
+.br
+Value = term()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called after \fIend_per_suite\fR\& if it exists\&. It behaves the same way as \fIpost_init_per_suite\fR\&, but for function \fIend_per_suite\fR\& instead\&.
+.RE
+.LP
+.B
+Module:on_tc_fail(SuiteName, TestName, Reason, CTHState) -> NewCTHState
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+TestName = init_per_suite | end_per_suite | {init_per_group,GroupName} | {end_per_group,GroupName} | {FuncName,GroupName} | FuncName
+.br
+FuncName = atom()
+.br
+GroupName = atom()
+.br
+Reason = term()
+.br
+CTHState = NewCTHState = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called whenever a test case (or configuration function) fails\&. It is called after the post function is called for the failed test case, that is:
+.RS 2
+.TP 2
+*
+If \fIinit_per_suite\fR\& fails, this function is called after \fIpost_init_per_suite\fR\&\&.
+.LP
+.TP 2
+*
+If a test case fails, this funcion is called after \fIpost_end_per_testcase\fR\&\&.
+.LP
+.RE
+
+.LP
+If the failed test case belongs to a test case group, the first argument is a tuple \fI{FuncName,GroupName}\fR\&, otherwise only the function name\&.
+.LP
+The data that comes with \fIReason\fR\& follows the same format as \fIFailReason\fR\& in event \fItc_done\fR\&\&. For details, see section Event Handling in the User\&'s Guide\&.
+.LP
+If \fIModule:on_tc_fail/4\fR\& is not exported, common_test will attempt to call \fIModule:on_tc_fail(TestName, Reason, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:on_tc_skip(SuiteName, TestName, Reason, CTHState) -> NewCTHState
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SuiteName = atom()
+.br
+TestName = init_per_suite | end_per_suite | {init_per_group,GroupName} | {end_per_group,GroupName} | {FuncName,GroupName} | FuncName
+.br
+FuncName = atom()
+.br
+GroupName = atom()
+.br
+Reason = {tc_auto_skip | tc_user_skip, term()}
+.br
+CTHState = NewCTHState = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called whenever a test case (or configuration function) is skipped\&. It is called after the post function is called for the skipped test case, that is:
+.RS 2
+.TP 2
+*
+If \fIinit_per_group\fR\& is skipped, this function is called after \fIpost_init_per_group\fR\&\&.
+.LP
+.TP 2
+*
+If a test case is skipped, this function is called after \fIpost_end_per_testcase\fR\&\&.
+.LP
+.RE
+
+.LP
+If the skipped test case belongs to a test case group, the first argument is a tuple \fI{FuncName,GroupName}\fR\&, otherwise only the function name\&.
+.LP
+The data that comes with \fIReason\fR\& follows the same format as events \fItc_auto_skip\fR\& and \fItc_user_skip\fR\& For details, see section Event Handling in the User\&'s Guide\&.
+.LP
+If \fIModule:on_tc_skip/4\fR\& is not exported, common_test will attempt to call \fIModule:on_tc_skip(TestName, Reason, CTHState)\fR\& instead\&. This is for backwards compatibility\&.
+.RE
+.LP
+.B
+Module:terminate(CTHState)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+CTHState = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+This function is called at the end of a CTH scope\&.
+.RE
+.LP
+.B
+Module:id(Opts) -> Id
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Opts = term()
+.br
+Id = term()
+.br
+.RE
+.RE
+.RS
+.LP
+OPTIONAL
+.LP
+The \fIId\fR\& identifies a CTH instance uniquely\&. If two CTHs return the same \fIId\fR\&, the second CTH is ignored and subsequent calls to the CTH are only made to the first instance\&. For details, see section Installing a CTH in the User\&'s Guide\&.
+.LP
+This function is \fInot\fR\& to have any side effects, as it can be called multiple times by \fICommon Test\fR\&\&.
+.LP
+If not implemented, the CTH acts as if this function returned a call to \fImake_ref/0\fR\&\&.
+.RE

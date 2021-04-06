@@ -1,0 +1,120 @@
+.TH wxPrintDialog 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxPrintDialog \- See external documentation: wxPrintDialog.
+.SH DESCRIPTION
+.LP
+See external documentation: wxPrintDialog\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxDialog\fR\& 
+.br
+\fBwxTopLevelWindow\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxPrintDialog():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new(Parent) -> \fBwxPrintDialog()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxPrintDialog()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {data, \fBwxPrintDialogData:wxPrintDialogData()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Also:
+.br
+new(Parent, Data) -> wxPrintDialog() when
+.br
+Parent::wxWindow:wxWindow(), Data::wxPrintData:wxPrintData()\&.
+.br
+
+.RE
+.LP
+.B
+getPrintDialogData(This) -> \fBwxPrintDialogData:wxPrintDialogData()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPrintDialog()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPrintDC(This) -> \fBwxDC:wxDC()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPrintDialog()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxPrintDialog()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

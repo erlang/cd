@@ -1,0 +1,63 @@
+.TH ct_property_test 3 "common_test 1.14" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ct_property_test \- EXPERIMENTAL support in Common Test for calling
+    property-based tests.
+.SH DESCRIPTION
+.LP
+EXPERIMENTAL support in \fICommon Test\fR\& for calling property-based tests\&.
+.LP
+This module is a first step to run property-based tests in the \fICommon Test\fR\& framework\&. A property testing tool like QuickCheck or PropEr is assumed to be installed\&.
+.LP
+The idea is to have a \fICommon Test\fR\& test suite calling a property testing tool with special property test suites as defined by that tool\&. The usual Erlang application directory structure is assumed\&. The tests are collected in the \fItest\fR\& directory of the application\&. The \fItest\fR\& directory has a subdirectory \fIproperty_test\fR\&, where everything needed for the property tests is collected\&.
+.LP
+A typical \fICommon Test\fR\& test suite using \fIct_property_test\fR\& is organized as follows:
+.LP
+.nf
+
+ -include_lib("common_test/include/ct.hrl").
+
+ all() -> [prop_ftp_case].
+
+ init_per_suite(Config) ->
+     ct_property_test:init_per_suite(Config).
+
+ %%%---- test case
+ prop_ftp_case(Config) ->
+     ct_property_test:quickcheck(
+       ftp_simple_client_server:prop_ftp(Config),
+       Config
+      ).
+.fi
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This is experimental code that can be changed or removed anytime without any warning\&.
+
+.SH EXPORTS
+.LP
+.B
+init_per_suite(Config) -> Config | {skip, Reason}
+.br
+.RS
+.LP
+Initializes \fIConfig\fR\& for property testing\&.
+.LP
+This function investigates if support is available for either Quickcheck, PropEr, or Triq\&. The options \fI{property_dir,AbsPath}\fR\& and \fI{property_test_tool,Tool}\fR\& are set in the \fIConfig\fR\& returned\&.
+.LP
+The function is intended to be called in function \fIinit_per_suite\fR\& in the test suite\&.
+.LP
+The property tests are assumed to be in subdirectory \fIproperty_test\fR\&\&.
+.RE
+.LP
+.B
+quickcheck(Property, Config) -> true | {fail, Reason}
+.br
+.RS
+.LP
+Calls quickcheck and returns the result in a form suitable for \fICommon Test\fR\&\&.
+.LP
+This function is intended to be called in the test cases in the test suite\&.
+.RE

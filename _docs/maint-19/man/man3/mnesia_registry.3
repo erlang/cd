@@ -1,0 +1,41 @@
+.TH mnesia_registry 3 "mnesia 4.14.3.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+mnesia_registry \- Dump support for registries in erl_interface.
+.SH DESCRIPTION
+.LP
+This module is usually part of the \fIerl_interface\fR\& application, but is currently part of the Mnesia application\&.
+.LP
+This module is mainly intended for internal use within OTP, but it has two functions that are exported for public use\&.
+.LP
+On C-nodes, \fIerl_interface\fR\& has support for registry tables\&. These tables reside in RAM on the C-node, but can also be dumped into Mnesia tables\&. By default, the dumping of registry tables through \fIerl_interface\fR\& causes a corresponding Mnesia table to be created with \fImnesia_registry:create_table/1\fR\&, if necessary\&.
+.LP
+Tables that are created with these functions can be administered as all other Mnesia tables\&. They can be included in backups, replicas can be added, and so on\&. The tables are normal Mnesia tables owned by the user of the corresponding \fIerl_interface\fR\& registries\&.
+.SH EXPORTS
+.LP
+.B
+create_table(Tab) -> ok | exit(Reason)
+.br
+.RS
+.LP
+A wrapper function for \fImnesia:create_table/2\fR\&, which creates a table (if there is no existing table) with an appropriate set of \fIattributes\fR\&\&. The table only resides on the local node and its storage type is the same as the \fIschema\fR\& table on the local node, that is, \fI{ram_copies,[node()]}\fR\& or \fI{disc_copies,[node()]}\fR\&\&.
+.LP
+This function is used by \fIerl_interface\fR\& to create the Mnesia table if it does not already exist\&.
+.RE
+.LP
+.B
+create_table(Tab, TabDef) -> ok | exit(Reason)
+.br
+.RS
+.LP
+A wrapper function for \fImnesia:create_table/2\fR\&, which creates a table (if there is no existing table) with an appropriate set of \fIattributes\fR\&\&. The attributes and \fITabDef\fR\& are forwarded to \fImnesia:create_table/2\fR\&\&. For example, if the table is to reside as \fIdisc_only_copies\fR\& on all nodes, a call looks as follows:
+.LP
+.nf
+
+          TabDef = [{{disc_only_copies, node()|nodes()]}],
+          mnesia_registry:create_table(my_reg, TabDef)
+.fi
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fBerl_interface(3)\fR\&, \fBmnesia(3)\fR\&

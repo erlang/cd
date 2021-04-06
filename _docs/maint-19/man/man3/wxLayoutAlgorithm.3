@@ -1,0 +1,160 @@
+.TH wxLayoutAlgorithm 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxLayoutAlgorithm \- See external documentation: wxLayoutAlgorithm.
+.SH DESCRIPTION
+.LP
+See external documentation: wxLayoutAlgorithm\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxLayoutAlgorithm():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxLayoutAlgorithm()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+layoutFrame(This, Frame) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxLayoutAlgorithm()\fR\&
+.br
+Frame = \fBwxFrame:wxFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBlayoutFrame(This, Frame, [])\fR\&\&.
+.RE
+.LP
+.B
+layoutFrame(This, Frame, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxLayoutAlgorithm()\fR\&
+.br
+Frame = \fBwxFrame:wxFrame()\fR\&
+.br
+Option = {mainWindow, \fBwxWindow:wxWindow()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+layoutMDIFrame(This, Frame) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxLayoutAlgorithm()\fR\&
+.br
+Frame = \fBwxMDIParentFrame:wxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBlayoutMDIFrame(This, Frame, [])\fR\&\&.
+.RE
+.LP
+.B
+layoutMDIFrame(This, Frame, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxLayoutAlgorithm()\fR\&
+.br
+Frame = \fBwxMDIParentFrame:wxMDIParentFrame()\fR\&
+.br
+Option = {rect, {X::integer(), Y::integer(), W::integer(), H::integer()}}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+layoutWindow(This, Frame) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxLayoutAlgorithm()\fR\&
+.br
+Frame = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBlayoutWindow(This, Frame, [])\fR\&\&.
+.RE
+.LP
+.B
+layoutWindow(This, Frame, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxLayoutAlgorithm()\fR\&
+.br
+Frame = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {mainWindow, \fBwxWindow:wxWindow()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxLayoutAlgorithm()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

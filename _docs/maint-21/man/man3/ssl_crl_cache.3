@@ -1,0 +1,64 @@
+.TH ssl_crl_cache 3 "ssl 9.2.3.5" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssl_crl_cache \- CRL cache 
+.SH DESCRIPTION
+.LP
+Implements an internal CRL (Certificate Revocation List) cache\&. In addition to implementing the \fB ssl_crl_cache_api\fR\& behaviour the following functions are available\&.
+.SH DATA TYPES
+.SS DATA TYPES
+.nf
+
+\fBcrl_src()\fR\& = 
+.br
+    {file, \fBfile:filename()\fR\&} | {der, \fBpublic_key:der_encoded()\fR\&}
+.br
+.fi
+.nf
+
+\fBuri()\fR\& = \fBuri_string:uri_string()\fR\&
+.br
+.fi
+.SH EXPORTS
+.LP
+.B
+delete(Entries) -> ok | {error, Reason} 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ Entries = \fBcrl_src()\fR\&]}
+.br
+ Reason = crl_reason()
+.br
+.RE
+.RE
+.RS
+.LP
+Delete CRLs from the ssl applications local cache\&.
+.RE
+.LP
+.B
+insert(CRLSrc) -> ok | {error, Reason}
+.br
+.B
+insert(URI, CRLSrc) -> ok | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ CRLSrc = \fBcrl_src()\fR\&]}
+.br
+ URI = \fBuri()\fR\&
+.br
+ Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Insert CRLs, available to fetch on DER format from \fIURI\fR\&, into the ssl applications local cache\&.
+.RE

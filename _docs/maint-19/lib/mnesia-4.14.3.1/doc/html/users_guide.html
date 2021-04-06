@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:erl="http://erlang.org" xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- Mnesia User's Guide</title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/mnesia-4.14.3.1.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>Mnesia</strong><br><strong>User's Guide</strong><br><small>Version 4.14.3.1</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu">
+<li id="no" title="Introduction" expanded="false">Introduction<ul>
+<li><a href="Mnesia_chap1.html">
+              Top of chapter
+            </a></li>
+<li title="Scope"><a href="Mnesia_chap1.html#idp24337360">Scope</a></li>
+<li title="Prerequisites"><a href="Mnesia_chap1.html#idp24808800">Prerequisites</a></li>
+</ul>
+</li>
+<li id="no" title="Mnesia" expanded="false">Mnesia<ul>
+<li><a href="Mnesia_overview.html">
+              Top of chapter
+            </a></li>
+<li title="Mnesia Database Management System (DBMS)"><a href="Mnesia_overview.html#idp24455296">Mnesia Database Management System (DBMS)</a></li>
+</ul>
+</li>
+<li id="no" title="Getting Started" expanded="false">Getting Started<ul>
+<li><a href="Mnesia_chap2.html">
+              Top of chapter
+            </a></li>
+<li title="Starting Mnesia for the First Time"><a href="Mnesia_chap2.html#idp24576176">Starting Mnesia for the First Time</a></li>
+<li title="Example"><a href="Mnesia_chap2.html#idp24263392">Example</a></li>
+</ul>
+</li>
+<li id="no" title="Build a Mnesia Database" expanded="false">Build a Mnesia Database<ul>
+<li><a href="Mnesia_chap3.html">
+              Top of chapter
+            </a></li>
+<li title="Define a Schema"><a href="Mnesia_chap3.html#idp25470640">Define a Schema</a></li>
+<li title="Data Model"><a href="Mnesia_chap3.html#idp25508128">Data Model</a></li>
+<li title="Start Mnesia"><a href="Mnesia_chap3.html#idp25515408">Start Mnesia</a></li>
+<li title="Create Tables"><a href="Mnesia_chap3.html#idp26101472">Create Tables</a></li>
+</ul>
+</li>
+<li id="no" title="Transactions and Other Access Contexts" expanded="false">Transactions and Other Access Contexts<ul>
+<li><a href="Mnesia_chap4.html">
+              Top of chapter
+            </a></li>
+<li title="Transaction Properties"><a href="Mnesia_chap4.html#idp26172592">Transaction Properties</a></li>
+<li title="Locking"><a href="Mnesia_chap4.html#idp26203968">Locking</a></li>
+<li title="Dirty Operations"><a href="Mnesia_chap4.html#idp26272752">Dirty Operations</a></li>
+<li title="Record Names versus Table Names"><a href="Mnesia_chap4.html#idp26328272">Record Names versus Table Names</a></li>
+<li title="Activity Concept and Various Access Contexts"><a href="Mnesia_chap4.html#idp26340144">Activity Concept and Various Access Contexts</a></li>
+<li title="Nested Transactions"><a href="Mnesia_chap4.html#idp26404816">Nested Transactions</a></li>
+<li title="Pattern Matching"><a href="Mnesia_chap4.html#idp26415664">Pattern Matching</a></li>
+<li title="Iteration"><a href="Mnesia_chap4.html#idp26471984">Iteration</a></li>
+</ul>
+</li>
+<li id="no" title="Miscellaneous Mnesia Features" expanded="false">Miscellaneous Mnesia Features<ul>
+<li><a href="Mnesia_chap5.html">
+              Top of chapter
+            </a></li>
+<li title="Indexing"><a href="Mnesia_chap5.html#idp26522864">Indexing</a></li>
+<li title="Distribution and Fault Tolerance"><a href="Mnesia_chap5.html#idp26539552">Distribution and Fault Tolerance</a></li>
+<li title="Table Fragmentation"><a href="Mnesia_chap5.html#idp26558752">Table Fragmentation</a></li>
+<li title="Local Content Tables"><a href="Mnesia_chap5.html#idp26679824">Local Content Tables</a></li>
+<li title="Disc-Less Nodes"><a href="Mnesia_chap5.html#idp26683024">Disc-Less Nodes</a></li>
+<li title="More about Schema Management"><a href="Mnesia_chap5.html#idp26709648">More about Schema Management</a></li>
+<li title="Mnesia Event Handling"><a href="Mnesia_chap5.html#idp26745872">Mnesia Event Handling</a></li>
+<li title="Debugging Mnesia Applications"><a href="Mnesia_chap5.html#idp26838256">Debugging Mnesia Applications</a></li>
+<li title="Concurrent Processes in Mnesia"><a href="Mnesia_chap5.html#idp26856048">Concurrent Processes in Mnesia</a></li>
+<li title="Prototyping"><a href="Mnesia_chap5.html#idp26862304">Prototyping</a></li>
+<li title="Object-Based Programming with Mnesia"><a href="Mnesia_chap5.html#idp26879168">Object-Based Programming with Mnesia</a></li>
+</ul>
+</li>
+<li id="no" title="Mnesia System Information" expanded="false">Mnesia System Information<ul>
+<li><a href="Mnesia_chap7.html">
+              Top of chapter
+            </a></li>
+<li title="Database Configuration Data"><a href="Mnesia_chap7.html#idp26919008">Database Configuration Data</a></li>
+<li title="Core Dumps"><a href="Mnesia_chap7.html#idp26924384">Core Dumps</a></li>
+<li title="Dumping Tables"><a href="Mnesia_chap7.html#idp26928192">Dumping Tables</a></li>
+<li title="Checkpoints"><a href="Mnesia_chap7.html#idp26933968">Checkpoints</a></li>
+<li title="Startup Files, Log File, and Data Files"><a href="Mnesia_chap7.html#idp26965328">Startup Files, Log File, and Data Files</a></li>
+<li title="Loading Tables at Startup"><a href="Mnesia_chap7.html#idp27026928">Loading Tables at Startup</a></li>
+<li title="Recovery from Communication Failure"><a href="Mnesia_chap7.html#idp27053296">Recovery from Communication Failure</a></li>
+<li title="Recovery of Transactions"><a href="Mnesia_chap7.html#idp27075312">Recovery of Transactions</a></li>
+<li title="Backup, Restore, Fallback, and Disaster Recovery"><a href="Mnesia_chap7.html#idp27097456">Backup, Restore, Fallback, and Disaster Recovery</a></li>
+</ul>
+</li>
+<li id="no" title="Combine Mnesia with SNMP" expanded="false">Combine Mnesia with SNMP<ul>
+<li><a href="Mnesia_chap8.html">
+              Top of chapter
+            </a></li>
+<li title="Combine Mnesia and SNMP"><a href="Mnesia_chap8.html#idp27212944">Combine Mnesia and SNMP</a></li>
+</ul>
+</li>
+<li id="no" title="Appendix A: Backup Callback Interface" expanded="false">Appendix A: Backup Callback Interface<ul>
+<li><a href="Mnesia_App_A.html">
+              Top of chapter
+            </a></li>
+<li title="mnesia_backup Callback Behavior"><a href="Mnesia_App_A.html#idp27226128">mnesia_backup Callback Behavior</a></li>
+</ul>
+</li>
+<li id="no" title="Appendix B: Activity Access Callback Interface" expanded="false">Appendix B: Activity Access Callback Interface<ul>
+<li><a href="Mnesia_App_B.html">
+              Top of chapter
+            </a></li>
+<li title="mnesia_access Callback Behavior"><a href="Mnesia_App_B.html#idp27240576">mnesia_access Callback Behavior</a></li>
+</ul>
+</li>
+<li id="no" title="Appendix C: Fragmented Table Hashing Callback Interface" expanded="false">Appendix C: Fragmented Table Hashing Callback Interface<ul>
+<li><a href="Mnesia_App_C.html">
+              Top of chapter
+            </a></li>
+<li title="mnesia_frag_hash Callback Behavior"><a href="Mnesia_App_C.html#idp27257856">mnesia_frag_hash Callback Behavior</a></li>
+</ul>
+</li>
+</ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Mnesia User's Guide</h1></center>
+<center><h4>Version 4.14.3.1</h4></center>
+<center><h4>June 15, 2018</h4></center>
+<div class="extrafrontpageinfo"><center></center></div>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 1997-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

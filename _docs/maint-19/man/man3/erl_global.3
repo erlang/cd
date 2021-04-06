@@ -1,0 +1,155 @@
+.TH erl_global 3 "erl_interface 3.9.3" "Ericsson AB" "C Library Functions"
+.SH NAME
+erl_global \- Access globally registered names.
+.SH DESCRIPTION
+.LP
+This module provides support for registering, looking up, and unregistering names in the \fIglobal\fR\& module\&. For more information, see \fB\fIkernel:global\fR\&\fR\&\&.
+.LP
+Notice that the functions below perform an RPC using an open file descriptor provided by the caller\&. This file descriptor must not be used for other traffic during the global operation, as the function can then receive unexpected data and fail\&.
+.SH EXPORTS
+.LP
+.B
+char **erl_global_names(fd,count)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int fd;
+.br
+int *count;
+.br
+.RE
+.RE
+.RS
+.LP
+Retrieves a list of all known global names\&.
+.RS 2
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIcount\fR\& is the address of an integer, or \fINULL\fR\&\&. If \fIcount\fR\& is not \fINULL\fR\&, it is set by the function to the number of names found\&.
+.LP
+.RE
+
+.LP
+On success, the function returns an array of strings, each containing a single registered name, and sets \fIcount\fR\& to the number of names found\&. The array is terminated by a single \fINULL\fR\& pointer\&. On failure, the function returns \fINULL\fR\& and \fIcount\fR\& is not modified\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+It is the caller\&'s responsibility to free the array afterwards\&. It has been allocated by the function with a single call to \fImalloc()\fR\&, so a single \fIfree()\fR\& is all that is necessary\&.
+
+.RE
+.LP
+.B
+int erl_global_register(fd,name,pid)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int fd;
+.br
+const char *name;
+.br
+ETERM *pid;
+.br
+.RE
+.RE
+.RS
+.LP
+Registers a name in \fIglobal\fR\&\&.
+.RS 2
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name to register in \fIglobal\fR\&\&.
+.LP
+.TP 2
+*
+\fIpid\fR\& is the pid that is to be associated with \fIname\fR\&\&. This value is returned by \fIglobal\fR\& when processes request the location of \fIname\fR\&\&. 
+.LP
+.RE
+
+.LP
+Returns \fI0\fR\& on success, otherwise \fI-1\fR\&\&.
+.RE
+.LP
+.B
+int erl_global_unregister(fd,name)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int fd;
+.br
+const char *name;
+.br
+.RE
+.RE
+.RS
+.LP
+Unregisters a name from \fIglobal\fR\&\&.
+.RS 2
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name to unregister from \fIglobal\fR\&\&.
+.LP
+.RE
+
+.LP
+Returns \fI0\fR\& on success, otherwise \fI-1\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_global_whereis(fd,name,node)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int fd;
+.br
+const char *name;
+.br
+char *node;
+.br
+.RE
+.RE
+.RS
+.LP
+Looks up a name in \fIglobal\fR\&\&.
+.RS 2
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name that is to be looked up in \fIglobal\fR\&\&.
+.LP
+.RE
+
+.LP
+If \fInode\fR\& is not \fINULL\fR\&, it is a pointer to a buffer where the function can fill in the name of the node where \fIname\fR\& is found\&. \fInode\fR\& can be passed directly to \fIerl_connect()\fR\& if necessary\&.
+.LP
+On success, the function returns an Erlang pid containing the address of the specified name, and the node is initialized to the node name where \fIname\fR\& is found\&. On failure, \fINULL\fR\& is returned and \fInode\fR\& is not modified\&.
+.RE

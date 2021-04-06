@@ -1,0 +1,2782 @@
+.TH erl_nif 3 "erts 9.3.3" "Ericsson AB" "C Library Functions"
+.SH NAME
+erl_nif \- API functions for an Erlang NIF library.
+.SH DESCRIPTION
+.LP
+A NIF library contains native implementation of some functions of an Erlang module\&. The native implemented functions (NIFs) are called like any other functions without any difference to the caller\&. Each NIF must have an implementation in Erlang that is invoked if the function is called before the NIF library is successfully loaded\&. A typical such stub implementation is to throw an exception\&. But it can also be used as a fallback implementation if the NIF library is not implemented for some architecture\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+.LP
+\fIUse this functionality with extreme care\&.\fR\&
+.LP
+A native function is executed as a direct extension of the native code of the VM\&. Execution is not made in a safe environment\&. The VM \fIcannot\fR\& provide the same services as provided when executing Erlang code, such as pre-emptive scheduling or memory protection\&. If the native function does not behave well, the whole VM will misbehave\&.
+.RS 2
+.TP 2
+*
+A native function that crash will crash the whole VM\&.
+.LP
+.TP 2
+*
+An erroneously implemented native function can cause a VM internal state inconsistency, which can cause a crash of the VM, or miscellaneous misbehaviors of the VM at any point after the call to the native function\&.
+.LP
+.TP 2
+*
+A native function doing \fBlengthy work\fR\& before returning degrades responsiveness of the VM, and can cause miscellaneous strange behaviors\&. Such strange behaviors include, but are not limited to, extreme memory usage, and bad load balancing between schedulers\&. Strange behaviors that can occur because of lengthy work can also vary between Erlang/OTP releases\&.
+.LP
+.RE
+
+
+.LP
+A minimal example of a NIF library can look as follows:
+.LP
+.nf
+
+/* niftest.c */
+#include <erl_nif.h>
+
+static ERL_NIF_TERM hello(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    return enif_make_string(env, "Hello world!", ERL_NIF_LATIN1);
+}
+
+static ErlNifFunc nif_funcs[] =
+{
+    {"hello", 0, hello}
+};
+
+ERL_NIF_INIT(niftest,nif_funcs,NULL,NULL,NULL,NULL)
+.fi
+.LP
+The Erlang module can look as follows:
+.LP
+.nf
+
+-module(niftest).
+
+-export([init/0, hello/0]).
+
+init() ->
+      erlang:load_nif("./niftest", 0).
+
+hello() ->
+      "NIF library not loaded".
+.fi
+.LP
+Compile and test can look as follows (on Linux):
+.LP
+.nf
+
+$> gcc -fPIC -shared -o niftest.so niftest.c -I $ERL_ROOT/usr/include/
+$> erl
+
+1> c(niftest).
+{ok,niftest}
+2> niftest:hello().
+"NIF library not loaded"
+3> niftest:init().
+ok
+4> niftest:hello().
+"Hello world!"
+.fi
+.LP
+A better solution for a real module is to take advantage of the new directive \fIon_load\fR\& (see section \fBRunning a Function When a Module is Loaded\fR\& in the Erlang Reference Manual) to load the NIF library automatically when the module is loaded\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+A NIF does not have to be exported, it can be local to the module\&. However, unused local stub functions will be optimized away by the compiler, causing loading of the NIF library to fail\&.
+
+.LP
+Once loaded, a NIF library is persistent\&. It will not be unloaded until the module code version that it belongs to is purged\&.
+.SH "FUNCTIONALITY"
+
+.LP
+All interaction between NIF code and the Erlang runtime system is performed by calling NIF API functions\&. Functions exist for the following functionality:
+.RS 2
+.TP 2
+.B
+Read and write Erlang terms:
+Any Erlang terms can be passed to a NIF as function arguments and be returned as function return values\&. The terms are of C-type \fB\fIERL_NIF_TERM\fR\&\fR\& and can only be read or written using API functions\&. Most functions to read the content of a term are prefixed \fIenif_get_\fR\& and usually return \fItrue\fR\& (or \fIfalse\fR\&) if the term is of the expected type (or not)\&. The functions to write terms are all prefixed \fIenif_make_\fR\& and usually return the created \fIERL_NIF_TERM\fR\&\&. There are also some functions to query terms, like \fIenif_is_atom\fR\&, \fIenif_is_identical\fR\&, and \fIenif_compare\fR\&\&.
+.RS 2
+.LP
+All terms of type \fIERL_NIF_TERM\fR\& belong to an environment of type \fB\fIErlNifEnv\fR\&\fR\&\&. The lifetime of a term is controlled by the lifetime of its environment object\&. All API functions that read or write terms has the environment that the term belongs to as the first function argument\&.
+.RE
+.TP 2
+.B
+Binaries:
+Terms of type binary are accessed with the help of struct type \fB\fIErlNifBinary\fR\&\fR\&, which contains a pointer (\fIdata\fR\&) to the raw binary data and the length (\fIsize\fR\&) of the data in bytes\&. Both \fIdata\fR\& and \fIsize\fR\& are read-only and are only to be written using calls to API functions\&. Instances of \fIErlNifBinary\fR\& are, however, always allocated by the user (usually as local variables)\&.
+.RS 2
+.LP
+The raw data pointed to by \fIdata\fR\& is only mutable after a call to \fB\fIenif_alloc_binary\fR\&\fR\& or \fB\fIenif_realloc_binary\fR\&\fR\&\&. All other functions that operate on a binary leave the data as read-only\&. A mutable binary must in the end either be freed with \fB\fIenif_release_binary\fR\&\fR\& or made read-only by transferring it to an Erlang term with \fB\fIenif_make_binary\fR\&\fR\&\&. However, it does not have to occur in the same NIF call\&. Read-only binaries do not have to be released\&.
+.RE
+.RS 2
+.LP
+\fB\fIenif_make_new_binary\fR\&\fR\& can be used as a shortcut to allocate and return a binary in the same NIF call\&.
+.RE
+.RS 2
+.LP
+Binaries are sequences of whole bytes\&. Bitstrings with an arbitrary bit length have no support yet\&.
+.RE
+.TP 2
+.B
+Resource objects:
+The use of resource objects is a safe way to return pointers to native data structures from a NIF\&. A resource object is only a block of memory allocated with \fB\fIenif_alloc_resource\fR\&\fR\&\&. A handle ("safe pointer") to this memory block can then be returned to Erlang by the use of \fB\fIenif_make_resource\fR\&\fR\&\&. The term returned by \fIenif_make_resource\fR\& is opaque in nature\&. It can be stored and passed between processes, but the only real end usage is to pass it back as an argument to a NIF\&. The NIF can then call \fB\fIenif_get_resource\fR\&\fR\& and get back a pointer to the memory block, which is guaranteed to still be valid\&. A resource object is not deallocated until the last handle term is garbage collected by the VM and the resource is released with \fB\fIenif_release_resource\fR\&\fR\& (not necessarily in that order)\&.
+.RS 2
+.LP
+All resource objects are created as instances of some \fIresource type\fR\&\&. This makes resources from different modules to be distinguishable\&. A resource type is created by calling \fB\fIenif_open_resource_type\fR\&\fR\& when a library is loaded\&. Objects of that resource type can then later be allocated and \fIenif_get_resource\fR\& verifies that the resource is of the expected type\&. A resource type can have a user-supplied destructor function, which is automatically called when resources of that type are released (by either the garbage collector or \fIenif_release_resource\fR\&)\&. Resource types are uniquely identified by a supplied name string and the name of the implementing module\&.
+.RE
+.RS 2
+.LP
+The following is a template example of how to create and return a resource object\&.
+.RE
+.LP
+.nf
+
+ERL_NIF_TERM term;
+MyStruct* obj = enif_alloc_resource(my_resource_type, sizeof(MyStruct));
+
+/* initialize struct ... */
+
+term = enif_make_resource(env, obj);
+
+if (keep_a_reference_of_our_own) {
+    /* store 'obj' in static variable, private data or other resource object */
+}
+else {
+    enif_release_resource(obj);
+    /* resource now only owned by "Erlang" */
+}
+return term;
+.fi
+.RS 2
+.LP
+Notice that once \fIenif_make_resource\fR\& creates the term to return to Erlang, the code can choose to either keep its own native pointer to the allocated struct and release it later, or release it immediately and rely only on the garbage collector to deallocate the resource object eventually when it collects the term\&.
+.RE
+.RS 2
+.LP
+Another use of resource objects is to create binary terms with user-defined memory management\&. \fB\fIenif_make_resource_binary\fR\&\fR\& creates a binary term that is connected to a resource object\&. The destructor of the resource is called when the binary is garbage collected, at which time the binary data can be released\&. An example of this can be a binary term consisting of data from a \fImmap\fR\&\&'ed file\&. The destructor can then do \fImunmap\fR\& to release the memory region\&.
+.RE
+.RS 2
+.LP
+Resource types support upgrade in runtime by allowing a loaded NIF library to take over an already existing resource type and by that "inherit" all existing objects of that type\&. The destructor of the new library is thereafter called for the inherited objects and the library with the old destructor function can be safely unloaded\&. Existing resource objects, of a module that is upgraded, must either be deleted or taken over by the new NIF library\&. The unloading of a library is postponed as long as there exist resource objects with a destructor function in the library\&.
+.RE
+.TP 2
+.B
+Module upgrade and static data:
+A loaded NIF library is tied to the Erlang module instance that loaded it\&. If the module is upgraded, the new module instance needs to load its own NIF library (or maybe choose not to)\&. The new module instance can, however, choose to load the exact same NIF library as the old code if it wants to\&. Sharing the dynamic library means that static data defined by the library is shared as well\&. To avoid unintentionally shared static data between module instances, each Erlang module version can keep its own private data\&. This private data can be set when the NIF library is loaded and later retrieved by calling \fB\fIenif_priv_data\fR\&\fR\&\&.
+.TP 2
+.B
+Threads and concurrency:
+A NIF is thread-safe without any explicit synchronization as long as it acts as a pure function and only reads the supplied arguments\&. When you write to a shared state either through static variables or \fB\fIenif_priv_data\fR\&\fR\&, you need to supply your own explicit synchronization\&. This includes terms in process-independent environments that are shared between threads\&. Resource objects also require synchronization if you treat them as mutable\&.
+.RS 2
+.LP
+The library initialization callbacks \fIload\fR\& and \fIupgrade\fR\& are thread-safe even for shared state data\&.
+.RE
+.TP 2
+.B
+Version Management:
+When a NIF library is built, information about the NIF API version is compiled into the library\&. When a NIF library is loaded, the runtime system verifies that the library is of a compatible version\&. \fIerl_nif\&.h\fR\& defines the following:
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_MAJOR_VERSION\fR\&:
+Incremented when NIF library incompatible changes are made to the Erlang runtime system\&. Normally it suffices to recompile the NIF library when the \fIERL_NIF_MAJOR_VERSION\fR\& has changed, but it can, under rare circumstances, mean that NIF libraries must be slightly modified\&. If so, this will of course be documented\&.
+.TP 2
+.B
+\fIERL_NIF_MINOR_VERSION\fR\&:
+Incremented when new features are added\&. The runtime system uses the minor version to determine what features to use\&.
+.RE
+.RS 2
+.LP
+The runtime system normally refuses to load a NIF library if the major versions differ, or if the major versions are equal and the minor version used by the NIF library is greater than the one used by the runtime system\&. Old NIF libraries with lower major versions are, however, allowed after a bump of the major version during a transition period of two major releases\&. Such old NIF libraries can however fail if deprecated features are used\&.
+.RE
+.TP 2
+.B
+Time Measurement:
+Support for time measurement in NIF libraries:
+.RS 2
+.TP 2
+*
+\fB\fIErlNifTime\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIErlNifTimeUnit\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_monotonic_time()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_time_offset()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_convert_time_unit()\fR\&\fR\&
+.LP
+.RE
+
+.TP 2
+.B
+I/O Queues:
+The Erlang nif library contains function for easily working with I/O vectors as used by the unix system call \fIwritev\fR\&\&. The I/O Queue is not thread safe, so some other synchronization mechanism has to be used\&.
+.RS 2
+.TP 2
+*
+\fB\fISysIOVec\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIErlNifIOVec\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_ioq_create()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_ioq_destroy()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_ioq_enq_binary()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_ioq_enqv()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_ioq_deq()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_ioq_peek()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_inspect_iovec()\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIenif_free_iovec()\fR\&\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Typical usage when writing to a file descriptor looks like this:
+.RE
+.LP
+.nf
+
+int writeiovec(ErlNifEnv *env, ERL_NIF_TERM term, ERL_NIF_TERM *tail,
+               ErlNifIOQueue *q, int fd) {
+
+    ErlNifIOVec vec, *iovec = &vec;
+    SysIOVec *sysiovec;
+    int saved_errno;
+    int iovcnt, n;
+
+    if (!enif_inspect_iovec(env, 64, term, tail, &iovec))
+        return -2;
+
+    if (enif_ioq_size(q) > 0) {
+        /* If the I/O queue contains data we enqueue the iovec and
+           then peek the data to write out of the queue. */
+        if (!enif_ioq_enqv(q, iovec, 0))
+            return -3;
+
+        sysiovec = enif_ioq_peek(q, &iovcnt);
+    } else {
+        /* If the I/O queue is empty we skip the trip through it. */
+        iovcnt = iovec->iovcnt;
+        sysiovec = iovec->iov;
+    }
+
+    /* Attempt to write the data */
+    n = writev(fd, sysiovec, iovcnt);
+    saved_errno = errno;
+
+    if (enif_ioq_size(q) == 0) {
+        /* If the I/O queue was initially empty we enqueue any
+           remaining data into the queue for writing later. */
+        if (n >= 0 && !enif_ioq_enqv(q, iovec, n))
+            return -3;
+    } else {
+        /* Dequeue any data that was written from the queue. */
+        if (n > 0 && !enif_ioq_deq(q, n, NULL))
+            return -4;
+    }
+
+    /* return n, which is either number of bytes written or -1 if
+       some error happened */
+    errno = saved_errno;
+    return n;
+}
+.fi
+.TP 2
+.B
+Long-running NIFs:
+As mentioned in the \fBwarning\fR\& text at the beginning of this manual page, it is of \fIvital importance\fR\& that a native function returns relatively fast\&. It is difficult to give an exact maximum amount of time that a native function is allowed to work, but usually a well-behaving native function is to return to its caller within 1 millisecond\&. This can be achieved using different approaches\&. If you have full control over the code to execute in the native function, the best approach is to divide the work into multiple chunks of work and call the native function multiple times\&. This is, however, not always possible, for example when calling third-party libraries\&.
+.RS 2
+.LP
+The \fB\fIenif_consume_timeslice()\fR\&\fR\& function can be used to inform the runtime system about the length of the NIF call\&. It is typically always to be used unless the NIF executes very fast\&.
+.RE
+.RS 2
+.LP
+If the NIF call is too lengthy, this must be handled in one of the following ways to avoid degraded responsiveness, scheduler load balancing problems, and other strange behaviors:
+.RE
+.RS 2
+.TP 2
+.B
+Yielding NIF:
+If the functionality of a long-running NIF can be split so that its work can be achieved through a series of shorter NIF calls, the application has two options:
+.RS 2
+.TP 2
+*
+Make that series of NIF calls from the Erlang level\&.
+.LP
+.TP 2
+*
+Call a NIF that first performs a chunk of the work, then invokes the \fB\fIenif_schedule_nif\fR\&\fR\& function to schedule another NIF call to perform the next chunk\&. The final call scheduled in this manner can then return the overall result\&.
+.LP
+.RE
+
+.RS 2
+.LP
+Breaking up a long-running function in this manner enables the VM to regain control between calls to the NIFs\&.
+.RE
+.RS 2
+.LP
+This approach is always preferred over the other alternatives described below\&. This both from a performance perspective and a system characteristics perspective\&.
+.RE
+.TP 2
+.B
+Threaded NIF:
+This is accomplished by dispatching the work to another thread managed by the NIF library, return from the NIF, and wait for the result\&. The thread can send the result back to the Erlang process using \fB\fIenif_send\fR\&\fR\&\&. Information about thread primitives is provided below\&.
+.TP 2
+.B
+Dirty NIF:
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Dirty NIF support is available only when the emulator is configured with dirty scheduler support\&. As of ERTS version 9\&.0, dirty scheduler support is enabled by default on the runtime system with SMP support\&. The Erlang runtime without SMP support does \fInot\fR\& support dirty schedulers even when the dirty scheduler support is explicitly enabled\&. To check at runtime for the presence of dirty scheduler threads, code can use the \fB\fIenif_system_info()\fR\&\fR\& API function\&.
+
+.RS 2
+.LP
+A NIF that cannot be split and cannot execute in a millisecond or less is called a "dirty NIF", as it performs work that the ordinary schedulers of the Erlang runtime system cannot handle cleanly\&. Applications that make use of such functions must indicate to the runtime that the functions are dirty so they can be handled specially\&. This is handled by executing dirty jobs on a separate set of schedulers called dirty schedulers\&. A dirty NIF executing on a dirty scheduler does not have the same duration restriction as a normal NIF\&.
+.RE
+.RS 2
+.LP
+It is important to classify the dirty job correct\&. An I/O bound job should be classified as such, and a CPU bound job should be classified as such\&. If you should classify CPU bound jobs as I/O bound jobs, dirty I/O schedulers might starve ordinary schedulers\&. I/O bound jobs are expected to either block waiting for I/O, and/or spend a limited amount of time moving data\&.
+.RE
+.RS 2
+.LP
+To schedule a dirty NIF for execution, the application has two options:
+.RE
+.RS 2
+.TP 2
+*
+Set the appropriate flags value for the dirty NIF in its \fB\fIErlNifFunc\fR\&\fR\& entry\&.
+.LP
+.TP 2
+*
+Call \fB\fIenif_schedule_nif\fR\&\fR\&, pass to it a pointer to the dirty NIF to be executed, and indicate with argument \fIflags\fR\& whether it expects the operation to be CPU-bound or I/O-bound\&.
+.LP
+.RE
+
+.RS 2
+.LP
+A job that alternates between I/O bound and CPU bound can be reclassified and rescheduled using \fIenif_schedule_nif\fR\& so that it executes on the correct type of dirty scheduler at all times\&. For more information see the documentation of the \fIerl(1)\fR\& command line arguments \fB\fI+SDcpu\fR\&\fR\&, and \fB\fI+SDio\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+While a process executes a dirty NIF, some operations that communicate with it can take a very long time to complete\&. Suspend or garbage collection of a process executing a dirty NIF cannot be done until the dirty NIF has returned\&. Thus, other processes waiting for such operations to complete might have to wait for a very long time\&. Blocking multi-scheduling, that is, calling \fB\fIerlang:system_flag(multi_scheduling, block)\fR\&\fR\&, can also take a very long time to complete\&. This becaue all ongoing dirty operations on all dirty schedulers must complete before the block operation can complete\&.
+.RE
+.RS 2
+.LP
+Many operations communicating with a process executing a dirty NIF can, however, complete while it executes the dirty NIF\&. For example, retrieving information about it through \fB\fIerlang:process_info\fR\&\fR\&, setting its group leader, register/unregister its name, and so on\&.
+.RE
+.RS 2
+.LP
+Termination of a process executing a dirty NIF can only be completed up to a certain point while it executes the dirty NIF\&. All Erlang resources, such as its registered name and its ETS tables, are released\&. All links and monitors are triggered\&. The execution of the NIF is, however, \fInot\fR\& stopped\&. The NIF can safely continue execution, allocate heap memory, and so on, but it is of course better to stop executing as soon as possible\&. The NIF can check whether a current process is alive using \fB\fIenif_is_current_process_alive\fR\&\fR\&\&. Communication using \fB\fIenif_send\fR\&\fR\& and \fB\fIenif_port_command\fR\&\fR\& is also dropped when the sending process is not alive\&. Deallocation of certain internal resources, such as process heap and process control block, is delayed until the dirty NIF has completed\&.
+.RE
+.RE
+.RE
+.SH "INITIALIZATION"
+
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_INIT(MODULE, ErlNifFunc funcs[], load, NULL, upgrade, unload)\fR\&:
+This is the magic macro to initialize a NIF library\&. It is to be evaluated in global file scope\&.
+.RS 2
+.LP
+\fIMODULE\fR\& is the name of the Erlang module as an identifier without string quotations\&. It is stringified by the macro\&.
+.RE
+.RS 2
+.LP
+\fIfuncs\fR\& is a static array of function descriptors for all the implemented NIFs in this library\&.
+.RE
+.RS 2
+.LP
+\fIload\fR\&, \fIupgrade\fR\& and \fIunload\fR\& are pointers to functions\&. One of \fIload\fR\& or \fIupgrade\fR\& is called to initialize the library\&. \fIunload\fR\& is called to release the library\&. All are described individually below\&.
+.RE
+.RS 2
+.LP
+The fourth argument \fINULL\fR\& is ignored\&. It was earlier used for the deprectated \fIreload\fR\& callback which is no longer supported since OTP 20\&.
+.RE
+.RS 2
+.LP
+If compiling a NIF for static inclusion through \fI--enable-static-nifs\fR\&, you must define \fISTATIC_ERLANG_NIF\fR\& before the \fIERL_NIF_INIT\fR\& declaration\&.
+.RE
+.TP 2
+.B
+\fIint (*load)(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)\fR\&:
+\fIload\fR\& is called when the NIF library is loaded and no previously loaded library exists for this module\&.
+.RS 2
+.LP
+\fI*priv_data\fR\& can be set to point to some private data if the library needs to keep a state between NIF calls\&. \fIenif_priv_data\fR\& returns this pointer\&. \fI*priv_data\fR\& is initialized to \fINULL\fR\& when \fIload\fR\& is called\&.
+.RE
+.RS 2
+.LP
+\fIload_info\fR\& is the second argument to \fB\fIerlang:load_nif/2\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+The library fails to load if \fIload\fR\& returns anything other than \fI0\fR\&\&. \fIload\fR\& can be \fINULL\fR\& if initialization is not needed\&.
+.RE
+.TP 2
+.B
+\fIint (*upgrade)(ErlNifEnv* env, void** priv_data, void** old_priv_data, ERL_NIF_TERM load_info)\fR\&:
+\fIupgrade\fR\& is called when the NIF library is loaded and there is old code of this module with a loaded NIF library\&.
+.RS 2
+.LP
+Works as \fIload\fR\&, except that \fI*old_priv_data\fR\& already contains the value set by the last call to \fIload\fR\& or \fIupgrade\fR\& for the old module code\&. \fI*priv_data\fR\& is initialized to \fINULL\fR\& when \fIupgrade\fR\& is called\&. It is allowed to write to both \fI*priv_data\fR\& and \fI*old_priv_data\&.\fR\&
+.RE
+.RS 2
+.LP
+The library fails to load if \fIupgrade\fR\& returns anything other than \fI0\fR\& or if \fIupgrade\fR\& is \fINULL\fR\&\&.
+.RE
+.TP 2
+.B
+\fIvoid (*unload)(ErlNifEnv* env, void* priv_data)\fR\&:
+\fIunload\fR\& is called when the module code that the NIF library belongs to is purged as old\&. New code of the same module may or may not exist\&.
+.RE
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_TERM\fR\&:
+Variables of type \fIERL_NIF_TERM\fR\& can refer to any Erlang term\&. This is an opaque type and values of it can only by used either as arguments to API functions or as return values from NIFs\&. All \fIERL_NIF_TERM\fR\&s belong to an environment (\fB\fIErlNifEnv\fR\&\fR\&)\&. A term cannot be destructed individually, it is valid until its environment is destructed\&.
+.TP 2
+.B
+\fIErlNifEnv\fR\&:
+\fIErlNifEnv\fR\& represents an environment that can host Erlang terms\&. All terms in an environment are valid as long as the environment is valid\&. \fIErlNifEnv\fR\& is an opaque type; pointers to it can only be passed on to API functions\&. Two types of environments exist:
+.RS 2
+.TP 2
+.B
+Process-bound environment:
+Passed as the first argument to all NIFs\&. All function arguments passed to a NIF belong to that environment\&. The return value from a NIF must also be a term belonging to the same environment\&.
+.RS 2
+.LP
+A process-bound environment contains transient information about the calling Erlang process\&. The environment is only valid in the thread where it was supplied as argument until the NIF returns\&. It is thus useless and dangerous to store pointers to process-bound environments between NIF calls\&.
+.RE
+.TP 2
+.B
+Process-independent environment:
+Created by calling \fB\fIenif_alloc_env\fR\&\fR\&\&. This environment can be used to store terms between NIF calls and to send terms with \fB\fIenif_send\fR\&\fR\&\&. A process-independent environment with all its terms is valid until you explicitly invalidate it with \fB\fIenif_free_env\fR\&\fR\& or \fIenif_send\fR\&\&.
+.RE
+.RS 2
+.LP
+All contained terms of a list/tuple/map must belong to the same environment as the list/tuple/map itself\&. Terms can be copied between environments with \fB\fIenif_make_copy\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIErlNifFunc\fR\&:
+
+.LP
+.nf
+
+typedef struct {
+    const char* name;
+    unsigned arity;
+    ERL_NIF_TERM (*fptr)(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+    unsigned flags;
+} ErlNifFunc;
+.fi
+.RS 2
+.LP
+Describes a NIF by its name, arity, and implementation\&.
+.RE
+.RS 2
+.TP 2
+.B
+\fIfptr\fR\&:
+A pointer to the function that implements the NIF\&.
+.TP 2
+.B
+\fIargv\fR\&:
+Contains the function arguments passed to the NIF\&.
+.TP 2
+.B
+\fIargc\fR\&:
+The array length, that is, the function arity\&. \fIargv[N-1]\fR\& thus denotes the Nth argument to the NIF\&. Notice that the argument \fIargc\fR\& allows for the same C function to implement several Erlang functions with different arity (but probably with the same name)\&.
+.TP 2
+.B
+\fIflags\fR\&:
+Is \fI0\fR\& for a regular NIF (and so its value can be omitted for statically initialized \fIErlNifFunc\fR\& instances)\&.
+.RS 2
+.LP
+\fIflags\fR\& can be used to indicate that the NIF is a \fBdirty NIF\fR\& that is to be executed on a dirty scheduler thread\&.
+.RE
+.RS 2
+.LP
+If the dirty NIF is expected to be CPU-bound, its \fIflags\fR\& field is to be set to \fIERL_NIF_DIRTY_JOB_CPU_BOUND\fR\& or \fIERL_NIF_DIRTY_JOB_IO_BOUND\fR\&\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If one of the \fIERL_NIF_DIRTY_JOB_*_BOUND\fR\& flags is set, and the runtime system has no support for dirty schedulers, the runtime system refuses to load the NIF library\&.
+
+.RE
+.TP 2
+.B
+\fIErlNifBinary\fR\&:
+
+.LP
+.nf
+
+typedef struct {
+    unsigned size;
+    unsigned char* data;
+} ErlNifBinary;
+.fi
+.RS 2
+.LP
+\fIErlNifBinary\fR\& contains transient information about an inspected binary term\&. \fIdata\fR\& is a pointer to a buffer of \fIsize\fR\& bytes with the raw content of the binary\&.
+.RE
+.RS 2
+.LP
+Notice that \fIErlNifBinary\fR\& is a semi-opaque type and you are only allowed to read fields \fIsize\fR\& and \fIdata\fR\&\&.
+.RE
+.TP 2
+.B
+\fIErlNifBinaryToTerm\fR\&:
+An enumeration of the options that can be specified to \fB\fIenif_binary_to_term\fR\&\fR\&\&. For default behavior, use value \fI0\fR\&\&.
+.RS 2
+.LP
+When receiving data from untrusted sources, use option \fIERL_NIF_BIN2TERM_SAFE\fR\&\&.
+.RE
+.TP 2
+.B
+\fIErlNifMonitor\fR\&:
+This is an opaque data type that identifies a monitor\&.
+.RS 2
+.LP
+The nif writer is to provide the memory for storing the monitor when calling \fB\fIenif_monitor_process\fR\&\fR\&\&. The address of the data is not stored by the runtime system, so \fIErlNifMonitor\fR\& can be used as any other data, it can be copied, moved in memory, forgotten, and so on\&. To compare two monitors, \fB\fIenif_compare_monitors\fR\&\fR\& must be used\&.
+.RE
+.TP 2
+.B
+\fIErlNifPid\fR\&:
+A process identifier (pid)\&. In contrast to pid terms (instances of \fIERL_NIF_TERM\fR\&), \fIErlNifPid\fR\&s are self-contained and not bound to any \fBenvironment\fR\&\&. \fIErlNifPid\fR\& is an opaque type\&.
+.TP 2
+.B
+\fIErlNifPort\fR\&:
+A port identifier\&. In contrast to port ID terms (instances of \fIERL_NIF_TERM\fR\&), \fIErlNifPort\fR\&s are self-contained and not bound to any \fBenvironment\fR\&\&. \fIErlNifPort\fR\& is an opaque type\&.
+.TP 2
+.B
+\fIErlNifResourceType\fR\&:
+Each instance of \fIErlNifResourceType\fR\& represents a class of memory-managed resource objects that can be garbage collected\&. Each resource type has a unique name and a destructor function that is called when objects of its type are released\&.
+.TP 2
+.B
+\fIErlNifResourceTypeInit\fR\&:
+
+.LP
+.nf
+
+typedef struct {
+    ErlNifResourceDtor* dtor;
+    ErlNifResourceStop* stop;
+    ErlNifResourceDown* down;
+} ErlNifResourceTypeInit;
+.fi
+.RS 2
+.LP
+Initialization structure read by \fB enif_open_resource_type_x\fR\&\&.
+.RE
+.TP 2
+.B
+\fIErlNifResourceDtor\fR\&:
+
+.LP
+.nf
+
+typedef void ErlNifResourceDtor(ErlNifEnv* env, void* obj);
+.fi
+.RS 2
+.LP
+The function prototype of a resource destructor function\&.
+.RE
+.RS 2
+.LP
+The \fIobj\fR\& argument is a pointer to the resource\&. The only allowed use for the resource in the destructor is to access its user data one final time\&. The destructor is guaranteed to be the last callback before the resource is deallocated\&.
+.RE
+.TP 2
+.B
+\fIErlNifResourceDown\fR\&:
+
+.LP
+.nf
+
+typedef void ErlNifResourceDown(ErlNifEnv* env, void* obj, const ErlNifPid* pid, const ErlNifMonitor* mon);
+.fi
+.RS 2
+.LP
+The function prototype of a resource down function, called on the behalf of \fB enif_monitor_process\fR\&\&. \fIobj\fR\& is the resource, \fIpid\fR\& is the identity of the monitored process that is exiting, and \fImon\fR\& is the identity of the monitor\&.
+.RE
+.TP 2
+.B
+\fIErlNifResourceStop\fR\&:
+
+.LP
+.nf
+
+typedef void ErlNifResourceStop(ErlNifEnv* env, void* obj, ErlNifEvent event, int is_direct_call);
+.fi
+.RS 2
+.LP
+The function prototype of a resource stop function, called on the behalf of \fB enif_select\fR\&\&. \fIobj\fR\& is the resource, \fIevent\fR\& is OS event, \fIis_direct_call\fR\& is true if the call is made directly from \fIenif_select\fR\& or false if it is a scheduled call (potentially from another thread)\&.
+.RE
+.TP 2
+.B
+\fIErlNifCharEncoding\fR\&:
+
+.LP
+.nf
+
+typedef enum {
+    ERL_NIF_LATIN1
+}ErlNifCharEncoding;
+.fi
+.RS 2
+.LP
+The character encoding used in strings and atoms\&. The only supported encoding is \fIERL_NIF_LATIN1\fR\& for ISO Latin-1 (8-bit ASCII)\&.
+.RE
+.TP 2
+.B
+\fIErlNifSysInfo\fR\&:
+Used by \fB\fIenif_system_info\fR\&\fR\& to return information about the runtime system\&. Contains the same content as \fB\fIErlDrvSysInfo\fR\&\fR\&\&.
+.TP 2
+.B
+\fIErlNifSInt64\fR\&:
+A native signed 64-bit integer type\&.
+.TP 2
+.B
+\fIErlNifUInt64\fR\&:
+A native unsigned 64-bit integer type\&.
+.TP 2
+.B
+\fIErlNifTime\fR\&:
+A signed 64-bit integer type for representation of time\&.
+.TP 2
+.B
+\fIErlNifTimeUnit\fR\&:
+An enumeration of time units supported by the NIF API:
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_SEC\fR\&:
+Seconds
+.TP 2
+.B
+\fIERL_NIF_MSEC\fR\&:
+Milliseconds
+.TP 2
+.B
+\fIERL_NIF_USEC\fR\&:
+Microseconds
+.TP 2
+.B
+\fIERL_NIF_NSEC\fR\&:
+Nanoseconds
+.RE
+.TP 2
+.B
+\fIErlNifUniqueInteger\fR\&:
+An enumeration of the properties that can be requested from \fB\fIenif_unique_integer\fR\&\fR\&\&. For default properties, use value \fI0\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_UNIQUE_POSITIVE\fR\&:
+Return only positive integers\&.
+.TP 2
+.B
+\fIERL_NIF_UNIQUE_MONOTONIC\fR\&:
+Return only \fB strictly monotonically increasing\fR\& integer corresponding to creation time\&.
+.RE
+.TP 2
+.B
+\fIErlNifHash\fR\&:
+An enumeration of the supported hash types that can be generated using \fB\fIenif_hash\fR\&\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_INTERNAL_HASH\fR\&:
+Non-portable hash function that only guarantees the same hash for the same term within one Erlang VM instance\&.
+.RS 2
+.LP
+It takes 32-bit salt values and generates hashes within \fI0\&.\&.2^32-1\fR\&\&.
+.RE
+.TP 2
+.B
+\fIERL_NIF_PHASH2\fR\&:
+Portable hash function that gives the same hash for the same Erlang term regardless of machine architecture and ERTS version\&.
+.RS 2
+.LP
+\fIIt ignores salt values\fR\& and generates hashes within \fI0\&.\&.2^27-1\fR\&\&.
+.RE
+.RS 2
+.LP
+Slower than \fIERL_NIF_INTERNAL_HASH\&.\fR\& It corresponds to \fB\fIerlang:phash2/1\fR\&\fR\&\&.
+.RE
+.RE
+.TP 2
+.B
+\fISysIOVec\fR\&:
+A system I/O vector, as used by \fIwritev\fR\& on Unix and \fIWSASend\fR\& on Win32\&. It is used in \fIErlNifIOVec\fR\& and by \fB\fIenif_ioq_peek\fR\&\fR\&\&.
+.TP 2
+.B
+\fIErlNifIOVec\fR\&:
+
+.LP
+.nf
+
+typedef struct {
+  int iovcnt;
+  size_t size;
+  SysIOVec* iov;
+} ErlNifIOVec;
+.fi
+.RS 2
+.LP
+An I/O vector containing \fIiovcnt\fR\& \fISysIOVec\fR\&s pointing to the data\&. It is used by \fB\fIenif_inspect_iovec\fR\&\fR\& and \fB\fIenif_ioq_enqv\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIErlNifIOQueueOpts\fR\&:
+ Options to configure a \fIErlNifIOQueue\fR\&\&. 
+.RS 2
+.TP 2
+.B
+ERL_NIF_IOQ_NORMAL:
+Create a normal I/O Queue
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+void *enif_alloc(size_t size)
+.br
+.RS
+.LP
+Allocates memory of \fIsize\fR\& bytes\&.
+.LP
+Returns \fINULL\fR\& if the allocation fails\&.
+.LP
+The returned pointer is suitably aligned for any built-in type that fit in the allocated memory\&.
+.RE
+.LP
+.B
+int enif_alloc_binary(size_t size, ErlNifBinary* bin)
+.br
+.RS
+.LP
+Allocates a new binary of size \fIsize\fR\& bytes\&. Initializes the structure pointed to by \fIbin\fR\& to refer to the allocated binary\&. The binary must either be released by \fB\fIenif_release_binary\fR\&\fR\& or ownership transferred to an Erlang term with \fB\fIenif_make_binary\fR\&\fR\&\&. An allocated (and owned) \fIErlNifBinary\fR\& can be kept between NIF calls\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if allocation fails\&.
+.RE
+.LP
+.B
+ErlNifEnv *enif_alloc_env()
+.br
+.RS
+.LP
+Allocates a new process-independent environment\&. The environment can be used to hold terms that are not bound to any process\&. Such terms can later be copied to a process environment with \fB\fIenif_make_copy\fR\&\fR\& or be sent to a process as a message with \fB\fIenif_send\fR\&\fR\&\&.
+.LP
+Returns pointer to the new environment\&.
+.RE
+.LP
+.B
+void *enif_alloc_resource(ErlNifResourceType*
+        type, unsigned size)
+.br
+.RS
+.LP
+Allocates a memory-managed resource object of type \fItype\fR\& and size \fIsize\fR\& bytes\&.
+.RE
+.LP
+.B
+size_t enif_binary_to_term(ErlNifEnv *env,
+        const unsigned char* data, size_t size, ERL_NIF_TERM *term,
+        ErlNifBinaryToTerm opts)
+.br
+.RS
+.LP
+Creates a term that is the result of decoding the binary data at \fIdata\fR\&, which must be encoded according to the Erlang external term format\&. No more than \fIsize\fR\& bytes are read from \fIdata\fR\&\&. Argument \fIopts\fR\& corresponds to the second argument to \fB\fIerlang:binary_to_term/2\fR\&\fR\& and must be either \fI0\fR\& or \fIERL_NIF_BIN2TERM_SAFE\fR\&\&.
+.LP
+On success, stores the resulting term at \fI*term\fR\& and returns the number of bytes read\&. Returns \fI0\fR\& if decoding fails or if \fIopts\fR\& is invalid\&.
+.LP
+See also \fB\fIErlNifBinaryToTerm\fR\&\fR\&, \fB\fIerlang:binary_to_term/2\fR\&\fR\&, and \fB\fIenif_term_to_binary\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_clear_env(ErlNifEnv* env)
+.br
+.RS
+.LP
+Frees all terms in an environment and clears it for reuse\&. The environment must have been allocated with \fB\fIenif_alloc_env\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_compare(ERL_NIF_TERM lhs, ERL_NIF_TERM rhs)
+.br
+.RS
+.LP
+Returns an integer < \fI0\fR\& if \fIlhs\fR\& < \fIrhs\fR\&, \fI0\fR\& if \fIlhs\fR\& = \fIrhs\fR\&, and > \fI0\fR\& if \fIlhs\fR\& > \fIrhs\fR\&\&. Corresponds to the Erlang operators \fI==\fR\&, \fI/=\fR\&, \fI=<\fR\&, \fI<\fR\&, \fI>=\fR\&, and \fI>\fR\& (but \fInot\fR\& \fI=:=\fR\& or \fI=/=\fR\&)\&.
+.RE
+.LP
+.B
+int enif_compare_monitors(const ErlNifMonitor
+        *monitor1, const ErlNifMonitor *monitor2)
+.br
+.RS
+.LP
+Compares two \fB\fIErlNifMonitor\fR\&\fR\&s\&. Can also be used to imply some artificial order on monitors, for whatever reason\&.
+.LP
+Returns \fI0\fR\& if \fImonitor1\fR\& and \fImonitor2\fR\& are equal, < \fI0\fR\& if \fImonitor1\fR\& < \fImonitor2\fR\&, and > \fI0\fR\& if \fImonitor1\fR\& > \fImonitor2\fR\&\&.
+.RE
+.LP
+.B
+void enif_cond_broadcast(ErlNifCond *cnd)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_cond_broadcast\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ErlNifCond *enif_cond_create(char *name)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_cond_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_cond_destroy(ErlNifCond *cnd)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_cond_destroy\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_cond_signal(ErlNifCond *cnd)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_cond_signal\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_cond_wait(ErlNifCond *cnd, ErlNifMutex *mtx)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_cond_wait\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_consume_timeslice(ErlNifEnv *env, int percent)
+.br
+.RS
+.LP
+Gives the runtime system a hint about how much CPU time the current NIF call has consumed since the last hint, or since the start of the NIF if no previous hint has been specified\&. The time is specified as a percent of the timeslice that a process is allowed to execute Erlang code until it can be suspended to give time for other runnable processes\&. The scheduling timeslice is not an exact entity, but can usually be approximated to about 1 millisecond\&.
+.LP
+Notice that it is up to the runtime system to determine if and how to use this information\&. Implementations on some platforms can use other means to determine consumed CPU time\&. Lengthy NIFs should regardless of this frequently call \fIenif_consume_timeslice\fR\& to determine if it is allowed to continue execution\&.
+.LP
+Argument \fIpercent\fR\& must be an integer between 1 and 100\&. This function must only be called from a NIF-calling thread, and argument \fIenv\fR\& must be the environment of the calling process\&.
+.LP
+Returns \fI1\fR\& if the timeslice is exhausted, otherwise \fI0\fR\&\&. If \fI1\fR\& is returned, the NIF is to return as soon as possible in order for the process to yield\&.
+.LP
+This function is provided to better support co-operative scheduling, improve system responsiveness, and make it easier to prevent misbehaviors of the VM because of a NIF monopolizing a scheduler thread\&. It can be used to divide \fB length work\fR\& into a number of repeated NIF calls without the need to create threads\&.
+.LP
+See also the \fBwarning\fR\& text at the beginning of this manual page\&.
+.RE
+.LP
+.B
+ErlNifTime enif_convert_time_unit(ErlNifTime
+        val, ErlNifTimeUnit from, ErlNifTimeUnit to)
+.br
+.RS
+.LP
+Converts the \fIval\fR\& value of time unit \fIfrom\fR\& to the corresponding value of time unit \fIto\fR\&\&. The result is rounded using the floor function\&.
+.RS 2
+.TP 2
+.B
+\fIval\fR\&:
+Value to convert time unit for\&.
+.TP 2
+.B
+\fIfrom\fR\&:
+Time unit of \fIval\fR\&\&.
+.TP 2
+.B
+\fIto\fR\&:
+Time unit of returned value\&.
+.RE
+.LP
+Returns \fIERL_NIF_TIME_ERROR\fR\& if called with an invalid time unit argument\&.
+.LP
+See also \fB\fIErlNifTime\fR\&\fR\& and \fB\fIErlNifTimeUnit\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_cpu_time(ErlNifEnv *)
+.br
+.RS
+.LP
+Returns the CPU time in the same format as \fB\fIerlang:timestamp()\fR\&\fR\&\&. The CPU time is the time the current logical CPU has spent executing since some arbitrary point in the past\&. If the OS does not support fetching this value, \fIenif_cpu_time\fR\& invokes \fB\fIenif_make_badarg\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_demonitor_process(ErlNifEnv* env, void* obj,
+      const ErlNifMonitor* mon)
+.br
+.RS
+.LP
+Cancels a monitor created earlier with \fB\fIenif_monitor_process\fR\&\fR\&\&. Argument \fIobj\fR\& is a pointer to the resource holding the monitor and \fI*mon\fR\& identifies the monitor\&.
+.LP
+Returns \fI0\fR\& if the monitor was successfully identified and removed\&. Returns a non-zero value if the monitor could not be identified, which means it was either
+.RS 2
+.TP 2
+*
+never created for this resource
+.LP
+.TP 2
+*
+already cancelled
+.LP
+.TP 2
+*
+already triggered
+.LP
+.TP 2
+*
+just about to be triggered by a concurrent thread
+.LP
+.RE
+
+.LP
+This function is only thread-safe when the emulator with SMP support is used\&. It can only be used in a non-SMP emulator from a NIF-calling thread\&.
+.RE
+.LP
+.B
+int enif_equal_tids(ErlNifTid tid1, ErlNifTid tid2)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_equal_tids\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_free(void* ptr)
+.br
+.RS
+.LP
+Frees memory allocated by \fB\fIenif_alloc\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_free_env(ErlNifEnv* env)
+.br
+.RS
+.LP
+Frees an environment allocated with \fB\fIenif_alloc_env\fR\&\fR\&\&. All terms created in the environment are freed as well\&.
+.RE
+.LP
+.B
+void enif_free_iovec(ErlNifIOvec* iov)
+.br
+.RS
+.LP
+Frees an io vector returned from \fB\fIenif_inspect_iovec\fR\&\fR\&\&. This is needed only if a \fINULL\fR\& environment is passed to \fB\fIenif_inspect_iovec\fR\&\fR\&\&.
+.LP
+.nf
+
+ErlNifIOVec *iovec = NULL;
+size_t max_elements = 128;
+ERL_NIF_TERM tail;
+if (!enif_inspect_iovec(NULL, max_elements, term, &tail, iovec))
+  return 0;
+
+// Do things with the iovec
+
+/* Free the iovector, possibly in another thread or nif function call */
+enif_free_iovec(iovec);
+.fi
+.RE
+.LP
+.B
+int enif_get_atom(ErlNifEnv* env, ERL_NIF_TERM
+        term, char* buf, unsigned size, ErlNifCharEncoding encode)
+.br
+.RS
+.LP
+Writes a \fINULL\fR\&-terminated string in the buffer pointed to by \fIbuf\fR\& of size \fIsize\fR\&, consisting of the string representation of the atom \fIterm\fR\& with encoding \fBencode\fR\&\&.
+.LP
+Returns the number of bytes written (including terminating \fINULL\fR\& character) or \fI0\fR\& if \fIterm\fR\& is not an atom with maximum length of \fIsize-1\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_atom_length(ErlNifEnv* env,
+        ERL_NIF_TERM term, unsigned* len, ErlNifCharEncoding encode)
+.br
+.RS
+.LP
+Sets \fI*len\fR\& to the length (number of bytes excluding terminating \fINULL\fR\& character) of the atom \fIterm\fR\& with encoding \fIencode\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an atom\&.
+.RE
+.LP
+.B
+int enif_get_double(ErlNifEnv* env,
+        ERL_NIF_TERM term, double* dp)
+.br
+.RS
+.LP
+Sets \fI*dp\fR\& to the floating-point value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not a float\&.
+.RE
+.LP
+.B
+int enif_get_int(ErlNifEnv* env, ERL_NIF_TERM
+        term, int* ip)
+.br
+.RS
+.LP
+Sets \fI*ip\fR\& to the integer value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an integer or is outside the bounds of type \fIint\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_int64(ErlNifEnv* env, ERL_NIF_TERM
+        term, ErlNifSInt64* ip)
+.br
+.RS
+.LP
+Sets \fI*ip\fR\& to the integer value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an integer or is outside the bounds of a signed 64-bit integer\&.
+.RE
+.LP
+.B
+int enif_get_local_pid(ErlNifEnv* env,
+        ERL_NIF_TERM term, ErlNifPid* pid)
+.br
+.RS
+.LP
+If \fIterm\fR\& is the pid of a node local process, this function initializes the pid variable \fI*pid\fR\& from it and returns \fItrue\fR\&\&. Otherwise returns \fIfalse\fR\&\&. No check is done to see if the process is alive\&.
+.RE
+.LP
+.B
+int enif_get_local_port(ErlNifEnv* env,
+        ERL_NIF_TERM term, ErlNifPort* port_id)
+.br
+.RS
+.LP
+If \fIterm\fR\& identifies a node local port, this function initializes the port variable \fI*port_id\fR\& from it and returns \fItrue\fR\&\&. Otherwise returns \fIfalse\fR\&\&. No check is done to see if the port is alive\&.
+.RE
+.LP
+.B
+int enif_get_list_cell(ErlNifEnv* env,
+        ERL_NIF_TERM list, ERL_NIF_TERM* head, ERL_NIF_TERM* tail)
+.br
+.RS
+.LP
+Sets \fI*head\fR\& and \fI*tail\fR\& from list \fIlist\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if it is not a list or the list is empty\&.
+.RE
+.LP
+.B
+int enif_get_list_length(ErlNifEnv* env,
+        ERL_NIF_TERM term, unsigned* len)
+.br
+.RS
+.LP
+Sets \fI*len\fR\& to the length of list \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not a proper list\&.
+.RE
+.LP
+.B
+int enif_get_long(ErlNifEnv* env, ERL_NIF_TERM
+        term, long int* ip)
+.br
+.RS
+.LP
+Sets \fI*ip\fR\& to the long integer value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an integer or is outside the bounds of type \fIlong int\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_map_size(ErlNifEnv* env,
+        ERL_NIF_TERM term, size_t *size)
+.br
+.RS
+.LP
+Sets \fI*size\fR\& to the number of key-value pairs in the map \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not a map\&.
+.RE
+.LP
+.B
+int enif_get_map_value(ErlNifEnv* env,
+        ERL_NIF_TERM map, ERL_NIF_TERM key, ERL_NIF_TERM* value)
+.br
+.RS
+.LP
+Sets \fI*value\fR\& to the value associated with \fIkey\fR\& in the map \fImap\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fImap\fR\& is not a map or if \fImap\fR\& does not contain \fIkey\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_resource(ErlNifEnv* env,
+        ERL_NIF_TERM term, ErlNifResourceType* type, void** objp)
+.br
+.RS
+.LP
+Sets \fI*objp\fR\& to point to the resource object referred to by \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not a handle to a resource object of type \fItype\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_string(ErlNifEnv* env,
+        ERL_NIF_TERM list, char* buf, unsigned size,
+        ErlNifCharEncoding encode)
+.br
+.RS
+.LP
+Writes a \fINULL\fR\&-terminated string in the buffer pointed to by \fIbuf\fR\& with size \fIsize\fR\&, consisting of the characters in the string \fIlist\fR\&\&. The characters are written using encoding \fBencode\fR\&\&.
+.LP
+Returns one of the following:
+.RS 2
+.TP 2
+*
+The number of bytes written (including terminating \fINULL\fR\& character)
+.LP
+.TP 2
+*
+\fI-size\fR\& if the string was truncated because of buffer space
+.LP
+.TP 2
+*
+\fI0\fR\& if \fIlist\fR\& is not a string that can be encoded with \fIencode\fR\& or if \fIsize\fR\& was < \fI1\fR\&\&.
+.LP
+.RE
+
+.LP
+The written string is always \fINULL\fR\&-terminated, unless buffer \fIsize\fR\& is < \fI1\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_tuple(ErlNifEnv* env, ERL_NIF_TERM
+        term, int* arity, const ERL_NIF_TERM** array)
+.br
+.RS
+.LP
+If \fIterm\fR\& is a tuple, this function sets \fI*array\fR\& to point to an array containing the elements of the tuple, and sets \fI*arity\fR\& to the number of elements\&. Notice that the array is read-only and \fI(*array)[N-1]\fR\& is the Nth element of the tuple\&. \fI*array\fR\& is undefined if the arity of the tuple is zero\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not a tuple\&.
+.RE
+.LP
+.B
+int enif_get_uint(ErlNifEnv* env, ERL_NIF_TERM
+        term, unsigned int* ip)
+.br
+.RS
+.LP
+Sets \fI*ip\fR\& to the unsigned integer value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an unsigned integer or is outside the bounds of type \fIunsigned int\fR\&\&.
+.RE
+.LP
+.B
+int enif_get_uint64(ErlNifEnv* env,
+        ERL_NIF_TERM term, ErlNifUInt64* ip)
+.br
+.RS
+.LP
+Sets \fI*ip\fR\& to the unsigned integer value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an unsigned integer or is outside the bounds of an unsigned 64-bit integer\&.
+.RE
+.LP
+.B
+int enif_get_ulong(ErlNifEnv* env, ERL_NIF_TERM
+        term, unsigned long* ip)
+.br
+.RS
+.LP
+Sets \fI*ip\fR\& to the unsigned long integer value of \fIterm\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIterm\fR\& is not an unsigned integer or is outside the bounds of type \fIunsigned long\fR\&\&.
+.RE
+.LP
+.B
+int enif_getenv(const char* key, char* value,
+        size_t *value_size)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_getenv\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_has_pending_exception(ErlNifEnv* env,
+        ERL_NIF_TERM* reason)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if a pending exception is associated with the environment \fIenv\fR\&\&. If \fIreason\fR\& is a \fINULL\fR\& pointer, ignore it\&. Otherwise, if a pending exception associated with \fIenv\fR\& exists, set \fI*reason\fR\& to the value of the exception term\&. For example, if \fB\fIenif_make_badarg\fR\&\fR\& is called to set a pending \fIbadarg\fR\& exception, a later call to \fIenif_has_pending_exception(env, &reason)\fR\& sets \fI*reason\fR\& to the atom \fIbadarg\fR\&, then return \fItrue\fR\&\&.
+.LP
+See also \fB\fIenif_make_badarg\fR\&\fR\& and \fB\fIenif_raise_exception\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ErlNifUInt64 enif_hash(ErlNifHash type, ERL_NIF_TERM term, ErlNifUInt64 salt)
+.br
+.RS
+.LP
+Hashes \fIterm\fR\& according to the specified \fB\fIErlNifHash\fR\&\fR\& \fItype\fR\&\&.
+.LP
+Ranges of taken salt (if any) and returned value depend on the hash type\&.
+.RE
+.LP
+.B
+int enif_inspect_binary(ErlNifEnv* env,
+        ERL_NIF_TERM bin_term, ErlNifBinary* bin)
+.br
+.RS
+.LP
+Initializes the structure pointed to by \fIbin\fR\& with information about binary term \fIbin_term\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIbin_term\fR\& is not a binary\&.
+.RE
+.LP
+.B
+int enif_inspect_iolist_as_binary(ErlNifEnv*
+        env, ERL_NIF_TERM term, ErlNifBinary* bin)
+.br
+.RS
+.LP
+Initializes the structure pointed to by \fIbin\fR\& with a continuous buffer with the same byte content as \fIiolist\fR\&\&. As with \fIinspect_binary\fR\&, the data pointed to by \fIbin\fR\& is transient and does not need to be released\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIiolist\fR\& is not an iolist\&.
+.RE
+.LP
+.B
+int enif_inspect_iovec(ErlNifEnv*
+        env, size_t max_elements, ERL_NIF_TERM iovec_term, ERL_NIF_TERM* tail,
+        ErlNifIOVec** iovec)
+.br
+.RS
+.LP
+Fills \fIiovec\fR\& with the list of binaries provided in \fIiovec_term\fR\&\&. The number of elements handled in the call is limited to \fImax_elements\fR\&, and \fItail\fR\& is set to the remainder of the list\&. Note that the output may be longer than \fImax_elements\fR\& on some platforms\&.
+.LP
+To create a list of binaries from an arbitrary iolist, use \fB\fIerlang:iolist_to_iovec/1\fR\&\fR\&\&.
+.LP
+When calling this function, \fIiovec\fR\& should contain a pointer to \fINULL\fR\& or a ErlNifIOVec structure that should be used if possible\&. e\&.g\&.
+.LP
+.nf
+
+/* Don't use a pre-allocated structure */
+ErlNifIOVec *iovec = NULL;
+enif_inspect_iovec(env, max_elements, term, &tail, &iovec);
+
+/* Use a stack-allocated vector as an optimization for vectors with few elements */
+ErlNifIOVec vec, *iovec = &vec;
+enif_inspect_iovec(env, max_elements, term, &tail, &iovec);
+
+.fi
+.LP
+The contents of the \fIiovec\fR\& is valid until the called nif function returns\&. If the \fIiovec\fR\& should be valid after the nif call returns, it is possible to call this function with a \fINULL\fR\& environment\&. If no environment is given the \fIiovec\fR\& owns the data in the vector and it has to be explicitly freed using \fB\fIenif_free_iovec\fR\&\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIiovec_term\fR\& not an iovec\&.
+.RE
+.LP
+.B
+ErlNifIOQueue *enif_ioq_create(ErlNifIOQueueOpts opts)
+.br
+.RS
+.LP
+Create a new I/O Queue that can be used to store data\&. \fIopts\fR\& has to be set to \fIERL_NIF_IOQ_NORMAL\fR\&\&.
+.RE
+.LP
+.B
+void enif_ioq_destroy(ErlNifIOQueue *q)
+.br
+.RS
+.LP
+Destroy the I/O queue and free all of it\&'s contents
+.RE
+.LP
+.B
+int enif_ioq_deq(ErlNifIOQueue *q, size_t count, size_t *size)
+.br
+.RS
+.LP
+Dequeue \fIcount\fR\& bytes from the I/O queue\&. If \fIsize\fR\& is not \fINULL\fR\&, the new size of the queue is placed there\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if the I/O does not contain \fIcount\fR\& bytes\&. On failure the queue is left un-altered\&.
+.RE
+.LP
+.B
+int enif_ioq_enq_binary(ErlNifIOQueue *q, ErlNifBinary *bin, size_t skip)
+.br
+.RS
+.LP
+Enqueue the \fIbin\fR\& into \fIq\fR\& skipping the first \fIskip\fR\& bytes\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIskip\fR\& is greater than the size of \fIbin\fR\&\&. Any ownership of the binary data is transferred to the queue and \fIbin\fR\& is to be considered read-only for the rest of the NIF call and then as released\&.
+.RE
+.LP
+.B
+int enif_ioq_enqv(ErlNifIOQueue *q, ErlNifIOVec *iovec, size_t skip)
+.br
+.RS
+.LP
+Enqueue the \fIiovec\fR\& into \fIq\fR\& skipping the first \fIskip\fR\& bytes\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fIskip\fR\& is greater than the size of \fIiovec\fR\&\&.
+.RE
+.LP
+.B
+SysIOVec *enif_ioq_peek(ErlNifIOQueue *q, int *iovlen)
+.br
+.RS
+.LP
+Get the I/O queue as a pointer to an array of \fISysIOVec\fR\&s\&. It also returns the number of elements in \fIiovlen\fR\&\&. This is the only way to get data out of the queue\&.
+.LP
+Nothing is removed from the queue by this function, that must be done with \fB\fIenif_ioq_deq\fR\&\fR\&\&.
+.LP
+The returned array is suitable to use with the Unix system call \fIwritev\fR\&\&.
+.RE
+.LP
+.B
+size_t enif_ioq_size(ErlNifIOQueue *q)
+.br
+.RS
+.LP
+Get the size of \fIq\fR\&\&.
+.RE
+.LP
+.B
+int enif_is_atom(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is an atom\&.
+.RE
+.LP
+.B
+int enif_is_binary(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a binary\&.
+.RE
+.LP
+.B
+int enif_is_current_process_alive(ErlNifEnv* env)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if the currently executing process is currently alive, otherwise \fIfalse\fR\&\&.
+.LP
+This function can only be used from a NIF-calling thread, and with an environment corresponding to currently executing processes\&.
+.RE
+.LP
+.B
+int enif_is_empty_list(ErlNifEnv* env,
+        ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is an empty list\&.
+.RE
+.LP
+.B
+int enif_is_exception(ErlNifEnv* env,
+        ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Return true if \fIterm\fR\& is an exception\&.
+.RE
+.LP
+.B
+int enif_is_fun(ErlNifEnv* env, ERL_NIF_TERM
+        term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a fun\&.
+.RE
+.LP
+.B
+int enif_is_identical(ERL_NIF_TERM lhs,
+        ERL_NIF_TERM rhs)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if the two terms are identical\&. Corresponds to the Erlang operators \fI=:=\fR\& and \fI=/=\fR\&\&.
+.RE
+.LP
+.B
+int enif_is_list(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a list\&.
+.RE
+.LP
+.B
+int enif_is_map(ErlNifEnv* env, ERL_NIF_TERM
+        term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a map, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.B
+int enif_is_number(ErlNifEnv* env, ERL_NIF_TERM
+        term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a number\&.
+.RE
+.LP
+.B
+int enif_is_pid(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a pid\&.
+.RE
+.LP
+.B
+int enif_is_port(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a port\&.
+.RE
+.LP
+.B
+int enif_is_port_alive(ErlNifEnv* env,
+        ErlNifPort *port_id)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIport_id\fR\& is alive\&.
+.LP
+This function is only thread-safe when the emulator with SMP support is used\&. It can only be used in a non-SMP emulator from a NIF-calling thread\&.
+.RE
+.LP
+.B
+int enif_is_process_alive(ErlNifEnv* env,
+        ErlNifPid *pid)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIpid\fR\& is alive\&.
+.LP
+This function is only thread-safe when the emulator with SMP support is used\&. It can only be used in a non-SMP emulator from a NIF-calling thread\&.
+.RE
+.LP
+.B
+int enif_is_ref(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a reference\&.
+.RE
+.LP
+.B
+int enif_is_tuple(ErlNifEnv* env, ERL_NIF_TERM term)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIterm\fR\& is a tuple\&.
+.RE
+.LP
+.B
+int enif_keep_resource(void* obj)
+.br
+.RS
+.LP
+Adds a reference to resource object \fIobj\fR\& obtained from \fB\fIenif_alloc_resource\fR\&\fR\&\&. Each call to \fIenif_keep_resource\fR\& for an object must be balanced by a call to \fB\fIenif_release_resource\fR\&\fR\& before the object is destructed\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_atom(ErlNifEnv* env, const char* name)
+.br
+.RS
+.LP
+Creates an atom term from the \fINULL\fR\&-terminated C-string \fIname\fR\& with ISO Latin-1 encoding\&. If the length of \fIname\fR\& exceeds the maximum length allowed for an atom (255 characters), \fIenif_make_atom\fR\& invokes \fB\fIenif_make_badarg\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_atom_len(ErlNifEnv* env,
+        const char* name, size_t len)
+.br
+.RS
+.LP
+Create an atom term from the string \fIname\fR\& with length \fIlen\fR\&\&. \fINULL\fR\& characters are treated as any other characters\&. If \fIlen\fR\& exceeds the maximum length allowed for an atom (255 characters), \fIenif_make_atom\fR\& invokes \fB\fIenif_make_badarg\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_badarg(ErlNifEnv* env)
+.br
+.RS
+.LP
+Makes a \fIbadarg\fR\& exception to be returned from a NIF, and associates it with environment \fIenv\fR\&\&. Once a NIF or any function it calls invokes \fIenif_make_badarg\fR\&, the runtime ensures that a \fIbadarg\fR\& exception is raised when the NIF returns, even if the NIF attempts to return a non-exception term instead\&.
+.LP
+The return value from \fIenif_make_badarg\fR\& can be used only as the return value from the NIF that invoked it (directly or indirectly) or be passed to \fB\fIenif_is_exception\fR\&\fR\&, but not to any other NIF API function\&.
+.LP
+See also \fB\fIenif_has_pending_exception\fR\&\fR\& and \fB\fIenif_raise_exception\fR\&\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Before ERTS 7\&.0 (Erlang/OTP 18), the return value from \fIenif_make_badarg\fR\& had to be returned from the NIF\&. This requirement is now lifted as the return value from the NIF is ignored if \fIenif_make_badarg\fR\& has been invoked\&.
+
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_binary(ErlNifEnv* env, ErlNifBinary* bin)
+.br
+.RS
+.LP
+Makes a binary term from \fIbin\fR\&\&. Any ownership of the binary data is transferred to the created term and \fIbin\fR\& is to be considered read-only for the rest of the NIF call and then as released\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_copy(ErlNifEnv* dst_env,
+        ERL_NIF_TERM src_term)
+.br
+.RS
+.LP
+Makes a copy of term \fIsrc_term\fR\&\&. The copy is created in environment \fIdst_env\fR\&\&. The source term can be located in any environment\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_double(ErlNifEnv* env, double d)
+.br
+.RS
+.LP
+Creates a floating-point term from a \fIdouble\fR\&\&. If argument \fIdouble\fR\& is not finite or is NaN, \fIenif_make_double\fR\& invokes \fB\fIenif_make_badarg\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_make_existing_atom(ErlNifEnv* env,
+        const char* name, ERL_NIF_TERM* atom, ErlNifCharEncoding
+        encode)
+.br
+.RS
+.LP
+Tries to create the term of an already existing atom from the \fINULL\fR\&-terminated C-string \fIname\fR\& with encoding \fBencode\fR\&\&.
+.LP
+If the atom already exists, this function stores the term in \fI*atom\fR\& and returns \fItrue\fR\&, otherwise \fIfalse\fR\&\&. Also returns \fIfalse\fR\& if the length of \fIname\fR\& exceeds the maximum length allowed for an atom (255 characters)\&.
+.RE
+.LP
+.B
+int enif_make_existing_atom_len(ErlNifEnv* env,
+        const char* name, size_t len, ERL_NIF_TERM* atom, ErlNifCharEncoding
+        encoding)
+.br
+.RS
+.LP
+Tries to create the term of an already existing atom from the string \fIname\fR\& with length \fIlen\fR\& and encoding \fBencode\fR\&\&. \fINULL\fR\& characters are treated as any other characters\&.
+.LP
+If the atom already exists, this function stores the term in \fI*atom\fR\& and returns \fItrue\fR\&, otherwise \fIfalse\fR\&\&. Also returns \fIfalse\fR\& if \fIlen\fR\& exceeds the maximum length allowed for an atom (255 characters)\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_int(ErlNifEnv* env, int i)
+.br
+.RS
+.LP
+Creates an integer term\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_int64(ErlNifEnv* env, ErlNifSInt64 i)
+.br
+.RS
+.LP
+Creates an integer term from a signed 64-bit integer\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_list(ErlNifEnv* env, unsigned cnt, ...)
+.br
+.RS
+.LP
+Creates an ordinary list term of length \fIcnt\fR\&\&. Expects \fIcnt\fR\& number of arguments (after \fIcnt\fR\&) of type \fIERL_NIF_TERM\fR\& as the elements of the list\&.
+.LP
+Returns an empty list if \fIcnt\fR\& is 0\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_list1(ErlNifEnv* env, ERL_NIF_TERM e1)
+.br
+.B
+ERL_NIF_TERM enif_make_list2(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ERL_NIF_TERM e2)
+.br
+.B
+ERL_NIF_TERM enif_make_list3(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ERL_NIF_TERM e2, ERL_NIF_TERM e3)
+.br
+.B
+ERL_NIF_TERM enif_make_list4(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e4)
+.br
+.B
+ERL_NIF_TERM enif_make_list5(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e5)
+.br
+.B
+ERL_NIF_TERM enif_make_list6(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e6)
+.br
+.B
+ERL_NIF_TERM enif_make_list7(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e7)
+.br
+.B
+ERL_NIF_TERM enif_make_list8(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e8)
+.br
+.B
+ERL_NIF_TERM enif_make_list9(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e9)
+.br
+.RS
+.LP
+Creates an ordinary list term with length indicated by the function name\&. Prefer these functions (macros) over the variadic \fIenif_make_list\fR\& to get a compile-time error if the number of arguments does not match\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_list_cell(ErlNifEnv*
+        env, ERL_NIF_TERM head, ERL_NIF_TERM tail)
+.br
+.RS
+.LP
+Creates a list cell \fI[head | tail]\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_list_from_array(ErlNifEnv* env, const ERL_NIF_TERM
+          arr[], unsigned cnt)
+.br
+.RS
+.LP
+Creates an ordinary list containing the elements of array \fIarr\fR\& of length \fIcnt\fR\&\&.
+.LP
+Returns an empty list if \fIcnt\fR\& is 0\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_long(ErlNifEnv* env, long int i)
+.br
+.RS
+.LP
+Creates an integer term from a \fIlong int\fR\&\&.
+.RE
+.LP
+.B
+int enif_make_map_put(ErlNifEnv* env,
+        ERL_NIF_TERM map_in, ERL_NIF_TERM key, ERL_NIF_TERM value,
+        ERL_NIF_TERM* map_out)
+.br
+.RS
+.LP
+Makes a copy of map \fImap_in\fR\& and inserts \fIkey\fR\& with \fIvalue\fR\&\&. If \fIkey\fR\& already exists in \fImap_in\fR\&, the old associated value is replaced by \fIvalue\fR\&\&.
+.LP
+If successful, this function sets \fI*map_out\fR\& to the new map and returns \fItrue\fR\&\&. Returns \fIfalse\fR\& if \fImap_in\fR\& is not a map\&.
+.LP
+The \fImap_in\fR\& term must belong to environment \fIenv\fR\&\&.
+.RE
+.LP
+.B
+int enif_make_map_remove(ErlNifEnv* env,
+        ERL_NIF_TERM map_in, ERL_NIF_TERM key, ERL_NIF_TERM* map_out)
+.br
+.RS
+.LP
+If map \fImap_in\fR\& contains \fIkey\fR\&, this function makes a copy of \fImap_in\fR\& in \fI*map_out\fR\&, and removes \fIkey\fR\& and the associated value\&. If map \fImap_in\fR\& does not contain \fIkey\fR\&, \fI*map_out\fR\& is set to \fImap_in\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if \fImap_in\fR\& is not a map\&.
+.LP
+The \fImap_in\fR\& term must belong to environment \fIenv\fR\&\&.
+.RE
+.LP
+.B
+int enif_make_map_update(ErlNifEnv* env,
+        ERL_NIF_TERM map_in, ERL_NIF_TERM key, ERL_NIF_TERM new_value,
+        ERL_NIF_TERM* map_out)
+.br
+.RS
+.LP
+Makes a copy of map \fImap_in\fR\& and replace the old associated value for \fIkey\fR\& with \fInew_value\fR\&\&.
+.LP
+If successful, this function sets \fI*map_out\fR\& to the new map and returns \fItrue\fR\&\&. Returns \fIfalse\fR\& if \fImap_in\fR\& is not a map or if it does not contain \fIkey\fR\&\&.
+.LP
+The \fImap_in\fR\& term must belong to environment \fIenv\fR\&\&.
+.RE
+.LP
+.B
+unsigned char *enif_make_new_binary(ErlNifEnv*
+        env, size_t size, ERL_NIF_TERM* termp)
+.br
+.RS
+.LP
+Allocates a binary of size \fIsize\fR\& bytes and creates an owning term\&. The binary data is mutable until the calling NIF returns\&. This is a quick way to create a new binary without having to use \fB\fIErlNifBinary\fR\&\fR\&\&. The drawbacks are that the binary cannot be kept between NIF calls and it cannot be reallocated\&.
+.LP
+Returns a pointer to the raw binary data and sets \fI*termp\fR\& to the binary term\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_new_map(ErlNifEnv* env)
+.br
+.RS
+.LP
+Makes an empty map term\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_pid(ErlNifEnv* env, const ErlNifPid* pid)
+.br
+.RS
+.LP
+Makes a pid term from \fI*pid\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_ref(ErlNifEnv* env)
+.br
+.RS
+.LP
+Creates a reference like \fB\fIerlang:make_ref/0\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_resource(ErlNifEnv* env, void* obj)
+.br
+.RS
+.LP
+Creates an opaque handle to a memory-managed resource object obtained by \fB\fIenif_alloc_resource\fR\&\fR\&\&. No ownership transfer is done, as the resource object still needs to be released by \fB\fIenif_release_resource\fR\&\fR\&\&. However, notice that the call to \fIenif_release_resource\fR\& can occur immediately after obtaining the term from \fIenif_make_resource\fR\&, in which case the resource object is deallocated when the term is garbage collected\&. For more details, see the \fBexample of creating and returning a resource object\fR\& in the User\&'s Guide\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Since ERTS 9\&.0 (OTP-20\&.0), resource terms have a defined behavior when compared and serialized through \fIterm_to_binary\fR\& or passed between nodes\&.
+.RS 2
+.TP 2
+*
+Two resource terms will compare equal iff they would yield the same resource object pointer when passed to \fB\fIenif_get_resource\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+A resoure term can be serialized with \fIterm_to_binary\fR\& and later be fully recreated if the resource object is still alive when \fIbinary_to_term\fR\& is called\&. A \fIstale\fR\& resource term will be returned from \fIbinary_to_term\fR\& if the resource object has been deallocated\&. \fB\fIenif_get_resource\fR\&\fR\& will return false for stale resource terms\&.
+.RS 2
+.LP
+The same principles of serialization apply when passing resource terms in messages to remote nodes and back again\&. A resource term will act stale on all nodes except the node where its resource object is still alive in memory\&.
+.RE
+.LP
+.RE
+
+.LP
+Before ERTS 9\&.0 (OTP-20\&.0), all resource terms did compare equal to each other and to empty binaries (\fI<<>>\fR\&)\&. If serialized, they would be recreated as plain empty binaries\&.
+
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_resource_binary(ErlNifEnv* env, void* obj, const
+        void* data, size_t size)
+.br
+.RS
+.LP
+Creates a binary term that is memory-managed by a resource object \fIobj\fR\& obtained by \fB\fIenif_alloc_resource\fR\&\fR\&\&. The returned binary term consists of \fIsize\fR\& bytes pointed to by \fIdata\fR\&\&. This raw binary data must be kept readable and unchanged until the destructor of the resource is called\&. The binary data can be stored external to the resource object, in which case the destructor is responsible for releasing the data\&.
+.LP
+Several binary terms can be managed by the same resource object\&. The destructor is not called until the last binary is garbage collected\&. This can be useful to return different parts of a larger binary buffer\&.
+.LP
+As with \fB\fIenif_make_resource\fR\&\fR\&, no ownership transfer is done\&. The resource still needs to be released with \fB\fIenif_release_resource\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_make_reverse_list(ErlNifEnv* env, ERL_NIF_TERM list_in,
+        ERL_NIF_TERM *list_out)
+.br
+.RS
+.LP
+Sets \fI*list_out\fR\& to the reverse list of the list \fIlist_in\fR\& and returns \fItrue\fR\&, or returns \fIfalse\fR\& if \fIlist_in\fR\& is not a list\&.
+.LP
+This function is only to be used on short lists, as a copy is created of the list, which is not released until after the NIF returns\&.
+.LP
+The \fIlist_in\fR\& term must belong to environment \fIenv\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_string(ErlNifEnv* env,
+        const char* string, ErlNifCharEncoding encoding)
+.br
+.RS
+.LP
+Creates a list containing the characters of the \fINULL\fR\&-terminated string \fIstring\fR\& with encoding \fBencoding\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_string_len(ErlNifEnv*
+        env, const char* string, size_t len, ErlNifCharEncoding
+        encoding)
+.br
+.RS
+.LP
+Creates a list containing the characters of the string \fIstring\fR\& with length \fIlen\fR\& and encoding \fBencoding\fR\&\&. \fINULL\fR\& characters are treated as any other characters\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_sub_binary(ErlNifEnv*
+        env, ERL_NIF_TERM bin_term, size_t pos, size_t size)
+.br
+.RS
+.LP
+Makes a subbinary of binary \fIbin_term\fR\&, starting at zero-based position \fIpos\fR\& with a length of \fIsize\fR\& bytes\&. \fIbin_term\fR\& must be a binary or bitstring\&. \fIpos+size\fR\& must be less or equal to the number of whole bytes in \fIbin_term\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_tuple(ErlNifEnv* env,
+        unsigned cnt, ...)
+.br
+.RS
+.LP
+Creates a tuple term of arity \fIcnt\fR\&\&. Expects \fIcnt\fR\& number of arguments (after \fIcnt\fR\&) of type \fIERL_NIF_TERM\fR\& as the elements of the tuple\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_tuple1(ErlNifEnv* env,
+        ERL_NIF_TERM e1)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple2(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ERL_NIF_TERM e2)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple3(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ERL_NIF_TERM e2, ERL_NIF_TERM e3)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple4(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e4)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple5(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e5)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple6(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e6)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple7(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e7)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple8(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e8)
+.br
+.B
+ERL_NIF_TERM enif_make_tuple9(ErlNifEnv* env,
+        ERL_NIF_TERM e1, ..., ERL_NIF_TERM e9)
+.br
+.RS
+.LP
+Creates a tuple term with length indicated by the function name\&. Prefer these functions (macros) over the variadic \fIenif_make_tuple\fR\& to get a compile-time error if the number of arguments does not match\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_tuple_from_array(ErlNifEnv* env, const ERL_NIF_TERM
+        arr[], unsigned cnt)
+.br
+.RS
+.LP
+Creates a tuple containing the elements of array \fIarr\fR\& of length \fIcnt\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_uint(ErlNifEnv* env, unsigned int i)
+.br
+.RS
+.LP
+Creates an integer term from an \fIunsigned int\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_uint64(ErlNifEnv* env, ErlNifUInt64 i)
+.br
+.RS
+.LP
+Creates an integer term from an unsigned 64-bit integer\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_ulong(ErlNifEnv* env, unsigned long i)
+.br
+.RS
+.LP
+Creates an integer term from an \fIunsigned long int\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_make_unique_integer(ErlNifEnv
+        *env, ErlNifUniqueInteger properties)
+.br
+.RS
+.LP
+Returns a unique integer with the same properties as specified by \fB\fIerlang:unique_integer/1\fR\&\fR\&\&.
+.LP
+\fIenv\fR\& is the environment to create the integer in\&.
+.LP
+\fIERL_NIF_UNIQUE_POSITIVE\fR\& and \fIERL_NIF_UNIQUE_MONOTONIC\fR\& can be passed as the second argument to change the properties of the integer returned\&. They can be combined by OR:ing the two values together\&.
+.LP
+See also \fB\fIErlNifUniqueInteger\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_map_iterator_create(ErlNifEnv *env,
+        ERL_NIF_TERM map, ErlNifMapIterator *iter, ErlNifMapIteratorEntry
+        entry)
+.br
+.RS
+.LP
+Creates an iterator for the map \fImap\fR\& by initializing the structure pointed to by \fIiter\fR\&\&. Argument \fIentry\fR\& determines the start position of the iterator: \fIERL_NIF_MAP_ITERATOR_FIRST\fR\& or \fIERL_NIF_MAP_ITERATOR_LAST\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or false if \fImap\fR\& is not a map\&.
+.LP
+A map iterator is only useful during the lifetime of environment \fIenv\fR\& that the \fImap\fR\& belongs to\&. The iterator must be destroyed by calling \fB\fIenif_map_iterator_destroy\fR\&\fR\&:
+.LP
+.nf
+
+ERL_NIF_TERM key, value;
+ErlNifMapIterator iter;
+enif_map_iterator_create(env, my_map, &iter, ERL_NIF_MAP_ITERATOR_FIRST);
+
+while (enif_map_iterator_get_pair(env, &iter, &key, &value)) {
+    do_something(key,value);
+    enif_map_iterator_next(env, &iter);
+}
+enif_map_iterator_destroy(env, &iter);
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The key-value pairs of a map have no defined iteration order\&. The only guarantee is that the iteration order of a single map instance is preserved during the lifetime of the environment that the map belongs to\&.
+
+.RE
+.LP
+.B
+void enif_map_iterator_destroy(ErlNifEnv *env,
+        ErlNifMapIterator *iter)
+.br
+.RS
+.LP
+Destroys a map iterator created by \fB\fIenif_map_iterator_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_map_iterator_get_pair(ErlNifEnv *env,
+        ErlNifMapIterator *iter, ERL_NIF_TERM *key, ERL_NIF_TERM
+        *value)
+.br
+.RS
+.LP
+Gets key and value terms at the current map iterator position\&.
+.LP
+On success, sets \fI*key\fR\& and \fI*value\fR\& and returns \fItrue\fR\&\&. Returns \fIfalse\fR\& if the iterator is positioned at head (before first entry) or tail (beyond last entry)\&.
+.RE
+.LP
+.B
+int enif_map_iterator_is_head(ErlNifEnv *env,
+        ErlNifMapIterator *iter)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if map iterator \fIiter\fR\& is positioned before the first entry\&.
+.RE
+.LP
+.B
+int enif_map_iterator_is_tail(ErlNifEnv *env,
+        ErlNifMapIterator *iter)
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if map iterator \fIiter\fR\& is positioned after the last entry\&.
+.RE
+.LP
+.B
+int enif_map_iterator_next(ErlNifEnv *env,
+        ErlNifMapIterator *iter)
+.br
+.RS
+.LP
+Increments map iterator to point to the next key-value entry\&.
+.LP
+Returns \fItrue\fR\& if the iterator is now positioned at a valid key-value entry, or \fIfalse\fR\& if the iterator is positioned at the tail (beyond the last entry)\&.
+.RE
+.LP
+.B
+int enif_map_iterator_prev(ErlNifEnv *env,
+        ErlNifMapIterator *iter)
+.br
+.RS
+.LP
+Decrements map iterator to point to the previous key-value entry\&.
+.LP
+Returns \fItrue\fR\& if the iterator is now positioned at a valid key-value entry, or \fIfalse\fR\& if the iterator is positioned at the head (before the first entry)\&.
+.RE
+.LP
+.B
+int enif_monitor_process(ErlNifEnv* env, void* obj,
+      const ErlNifPid* target_pid, ErlNifMonitor* mon)
+.br
+.RS
+.LP
+Starts monitoring a process from a resource\&. When a process is monitored, a process exit results in a call to the provided \fB\fIdown\fR\&\fR\& callback associated with the resource type\&.
+.LP
+Argument \fIobj\fR\& is pointer to the resource to hold the monitor and \fI*target_pid\fR\& identifies the local process to be monitored\&.
+.LP
+If \fImon\fR\& is not \fINULL\fR\&, a successful call stores the identity of the monitor in the \fB\fIErlNifMonitor\fR\&\fR\& struct pointed to by \fImon\fR\&\&. This identifier is used to refer to the monitor for later removal with \fB\fIenif_demonitor_process\fR\&\fR\& or compare with \fB\fIenif_compare_monitors\fR\&\fR\&\&. A monitor is automatically removed when it triggers or when the resource is deallocated\&.
+.LP
+Returns \fI0\fR\& on success, < 0 if no \fIdown\fR\& callback is provided, and > 0 if the process is no longer alive\&.
+.LP
+This function is only thread-safe when the emulator with SMP support is used\&. It can only be used in a non-SMP emulator from a NIF-calling thread\&.
+.RE
+.LP
+.B
+ErlNifTime enif_monotonic_time(ErlNifTimeUnit time_unit)
+.br
+.RS
+.LP
+Returns the current \fB Erlang monotonic time\fR\&\&. Notice that it is not uncommon with negative values\&.
+.LP
+\fItime_unit\fR\& is the time unit of the returned value\&.
+.LP
+Returns \fIERL_NIF_TIME_ERROR\fR\& if called with an invalid time unit argument, or if called from a thread that is not a scheduler thread\&.
+.LP
+See also \fB\fIErlNifTime\fR\&\fR\& and \fB\fIErlNifTimeUnit\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ErlNifMutex *enif_mutex_create(char *name)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_mutex_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_mutex_destroy(ErlNifMutex *mtx)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_mutex_destroy\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_mutex_lock(ErlNifMutex *mtx)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_mutex_lock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_mutex_trylock(ErlNifMutex *mtx)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_mutex_trylock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_mutex_unlock(ErlNifMutex *mtx)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_mutex_unlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_now_time(ErlNifEnv *env)
+.br
+.RS
+.LP
+Returns an \fB\fIerlang:now()\fR\&\fR\& time stamp\&.
+.LP
+\fIThis function is deprecated\&.\fR\&
+.RE
+.LP
+.B
+ErlNifResourceType *enif_open_resource_type(ErlNifEnv* env, const char*
+        module_str, const char* name, ErlNifResourceDtor* dtor,
+        ErlNifResourceFlags flags, ErlNifResourceFlags* tried)
+.br
+.RS
+.LP
+Creates or takes over a resource type identified by the string \fIname\fR\& and gives it the destructor function pointed to by \fB\fIdtor\fR\&\fR\&\&. Argument \fIflags\fR\& can have the following values:
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_RT_CREATE\fR\&:
+Creates a new resource type that does not already exist\&.
+.TP 2
+.B
+\fIERL_NIF_RT_TAKEOVER\fR\&:
+Opens an existing resource type and takes over ownership of all its instances\&. The supplied destructor \fIdtor\fR\& is called both for existing instances and new instances not yet created by the calling NIF library\&.
+.RE
+.LP
+The two flag values can be combined with bitwise OR\&. The resource type name is local to the calling module\&. Argument \fImodule_str\fR\& is not (yet) used and must be \fINULL\fR\&\&. \fIdtor\fR\& can be \fINULL\fR\& if no destructor is needed\&.
+.LP
+On success, the function returns a pointer to the resource type and \fI*tried\fR\& is set to either \fIERL_NIF_RT_CREATE\fR\& or \fIERL_NIF_RT_TAKEOVER\fR\& to indicate what was done\&. On failure, returns \fINULL\fR\& and sets \fI*tried\fR\& to \fIflags\fR\&\&. It is allowed to set \fItried\fR\& to \fINULL\fR\&\&.
+.LP
+Notice that \fIenif_open_resource_type\fR\& is only allowed to be called in the two callbacks \fB\fIload\fR\&\fR\& and \fB\fIupgrade\fR\&\fR\&\&.
+.LP
+See also \fB\fIenif_open_resource_type_x\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ErlNifResourceType *enif_open_resource_type_x(ErlNifEnv* env, const char* name,
+	const ErlNifResourceTypeInit* init,
+        ErlNifResourceFlags flags, ErlNifResourceFlags* tried)
+.br
+.RS
+.LP
+Same as \fB\fIenif_open_resource_type\fR\&\fR\& except it accepts additional callback functions for resource types that are used together with \fB\fIenif_select\fR\&\fR\& and \fB\fIenif_monitor_process\fR\&\fR\&\&.
+.LP
+Argument \fIinit\fR\& is a pointer to an \fB\fIErlNifResourceTypeInit\fR\&\fR\& structure that contains the function pointers for destructor, down and stop callbacks for the resource type\&.
+.RE
+.LP
+.B
+int enif_port_command(ErlNifEnv* env, const
+       ErlNifPort* to_port, ErlNifEnv *msg_env, ERL_NIF_TERM msg)
+.br
+.RS
+.LP
+Works as \fB\fIerlang:port_command/2\fR\&\fR\&, except that it is always completely asynchronous\&.
+.RS 2
+.TP 2
+.B
+\fIenv\fR\&:
+The environment of the calling process\&. Must not be \fINULL\fR\&\&.
+.TP 2
+.B
+\fI*to_port\fR\&:
+The port ID of the receiving port\&. The port ID is to refer to a port on the local node\&.
+.TP 2
+.B
+\fImsg_env\fR\&:
+The environment of the message term\&. Can be a process-independent environment allocated with \fB\fIenif_alloc_env\fR\&\fR\& or \fINULL\fR\&\&.
+.TP 2
+.B
+\fImsg\fR\&:
+The message term to send\&. The same limitations apply as on the payload to \fB\fIerlang:port_command/2\fR\&\fR\&\&.
+.RE
+.LP
+Using a \fImsg_env\fR\& of \fINULL\fR\& is an optimization, which groups together calls to \fIenif_alloc_env\fR\&, \fIenif_make_copy\fR\&, \fIenif_port_command\fR\&, and \fIenif_free_env\fR\& into one call\&. This optimization is only useful when a majority of the terms are to be copied from \fIenv\fR\& to \fImsg_env\fR\&\&.
+.LP
+Returns \fItrue\fR\& if the command is successfully sent\&. Returns \fIfalse\fR\& if the command fails, for example:
+.RS 2
+.TP 2
+*
+\fI*to_port\fR\& does not refer to a local port\&.
+.LP
+.TP 2
+*
+The currently executing process (that is, the sender) is not alive\&.
+.LP
+.TP 2
+*
+\fImsg\fR\& is invalid\&.
+.LP
+.RE
+
+.LP
+See also \fB\fIenif_get_local_port\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void *enif_priv_data(ErlNifEnv* env)
+.br
+.RS
+.LP
+Returns the pointer to the private data that was set by \fB\fIload\fR\&\fR\& or \fB\fIupgrade\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_raise_exception(ErlNifEnv*
+        env, ERL_NIF_TERM reason)
+.br
+.RS
+.LP
+Creates an error exception with the term \fIreason\fR\& to be returned from a NIF, and associates it with environment \fIenv\fR\&\&. Once a NIF or any function it calls invokes \fIenif_raise_exception\fR\&, the runtime ensures that the exception it creates is raised when the NIF returns, even if the NIF attempts to return a non-exception term instead\&.
+.LP
+The return value from \fIenif_raise_exception\fR\& can only be used as the return value from the NIF that invoked it (directly or indirectly) or be passed to \fB\fIenif_is_exception\fR\&\fR\&, but not to any other NIF API function\&.
+.LP
+See also \fB\fIenif_has_pending_exception\fR\&\fR\& and \fB\fIenif_make_badarg\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void *enif_realloc(void* ptr, size_t size)
+.br
+.RS
+.LP
+Reallocates memory allocated by \fB\fIenif_alloc\fR\&\fR\& to \fIsize\fR\& bytes\&.
+.LP
+Returns \fINULL\fR\& if the reallocation fails\&.
+.LP
+The returned pointer is suitably aligned for any built-in type that fit in the allocated memory\&.
+.RE
+.LP
+.B
+int enif_realloc_binary(ErlNifBinary* bin, size_t size)
+.br
+.RS
+.LP
+Changes the size of a binary \fIbin\fR\&\&. The source binary can be read-only, in which case it is left untouched and a mutable copy is allocated and assigned to \fI*bin\fR\&\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if memory allocation failed\&.
+.RE
+.LP
+.B
+void enif_release_binary(ErlNifBinary* bin)
+.br
+.RS
+.LP
+Releases a binary obtained from \fB\fIenif_alloc_binary\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_release_resource(void* obj)
+.br
+.RS
+.LP
+Removes a reference to resource object \fIobj\fR\& obtained from \fB\fIenif_alloc_resource\fR\&\fR\&\&. The resource object is destructed when the last reference is removed\&. Each call to \fIenif_release_resource\fR\& must correspond to a previous call to \fIenif_alloc_resource\fR\& or \fB\fIenif_keep_resource\fR\&\fR\&\&. References made by \fB\fIenif_make_resource\fR\&\fR\& can only be removed by the garbage collector\&.
+.RE
+.LP
+.B
+ErlNifRWLock *enif_rwlock_create(char *name)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_rwlock_destroy(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_destroy\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_rwlock_rlock(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_rlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_rwlock_runlock(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_runlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_rwlock_rwlock(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_rwlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_rwlock_rwunlock(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_rwunlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_rwlock_tryrlock(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_tryrlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_rwlock_tryrwlock(ErlNifRWLock *rwlck)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_rwlock_tryrwlock\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ERL_NIF_TERM enif_schedule_nif(ErlNifEnv* env,
+        const char* fun_name, int flags, ERL_NIF_TERM (*fp)(ErlNifEnv* env, int
+        argc, const ERL_NIF_TERM argv[]), int argc, const ERL_NIF_TERM
+        argv[])
+.br
+.RS
+.LP
+Schedules NIF \fIfp\fR\& to execute\&. This function allows an application to break up long-running work into multiple regular NIF calls or to schedule a \fB dirty NIF\fR\& to execute on a dirty scheduler thread\&.
+.RS 2
+.TP 2
+.B
+\fIfun_name\fR\&:
+Provides a name for the NIF that is scheduled for execution\&. If it cannot be converted to an atom, \fIenif_schedule_nif\fR\& returns a \fIbadarg\fR\& exception\&.
+.TP 2
+.B
+\fIflags\fR\&:
+Must be set to \fI0\fR\& for a regular NIF\&. If the emulator was built with dirty scheduler support enabled, \fIflags\fR\& can be set to either \fIERL_NIF_DIRTY_JOB_CPU_BOUND\fR\& if the job is expected to be CPU-bound, or \fIERL_NIF_DIRTY_JOB_IO_BOUND\fR\& for jobs that will be I/O-bound\&. If dirty scheduler threads are not available in the emulator, an attempt to schedule such a job results in a \fInotsup\fR\& exception\&.
+.TP 2
+.B
+\fIargc\fR\& and \fIargv\fR\&:
+Can either be the originals passed into the calling NIF, or can be values created by the calling NIF\&.
+.RE
+.LP
+The calling NIF must use the return value of \fIenif_schedule_nif\fR\& as its own return value\&.
+.LP
+Be aware that \fIenif_schedule_nif\fR\&, as its name implies, only schedules the NIF for future execution\&. The calling NIF does not block waiting for the scheduled NIF to execute and return\&. This means that the calling NIF cannot expect to receive the scheduled NIF return value and use it for further operations\&.
+.RE
+.LP
+.B
+int enif_select(ErlNifEnv* env, ErlNifEvent event, enum ErlNifSelectFlags mode,
+	void* obj, const ErlNifPid* pid, ERL_NIF_TERM ref)
+.br
+.RS
+.LP
+This function can be used to receive asynchronous notifications when OS-specific event objects become ready for either read or write operations\&.
+.LP
+Argument \fIevent\fR\& identifies the event object\&. On Unix systems, the functions \fIselect\fR\&/\fIpoll\fR\& are used\&. The event object must be a socket, pipe or other file descriptor object that \fIselect\fR\&/\fIpoll\fR\& can use\&.
+.LP
+Argument \fImode\fR\& describes the type of events to wait for\&. It can be \fIERL_NIF_SELECT_READ\fR\&, \fIERL_NIF_SELECT_WRITE\fR\& or a bitwise OR combination to wait for both\&. It can also be \fIERL_NIF_SELECT_STOP\fR\& which is described further below\&. When a read or write event is triggerred, a notification message like this is sent to the process identified by \fIpid\fR\&:
+.LP
+.nf
+{select, Obj, Ref, ready_input | ready_output}
+.fi
+.LP
+\fIready_input\fR\& or \fIready_output\fR\& indicates if the event object is ready for reading or writing\&.
+.LP
+Argument \fIpid\fR\& may be \fINULL\fR\& to indicate the calling process\&.
+.LP
+Argument \fIobj\fR\& is a resource object obtained from \fB\fIenif_alloc_resource\fR\&\fR\&\&. The purpose of the resource objects is as a container of the event object to manage its state and lifetime\&. A handle to the resource is received in the notification message as \fIObj\fR\&\&.
+.LP
+Argument \fIref\fR\& must be either a reference obtained from \fB\fIerlang:make_ref/0\fR\&\fR\& or the atom \fIundefined\fR\&\&. It will be passed as \fIRef\fR\& in the notifications\&. If a selective \fIreceive\fR\& statement is used to wait for the notification then a reference created just before the \fIreceive\fR\& will exploit a runtime optimization that bypasses all earlier received messages in the queue\&.
+.LP
+The notifications are one-shot only\&. To receive further notifications of the same type (read or write), repeated calls to \fIenif_select\fR\& must be made after receiving each notification\&.
+.LP
+Use \fIERL_NIF_SELECT_STOP\fR\& as \fImode\fR\& in order to safely close an event object that has been passed to \fIenif_select\fR\&\&. The \fB\fIstop\fR\&\fR\& callback of the resource \fIobj\fR\& will be called when it is safe to close the event object\&. This safe way of closing event objects must be used even if all notifications have been received and no further calls to \fIenif_select\fR\& have been made\&.
+.LP
+The first call to \fIenif_select\fR\& for a specific OS \fIevent\fR\& will establish a relation between the event object and the containing resource\&. All subsequent calls for an \fIevent\fR\& must pass its containing resource as argument \fIobj\fR\&\&. The relation is dissolved when \fIenif_select\fR\& has been called with \fImode\fR\& as \fIERL_NIF_SELECT_STOP\fR\& and the corresponding \fIstop\fR\& callback has returned\&. A resource can contain several event objects but one event object can only be contained within one resource\&. A resource will not be destructed until all its contained relations have been dissolved\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Use \fB\fIenif_monitor_process\fR\&\fR\& together with \fIenif_select\fR\& to detect failing Erlang processes and prevent them from causing permanent leakage of resources and their contained OS event objects\&.
+
+.LP
+Returns a non-negative value on success where the following bits can be set:
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_SELECT_STOP_CALLED\fR\&:
+The stop callback was called directly by \fIenif_select\fR\&\&.
+.TP 2
+.B
+\fIERL_NIF_SELECT_STOP_SCHEDULED\fR\&:
+The stop callback was scheduled to run on some other thread or later by this thread\&.
+.RE
+.LP
+Returns a negative value if the call failed where the follwing bits can be set:
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_SELECT_INVALID_EVENT\fR\&:
+Argument \fIevent\fR\& is not a valid OS event object\&.
+.TP 2
+.B
+\fIERL_NIF_SELECT_FAILED\fR\&:
+The system call failed to add the event object to the poll set\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Use bitwise AND to test for specific bits in the return vaue\&. New significant bits may be added in future releases to give more detailed information for both failed and successful calls\&. Do NOT use equallity tests like \fI==\fR\&, as that may cause your application to stop working\&.
+.LP
+Example:
+.LP
+.nf
+
+retval = enif_select(env, fd, ERL_NIF_SELECT_STOP, resource, ref);
+if (retval < 0) {
+    /* handle error */
+}
+/* Success! */
+if (retval & ERL_NIF_SELECT_STOP_CALLED) {
+    /* ... */
+}
+
+.fi
+
+.RE
+.LP
+.B
+ErlNifPid *enif_self(ErlNifEnv* caller_env, ErlNifPid* pid)
+.br
+.RS
+.LP
+Initializes the \fB\fIErlNifPid\fR\&\fR\& variable at \fI*pid\fR\& to represent the calling process\&.
+.LP
+Returns \fIpid\fR\& if successful, or NULL if \fIcaller_env\fR\& is not a \fBprocess-bound environment\fR\&\&.
+.RE
+.LP
+.B
+int enif_send(ErlNifEnv* env, ErlNifPid* to_pid,
+        ErlNifEnv* msg_env, ERL_NIF_TERM msg)
+.br
+.RS
+.LP
+Sends a message to a process\&.
+.RS 2
+.TP 2
+.B
+\fIenv\fR\&:
+The environment of the calling process\&. Must be \fINULL\fR\& only if calling from a created thread\&.
+.TP 2
+.B
+\fI*to_pid\fR\&:
+The pid of the receiving process\&. The pid is to refer to a process on the local node\&.
+.TP 2
+.B
+\fImsg_env\fR\&:
+The environment of the message term\&. Must be a process-independent environment allocated with \fB\fIenif_alloc_env\fR\&\fR\& or NULL\&.
+.TP 2
+.B
+\fImsg\fR\&:
+The message term to send\&.
+.RE
+.LP
+Returns \fItrue\fR\& if the message is successfully sent\&. Returns \fIfalse\fR\& if the send operation fails, that is:
+.RS 2
+.TP 2
+*
+\fI*to_pid\fR\& does not refer to an alive local process\&.
+.LP
+.TP 2
+*
+The currently executing process (that is, the sender) is not alive\&.
+.LP
+.RE
+
+.LP
+The message environment \fImsg_env\fR\& with all its terms (including \fImsg\fR\&) is invalidated by a successful call to \fIenif_send\fR\&\&. The environment is to either be freed with \fB\fIenif_free_env\fR\&\fR\& of cleared for reuse with \fB\fIenif_clear_env\fR\&\fR\&\&.
+.LP
+If \fImsg_env\fR\& is set to \fINULL\fR\&, the \fImsg\fR\& term is copied and the original term and its environemt is still valid after the call\&.
+.LP
+This function is only thread-safe when the emulator with SMP support is used\&. It can only be used in a non-SMP emulator from a NIF-calling thread\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Passing \fImsg_env\fR\& as \fINULL\fR\& is only supported as from ERTS 8\&.0 (Erlang/OTP 19)\&.
+
+.RE
+.LP
+.B
+unsigned enif_sizeof_resource(void* obj)
+.br
+.RS
+.LP
+Gets the byte size of resource object \fIobj\fR\& obtained by \fB\fIenif_alloc_resource\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_snprintf(char *str, size_t size, const
+        char *format, ...)
+.br
+.RS
+.LP
+Similar to \fIsnprintf\fR\& but this format string also accepts \fI"%T"\fR\&, which formats Erlang terms\&.
+.RE
+.LP
+.B
+void enif_system_info(ErlNifSysInfo
+        *sys_info_ptr, size_t size)
+.br
+.RS
+.LP
+Same as \fB\fIdriver_system_info\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_term_to_binary(ErlNifEnv *env,
+        ERL_NIF_TERM term, ErlNifBinary *bin)
+.br
+.RS
+.LP
+Allocates a new binary with \fB\fIenif_alloc_binary\fR\&\fR\& and stores the result of encoding \fIterm\fR\& according to the Erlang external term format\&.
+.LP
+Returns \fItrue\fR\& on success, or \fIfalse\fR\& if the allocation fails\&.
+.LP
+See also \fB\fIerlang:term_to_binary/1\fR\&\fR\& and \fB\fIenif_binary_to_term\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_thread_create(char *name,ErlNifTid
+        *tid,void * (*func)(void *),void *args,ErlNifThreadOpts
+        *opts)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_thread_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_thread_exit(void *resp)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_thread_exit\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_thread_join(ErlNifTid, void **respp)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_thread_join\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ErlNifThreadOpts *enif_thread_opts_create(char *name)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_thread_opts_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_thread_opts_destroy(ErlNifThreadOpts *opts)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_thread_opts_destroy\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ErlNifTid enif_thread_self(void)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_thread_self\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_thread_type(void)
+.br
+.RS
+.LP
+Determine the type of currently executing thread\&. A positive value indicates a scheduler thread while a negative value or zero indicates another type of thread\&. Currently the following specific types exist (which may be extended in the future):
+.RS 2
+.TP 2
+.B
+\fIERL_NIF_THR_UNDEFINED\fR\&:
+Undefined thread that is not a scheduler thread\&.
+.TP 2
+.B
+\fIERL_NIF_THR_NORMAL_SCHEDULER\fR\&:
+A normal scheduler thread\&.
+.TP 2
+.B
+\fIERL_NIF_THR_DIRTY_CPU_SCHEDULER\fR\&:
+A dirty CPU scheduler thread\&.
+.TP 2
+.B
+\fIERL_NIF_THR_DIRTY_IO_SCHEDULER\fR\&:
+A dirty I/O scheduler thread\&.
+.RE
+.RE
+.LP
+.B
+ErlNifTime enif_time_offset(ErlNifTimeUnit time_unit)
+.br
+.RS
+.LP
+Returns the current time offset between \fB Erlang monotonic time\fR\& and \fB Erlang system time\fR\& converted into the \fItime_unit\fR\& passed as argument\&.
+.LP
+\fItime_unit\fR\& is the time unit of the returned value\&.
+.LP
+Returns \fIERL_NIF_TIME_ERROR\fR\& if called with an invalid time unit argument or if called from a thread that is not a scheduler thread\&.
+.LP
+See also \fB\fIErlNifTime\fR\&\fR\& and \fB\fIErlNifTimeUnit\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void *enif_tsd_get(ErlNifTSDKey key)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_tsd_get\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_tsd_key_create(char *name, ErlNifTSDKey *key)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_tsd_key_create\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_tsd_key_destroy(ErlNifTSDKey key)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_tsd_key_destroy\fR\&\fR\&\&.
+.RE
+.LP
+.B
+void enif_tsd_set(ErlNifTSDKey key, void *data)
+.br
+.RS
+.LP
+Same as \fB\fIerl_drv_tsd_set\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int enif_whereis_pid(ErlNifEnv *env,
+          ERL_NIF_TERM name, ErlNifPid *pid)
+.br
+.RS
+.LP
+Looks up a process by its registered name\&.
+.RS 2
+.TP 2
+.B
+\fIenv\fR\&:
+The environment of the calling process\&. Must be \fINULL\fR\& only if calling from a created thread\&.
+.TP 2
+.B
+\fIname\fR\&:
+The name of a registered process, as an atom\&.
+.TP 2
+.B
+\fI*pid\fR\&:
+The \fB\fIErlNifPid\fR\&\fR\& in which the resolved process id is stored\&.
+.RE
+.LP
+On success, sets \fI*pid\fR\& to the local process registered with \fIname\fR\& and returns \fItrue\fR\&\&. If \fIname\fR\& is not a registered process, or is not an atom, \fIfalse\fR\& is returned and \fI*pid\fR\& is unchanged\&.
+.LP
+Works as \fB\fIerlang:whereis/1\fR\&\fR\&, but restricted to processes\&. See \fB\fIenif_whereis_port\fR\&\fR\& to resolve registered ports\&.
+.RE
+.LP
+.B
+int enif_whereis_port(ErlNifEnv *env,
+          ERL_NIF_TERM name, ErlNifPort *port)
+.br
+.RS
+.LP
+Looks up a port by its registered name\&.
+.RS 2
+.TP 2
+.B
+\fIenv\fR\&:
+The environment of the calling process\&. Must be \fINULL\fR\& only if calling from a created thread\&.
+.TP 2
+.B
+\fIname\fR\&:
+The name of a registered port, as an atom\&.
+.TP 2
+.B
+\fI*port\fR\&:
+The \fB\fIErlNifPort\fR\&\fR\& in which the resolved port id is stored\&.
+.RE
+.LP
+On success, sets \fI*port\fR\& to the port registered with \fIname\fR\& and returns \fItrue\fR\&\&. If \fIname\fR\& is not a registered port, or is not an atom, \fIfalse\fR\& is returned and \fI*port\fR\& is unchanged\&.
+.LP
+Works as \fB\fIerlang:whereis/1\fR\&\fR\&, but restricted to ports\&. See \fB\fIenif_whereis_pid\fR\&\fR\& to resolve registered processes\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerlang:load_nif/2\fR\&\fR\&

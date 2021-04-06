@@ -1,0 +1,278 @@
+.TH erl_pp 3 "stdlib 3.13.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_pp \- The Erlang pretty printer.
+.SH DESCRIPTION
+.LP
+The functions in this module are used to generate aesthetically attractive representations of abstract forms, which are suitable for printing\&. All functions return (possibly deep) lists of characters and generate an error if the form is wrong\&.
+.LP
+All functions can have an optional argument, which specifies a hook that is called if an attempt is made to print an unknown form\&.
+.SH DATA TYPES
+.nf
+
+\fBhook_function()\fR\& = 
+.br
+    none |
+.br
+    fun((Expr :: erl_parse:abstract_expr(),
+.br
+         CurrentIndentation :: integer(),
+.br
+         CurrentPrecedence :: integer() >= 0,
+.br
+         Options :: options()) ->
+.br
+            io_lib:chars())
+.br
+.fi
+.RS
+.LP
+Optional argument \fIHookFunction\fR\&, shown in the functions described in this module, defines a function that is called when an unknown form occurs where there is to be a valid expression\&. If \fIHookFunction\fR\& is equal to \fInone\fR\&, there is no hook function\&.
+.LP
+The called hook function is to return a (possibly deep) list of characters\&. Function \fIexpr/4\fR\& is useful in a hook\&.
+.LP
+If \fICurrentIndentation\fR\& is negative, there are no line breaks and only a space is used as a separator\&.
+.RE
+.nf
+
+\fBoption()\fR\& = 
+.br
+    {hook, hook_function()} |
+.br
+    {encoding, latin1 | unicode | utf8} |
+.br
+    {quote_singleton_atom_types, boolean()} |
+.br
+    {linewidth, integer() >= 1} |
+.br
+    {indent, integer() >= 1}
+.br
+.fi
+.RS
+.LP
+The option \fIquote_singleton_atom_types\fR\& is used to add quotes to all singleton atom types\&.
+.LP
+The option \fIlinewidth\fR\& controls the maximum line width for formatted lines (defaults to 72 characters)\&.
+.LP
+The option \fIindent\fR\& controls the indention for formatted lines (defaults to 4 spaces)\&.
+.RE
+.nf
+
+\fBoptions()\fR\& = hook_function() | [option()]
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+attribute(Attribute) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+attribute(Attribute, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Attribute = erl_parse:abstract_form()
+.br
+Options = options()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIform/1,2\fR\&, but only for attribute \fIAttribute\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+expr(Expression) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+expr(Expression, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+expr(Expression, Indent, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+expr(Expression, Indent, Precedence, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Expression = erl_parse:abstract_expr()
+.br
+Indent = integer()
+.br
+Precedence = integer() >= 0
+.br
+Options = options()
+.br
+.RE
+.RE
+.RS
+.LP
+Prints one expression\&. It is useful for implementing hooks (see section Known Limitations)\&.
+.RE
+.LP
+.nf
+
+.B
+exprs(Expressions) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+exprs(Expressions, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+exprs(Expressions, Indent, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Expressions = [erl_parse:abstract_expr()]
+.br
+Indent = integer()
+.br
+Options = options()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIform/1,2\fR\&, but only for the sequence of expressions in \fIExpressions\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+form(Form) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+form(Form, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Form = erl_parse:abstract_form() | erl_parse:form_info()
+.br
+Options = options()
+.br
+.RE
+.RE
+.RS
+.LP
+Pretty prints a \fIForm\fR\&, which is an abstract form of a type that is returned by \fIerl_parse:parse_form/1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+function(Function) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+function(Function, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = erl_parse:abstract_form()
+.br
+Options = options()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIform/1,2\fR\&, but only for function \fIFunction\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+guard(Guard) -> io_lib:chars()
+.br
+.fi
+.br
+.nf
+
+.B
+guard(Guard, Options) -> io_lib:chars()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Guard = [erl_parse:abstract_expr()]
+.br
+Options = options()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIform/1,2\fR\&, but only for the guard test \fIGuard\fR\&\&.
+.RE
+.SH "KNOWN LIMITATIONS"
+
+.LP
+It is not possible to have hook functions for unknown forms at other places than expressions\&.
+.SH "SEE ALSO"
+
+.LP
+\fIerl_eval(3)\fR\&, \fIerl_parse(3)\fR\&, \fIio(3)\fR\&

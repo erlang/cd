@@ -1,0 +1,147 @@
+.TH mod_esi 3 "inets 6.3.9" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+mod_esi \- Erlang Server Interface
+.SH DESCRIPTION
+.LP
+This module defines the Erlang Server Interface (ESI) API\&. It is a more efficient way of writing Erlang scripts for your \fIInets\fR\& web server than writing them as common CGI scripts\&.
+.SH "DATA TYPES"
+
+.LP
+The following data types are used in the functions for mod_esi:
+.RS 2
+.TP 2
+.B
+\fIenv() = \fR\&:
+\fI{EnvKey()::atom(), Value::term()}\fR\&
+.RS 2
+.LP
+Currently supported key value pairs
+.RE
+.RS 2
+.TP 2
+.B
+\fI{server_software, string()}\fR\&:
+Indicates the inets version\&.
+.TP 2
+.B
+\fI{server_name, string()}\fR\&:
+The local hostname\&.
+.TP 2
+.B
+\fI{gateway_interface, string()}\fR\&:
+Legacy string used in CGI, just ignore\&.
+.TP 2
+.B
+\fI{server_protocol, string()}\fR\&:
+HTTP version, currently "HTTP/1\&.1"
+.TP 2
+.B
+\fI{server_port, integer()}\fR\&:
+Servers port number\&.
+.TP 2
+.B
+\fI{request_method, "GET | "PUT" | "DELETE" | "POST" | "PATCH"}\fR\&:
+HTTP request method\&.
+.TP 2
+.B
+\fI{remote_adress, inet:ip_address()} \fR\&:
+The clients ip address\&.
+.TP 2
+.B
+\fI{peer_cert, undefined | no_peercert | DER:binary()}\fR\&:
+For TLS connections where client certificates are used this will be an ASN\&.1 DER-encoded X509-certificate as an Erlang binary\&. If client certificates are not used the value will be \fIno_peercert\fR\&, and if TLS is not used (HTTP or connection is lost due to network failure) the value will be \fIundefined\fR\&\&.
+.TP 2
+.B
+\fI{script_name, string()}\fR\&:
+Request URI
+.TP 2
+.B
+\fI{http_LowerCaseHTTPHeaderName, string()}\fR\&:
+example: {http_content_type, "text/html"}
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+deliver(SessionID, Data) -> ok | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SessionID = term()
+.br
+Data = string() | io_list() | binary()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This function is \fIonly\fR\& intended to be used from functions called by the Erl Scheme interface to deliver parts of the content to the user\&.
+.LP
+Sends data from an Erl Scheme script back to the client\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If any HTTP header fields are added by the script, they must be in the first call to \fIdeliver/2\fR\&, and the data in the call must be a string\&. Calls after the headers are complete can contain binary data to reduce copying overhead\&. Do not assume anything about the data type of \fISessionID\fR\&\&. \fISessionID\fR\& must be the value given as input to the ESI callback function that you implemented\&.
+
+.RE
+.SH "ESI CALLBACK FUNCTIONS"
+
+.SH EXPORTS
+.LP
+.B
+Module:Function(SessionID, Env, Input)-> _ 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SessionID = term()
+.br
+Env = env()
+.br
+Input = string()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIModule\fR\& must be found in the code path and export \fIFunction\fR\& with an arity of three\&. An \fIerlScriptAlias\fR\& must also be set up in the configuration file for the web server\&.
+.LP
+If the HTTP request is a \&'post\&' request and a body is sent, \fIcontent_length\fR\& is the length of the posted data\&. If \&'get\&' is used, \fIquery_string\fR\& is the data after \fI?\fR\& in the URL\&.
+.LP
+\fIParsedHeader\fR\& is the HTTP request as a key-value tuple list\&. The keys in \fIParsedHeader\fR\& are in lower case\&.
+.LP
+\fISessionID\fR\& is an identifier the server uses when \fIdeliver/2\fR\& is called\&. Do not assume anything about the datatype\&.
+.LP
+Use this callback function to generate dynamic web content dynamically\&. When a part of the page is generated, send the data back to the client through \fIdeliver/2\fR\&\&. Notice that the first chunk of data sent to the client must at least contain all HTTP header fields that the response will generate\&. If the first chunk does not contain the \fIend of HTTP header\fR\&, that is, \fI"\\r\\n\\r\\n",\fR\& the server assumes that no HTTP header fields will be generated\&.
+.RE
+.LP
+.B
+Module:Function(Env, Input)-> Response 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Env = env()
+.br
+Input = string()
+.br
+Response = string()
+.br
+.RE
+.RE
+.RS
+.LP
+This callback format consumes much memory, as the whole response must be generated before it is sent to the user\&. This function is deprecated and is only kept for backwards compatibility\&. For new development, use \fIModule:Function/3\fR\&\&.
+.RE

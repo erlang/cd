@@ -1,0 +1,670 @@
+.TH uri_string 3 "stdlib 3.13.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+uri_string \- URI processing functions.
+.SH DESCRIPTION
+.LP
+This module contains functions for parsing and handling URIs (RFC 3986) and form-urlencoded query strings (HTML 5\&.2)\&.
+.LP
+Parsing and serializing non-UTF-8 form-urlencoded query strings are also supported (HTML 5\&.0)\&.
+.LP
+A URI is an identifier consisting of a sequence of characters matching the syntax rule named \fIURI\fR\& in RFC 3986\&.
+.LP
+The generic URI syntax consists of a hierarchical sequence of components referred to as the scheme, authority, path, query, and fragment:
+.LP
+.nf
+
+    URI         = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
+    hier-part   = "//" authority path-abempty
+                   / path-absolute
+                   / path-rootless
+                   / path-empty
+    scheme      = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+    authority   = [ userinfo "@" ] host [ ":" port ]
+    userinfo    = *( unreserved / pct-encoded / sub-delims / ":" )
+
+    reserved    = gen-delims / sub-delims
+    gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
+    sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+                / "*" / "+" / "," / ";" / "="
+
+    unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+    
+.fi
+.br
+
+.LP
+The interpretation of a URI depends only on the characters used and not on how those characters are represented in a network protocol\&.
+.LP
+The functions implemented by this module cover the following use cases:
+.RS 2
+.TP 2
+*
+Parsing URIs into its components and returing a map
+.br
+\fIparse/1\fR\&
+.LP
+.TP 2
+*
+Recomposing a map of URI components into a URI string
+.br
+\fIrecompose/1\fR\&
+.LP
+.TP 2
+*
+Changing inbound binary and percent-encoding of URIs
+.br
+\fItranscode/2\fR\&
+.LP
+.TP 2
+*
+Transforming URIs into a normalized form
+.br
+\fInormalize/1\fR\&
+.br
+\fInormalize/2\fR\&
+.LP
+.TP 2
+*
+Composing form-urlencoded query strings from a list of key-value pairs
+.br
+\fIcompose_query/1\fR\&
+.br
+\fIcompose_query/2\fR\&
+.LP
+.TP 2
+*
+Dissecting form-urlencoded query strings into a list of key-value pairs
+.br
+\fIdissect_query/1\fR\&
+.LP
+.TP 2
+*
+Decoding percent-encoded triplets
+.br
+\fIpercent_decode/1\fR\&
+.LP
+.RE
+
+.LP
+There are four different encodings present during the handling of URIs:
+.RS 2
+.TP 2
+*
+Inbound binary encoding in binaries
+.LP
+.TP 2
+*
+Inbound percent-encoding in lists and binaries
+.LP
+.TP 2
+*
+Outbound binary encoding in binaries
+.LP
+.TP 2
+*
+Outbound percent-encoding in lists and binaries
+.LP
+.RE
+
+.LP
+Functions with \fIuri_string()\fR\& argument accept lists, binaries and mixed lists (lists with binary elements) as input type\&. All of the functions but \fItranscode/2\fR\& expects input as lists of unicode codepoints, UTF-8 encoded binaries and UTF-8 percent-encoded URI parts ("%C3%B6" corresponds to the unicode character "ö")\&.
+.LP
+Unless otherwise specified the return value type and encoding are the same as the input type and encoding\&. That is, binary input returns binary output, list input returns a list output but mixed input returns list output\&.
+.LP
+In case of lists there is only percent-encoding\&. In binaries, however, both binary encoding and percent-encoding shall be considered\&. \fItranscode/2\fR\& provides the means to convert between the supported encodings, it takes a \fIuri_string()\fR\& and a list of options specifying inbound and outbound encodings\&.
+.LP
+RFC 3986 does not mandate any specific character encoding and it is usually defined by the protocol or surrounding text\&. This library takes the same assumption, binary and percent-encoding are handled as one configuration unit, they cannot be set to different values\&.
+.SH DATA TYPES
+.nf
+
+\fBerror()\fR\& = {error, atom(), term()}
+.br
+.fi
+.RS
+.LP
+Error tuple indicating the type of error\&. Possible values of the second component:
+.RS 2
+.TP 2
+*
+\fIinvalid_character\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_encoding\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_input\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_map\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_percent_encoding\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_scheme\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_uri\fR\&
+.LP
+.TP 2
+*
+\fIinvalid_utf8\fR\&
+.LP
+.TP 2
+*
+\fImissing_value\fR\&
+.LP
+.RE
+
+.LP
+The third component is a term providing additional information about the cause of the error\&.
+.RE
+.nf
+
+\fBuri_map()\fR\& = 
+.br
+    #{fragment => unicode:chardata(),
+.br
+      host => unicode:chardata(),
+.br
+      path => unicode:chardata(),
+.br
+      port => integer() >= 0 | undefined,
+.br
+      query => unicode:chardata(),
+.br
+      scheme => unicode:chardata(),
+.br
+      userinfo => unicode:chardata()}
+.br
+.fi
+.RS
+.LP
+Map holding the main components of a URI\&.
+.RE
+.nf
+
+\fBuri_string()\fR\& = iodata()
+.br
+.fi
+.RS
+.LP
+List of unicode codepoints, a UTF-8 encoded binary, or a mix of the two, representing an RFC 3986 compliant URI (\fIpercent-encoded form\fR\&)\&. A URI is a sequence of characters from a very limited set: the letters of the basic Latin alphabet, digits, and a few special characters\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+allowed_characters() -> [{atom(), list()}]
+.br
+.fi
+.br
+.RS
+.LP
+This is a utility function meant to be used in the shell for printing the allowed characters in each major URI component, and also in the most important characters sets\&. Please note that this function does not replace the ABNF rules defined by the standards, these character sets are derived directly from those aformentioned rules\&. For more information see the Uniform Resource Identifiers chapter in stdlib\&'s Users Guide\&.
+.RE
+.LP
+.nf
+
+.B
+compose_query(QueryList) -> QueryString
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryList = [{unicode:chardata(), unicode:chardata() | true}]
+.br
+QueryString = uri_string() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Composes a form-urlencoded \fIQueryString\fR\& based on a \fIQueryList\fR\&, a list of non-percent-encoded key-value pairs\&. Form-urlencoding is defined in section 4\&.10\&.21\&.6 of the HTML 5\&.2 specification and in section 4\&.10\&.22\&.6 of the HTML 5\&.0 specification for non-UTF-8 encodings\&.
+.LP
+See also the opposite operation \fIdissect_query/1\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:compose_query([{"foo bar","1"},{"city","örebro"}])\&.
+"foo+bar=1&city=%C3%B6rebro"
+2> uri_string:compose_query([{<<"foo bar">>,<<"1">>},
+2> {<<"city">>,<<"örebro"/utf8>>}]).
+<<"foo+bar=1&city=%C3%B6rebro">>
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+compose_query(QueryList, Options) -> QueryString
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryList = [{unicode:chardata(), unicode:chardata() | true}]
+.br
+Options = [{encoding, atom()}]
+.br
+QueryString = uri_string() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIcompose_query/1\fR\& but with an additional \fIOptions\fR\& parameter, that controls the encoding ("charset") used by the encoding algorithm\&. There are two supported encodings: \fIutf8\fR\& (or \fIunicode\fR\&) and \fIlatin1\fR\&\&.
+.LP
+Each character in the entry\&'s name and value that cannot be expressed using the selected character encoding, is replaced by a string consisting of a U+0026 AMPERSAND character (&), a "#" (U+0023) character, one or more ASCII digits representing the Unicode code point of the character in base ten, and finally a ";" (U+003B) character\&.
+.LP
+Bytes that are out of the range 0x2A, 0x2D, 0x2E, 0x30 to 0x39, 0x41 to 0x5A, 0x5F, 0x61 to 0x7A, are percent-encoded (U+0025 PERCENT SIGN character (%) followed by uppercase ASCII hex digits representing the hexadecimal value of the byte)\&.
+.LP
+See also the opposite operation \fIdissect_query/1\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:compose_query([{"foo bar","1"},{"city","örebro"}],
+1> [{encoding, latin1}]).
+"foo+bar=1&city=%F6rebro"
+2> uri_string:compose_query([{<<"foo bar">>,<<"1">>},
+2> {<<"city">>,<<"東京"/utf8>>}], [{encoding, latin1}]).
+<<"foo+bar=1&city=%26%2326481%3B%26%2320140%3B">>
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+dissect_query(QueryString) -> QueryList
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryString = uri_string()
+.br
+QueryList = 
+.br
+    [{unicode:chardata(), unicode:chardata() | true}] | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Dissects an urlencoded \fIQueryString\fR\& and returns a \fIQueryList\fR\&, a list of non-percent-encoded key-value pairs\&. Form-urlencoding is defined in section 4\&.10\&.21\&.6 of the HTML 5\&.2 specification and in section 4\&.10\&.22\&.6 of the HTML 5\&.0 specification for non-UTF-8 encodings\&.
+.LP
+See also the opposite operation \fIcompose_query/1\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:dissect_query("foo+bar=1&city=%C3%B6rebro")\&.
+[{"foo bar","1"},{"city","örebro"}]
+2> uri_string:dissect_query(<<"foo+bar=1&city=%26%2326481%3B%26%2320140%3B">>).
+[{<<"foo bar">>,<<"1">>},
+ {<<"city">>,<<230,157,177,228,186,172>>}] 
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+normalize(URI) -> NormalizedURI
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+URI = uri_string() | uri_map()
+.br
+NormalizedURI = uri_string() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Transforms an \fIURI\fR\& into a normalized form using Syntax-Based Normalization as defined by RFC 3986\&.
+.LP
+This function implements case normalization, percent-encoding normalization, path segment normalization and scheme based normalization for HTTP(S) with basic support for FTP, SSH, SFTP and TFTP\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:normalize("/a/b/c/\&./\&.\&./\&.\&./g")\&.
+"/a/g"
+2> uri_string:normalize(<<"mid/content=5/../6">>).
+<<"mid/6">>
+3> uri_string:normalize("http://localhost:80").
+"http://localhost/"
+4> uri_string:normalize(#{scheme => "http",port => 80,path => "/a/b/c/\&./\&.\&./\&.\&./g",
+4> host => "localhost-örebro"}).
+"http://localhost-%C3%B6rebro/a/g"
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+normalize(URI, Options) -> NormalizedURI
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+URI = uri_string() | uri_map()
+.br
+Options = [return_map]
+.br
+NormalizedURI = uri_string() | uri_map() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fInormalize/1\fR\& but with an additional \fIOptions\fR\& parameter, that controls whether the normalized URI shall be returned as an uri_map()\&. There is one supported option: \fIreturn_map\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:normalize("/a/b/c/\&./\&.\&./\&.\&./g", [return_map])\&.
+#{path => "/a/g"}
+2> uri_string:normalize(<<"mid/content=5/../6">>, [return_map]).
+#{path => <<"mid/6">>}
+3> uri_string:normalize("http://localhost:80", [return_map]).
+#{scheme => "http",path => "/",host => "localhost"}
+4> uri_string:normalize(#{scheme => "http",port => 80,path => "/a/b/c/\&./\&.\&./\&.\&./g",
+4> host => "localhost-örebro"}, [return_map]).
+#{scheme => "http",path => "/a/g",host => "localhost-örebro"}
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+parse(URIString) -> URIMap
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+URIString = uri_string()
+.br
+URIMap = uri_map() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Parses an RFC 3986 compliant \fIuri_string()\fR\& into a \fIuri_map()\fR\&, that holds the parsed components of the \fIURI\fR\&\&. If parsing fails, an error tuple is returned\&.
+.LP
+See also the opposite operation \fIrecompose/1\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:parse("foo://user@example\&.com:8042/over/there?name=ferret#nose")\&.
+#{fragment => "nose",host => "example.com",
+  path => "/over/there",port => 8042,query => "name=ferret",
+  scheme => foo,userinfo => "user"}
+2> uri_string:parse(<<"foo://user@example.com:8042/over/there?name=ferret">>).
+#{host => <<"example.com">>,path => <<"/over/there">>,
+  port => 8042,query => <<"name=ferret">>,scheme => <<"foo">>,
+  userinfo => <<"user">>}
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+percent_decode(URI) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+URI = uri_string() | uri_map()
+.br
+Result = 
+.br
+    uri_string() |
+.br
+    uri_map() |
+.br
+    {error, {invalid, {atom(), {term(), term()}}}}
+.br
+.RE
+.RE
+.RS
+.LP
+Decodes all percent-encoded triplets in the input that can be both a \fIuri_string()\fR\& and a \fIuri_map()\fR\&\&. Note, that this function performs raw decoding and it shall be used on already parsed URI components\&. Applying this function directly on a standard URI can effectively change it\&.
+.LP
+If the input encoding is not UTF-8, an error tuple is returned\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:percent_decode(#{host => "localhost-%C3%B6rebro",path => [],
+1> scheme => "http"})\&.
+#{host => "localhost-örebro",path => [],scheme => "http"}
+2> uri_string:percent_decode(<<"%C3%B6rebro">>).
+<<"örebro"/utf8>>
+	
+.fi
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Using \fIuri_string:percent_decode/1\fR\& directly on a URI is not safe\&. This example shows, that after each consecutive application of the function the resulting URI will be changed\&. None of these URIs refer to the same resource\&.
+.LP
+.nf
+
+3> uri_string:percent_decode(<<"http://local%252Fhost/path">>).
+<<"http://local%2Fhost/path">>
+4> uri_string:percent_decode(<<"http://local%2Fhost/path">>).
+<<"http://local/host/path">>
+        
+.fi
+
+.RE
+.LP
+.nf
+
+.B
+recompose(URIMap) -> URIString
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+URIMap = uri_map()
+.br
+URIString = uri_string() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an RFC 3986 compliant \fIURIString\fR\& (percent-encoded), based on the components of \fIURIMap\fR\&\&. If the \fIURIMap\fR\& is invalid, an error tuple is returned\&.
+.LP
+See also the opposite operation \fIparse/1\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> URIMap = #{fragment => "nose", host => "example\&.com", path => "/over/there",
+1> port => 8042, query => "name=ferret", scheme => "foo", userinfo => "user"}.
+#{fragment => "nose",host => "example.com",
+  path => "/over/there",port => 8042,query => "name=ferret",
+  scheme => "foo",userinfo => "user"}
+
+2> uri_string:recompose(URIMap)\&.
+"foo://example.com:8042/over/there?name=ferret#nose"
+.fi
+.RE
+.LP
+.nf
+
+.B
+resolve(RefURI, BaseURI) -> TargetURI
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+RefURI = BaseURI = uri_string() | uri_map()
+.br
+TargetURI = uri_string() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Convert a \fIRefURI\fR\& reference that might be relative to a given base URI into the parsed components of the reference\&'s target, which can then be recomposed to form the target URI\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:resolve("/abs/ol/ute", "http://localhost/a/b/c?q")\&.
+"http://localhost/abs/ol/ute"
+2> uri_string:resolve("../relative", "http://localhost/a/b/c?q").
+"http://localhost/a/relative"
+3> uri_string:resolve("http://localhost/full", "http://localhost/a/b/c?q").
+"http://localhost/full"
+4> uri_string:resolve(#{path => "path", query => "xyz"}, "http://localhost/a/b/c?q").
+"http://localhost/a/b/path?xyz"
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+resolve(RefURI, BaseURI, Options) -> TargetURI
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+RefURI = BaseURI = uri_string() | uri_map()
+.br
+Options = [return_map]
+.br
+TargetURI = uri_string() | uri_map() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fIresolve/2\fR\& but with an additional \fIOptions\fR\& parameter, that controls whether the target URI shall be returned as an uri_map()\&. There is one supported option: \fIreturn_map\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:resolve("/abs/ol/ute", "http://localhost/a/b/c?q", [return_map])\&.
+#{host => "localhost",path => "/abs/ol/ute",scheme => "http"}
+2> uri_string:resolve(#{path => "/abs/ol/ute"}, #{scheme => "http",
+2> host => "localhost", path => "/a/b/c?q"}, [return_map]).
+#{host => "localhost",path => "/abs/ol/ute",scheme => "http"}
+	
+.fi
+.RE
+.LP
+.nf
+
+.B
+transcode(URIString, Options) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+URIString = uri_string()
+.br
+Options = 
+.br
+    [{in_encoding, unicode:encoding()} |
+.br
+     {out_encoding, unicode:encoding()}]
+.br
+Result = uri_string() | error()
+.br
+.RE
+.RE
+.RS
+.LP
+Transcodes an RFC 3986 compliant \fIURIString\fR\&, where \fIOptions\fR\& is a list of tagged tuples, specifying the inbound (\fIin_encoding\fR\&) and outbound (\fIout_encoding\fR\&) encodings\&. \fIin_encoding\fR\& and \fIout_encoding\fR\& specifies both binary encoding and percent-encoding for the input and output data\&. Mixed encoding, where binary encoding is not the same as percent-encoding, is not supported\&. If an argument is invalid, an error tuple is returned\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> uri_string:transcode(<<"foo%00%00%00%F6bar"/utf32>>,
+1> [{in_encoding, utf32},{out_encoding, utf8}]).
+<<"foo%C3%B6bar"/utf8>>
+2> uri_string:transcode("foo%F6bar", [{in_encoding, latin1},
+2> {out_encoding, utf8}]).
+"foo%C3%B6bar"
+	
+.fi
+.RE

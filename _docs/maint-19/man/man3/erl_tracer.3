@@ -1,0 +1,921 @@
+.TH erl_tracer 3 "erts 8.3.5.4" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_tracer \- Erlang tracer behavior.
+.SH DESCRIPTION
+.LP
+This behavior module implements the back end of the Erlang tracing system\&. The functions in this module are called whenever a trace probe is triggered\&. Both the \fIenabled\fR\& and \fItrace\fR\& functions are called in the context of the entity that triggered the trace probe\&. This means that the overhead by having the tracing enabled is greatly effected by how much time is spent in these functions\&. So, do as little work as possible in these functions\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+All functions in this behavior must be implemented as NIFs\&. This limitation can be removed in a future releases\&. An \fBexample tracer module NIF\fR\& implementation is provided at the end of this page\&.
+
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Do not send messages or issue port commands to the \fITracee\fR\& in any of the callbacks\&. This is not allowed and can cause all sorts of strange behavior, including, but not limited to, infinite recursions\&.
+
+.SH DATA TYPES
+.nf
+
+\fBtrace_tag_call()\fR\& = 
+.br
+    call | return_to | return_from | exception_from
+.br
+.fi
+.nf
+
+\fBtrace_tag_gc()\fR\& = 
+.br
+    gc_minor_start | gc_minor_end | gc_major_start | gc_major_end
+.br
+.fi
+.nf
+
+\fBtrace_tag_ports()\fR\& = 
+.br
+    open |
+.br
+    closed |
+.br
+    link |
+.br
+    unlink |
+.br
+    getting_linked |
+.br
+    getting_unlinked
+.br
+.fi
+.nf
+
+\fBtrace_tag_procs()\fR\& = 
+.br
+    spawn |
+.br
+    spawned |
+.br
+    exit |
+.br
+    link |
+.br
+    unlink |
+.br
+    getting_linked |
+.br
+    getting_unlinked |
+.br
+    register |
+.br
+    unregister
+.br
+.fi
+.nf
+
+\fBtrace_tag_receive()\fR\& = \&'receive\&'
+.br
+.fi
+.nf
+
+\fBtrace_tag_running_ports()\fR\& = 
+.br
+    in | out | in_exiting | out_exiting | out_exited
+.br
+.fi
+.nf
+
+\fBtrace_tag_running_procs()\fR\& = 
+.br
+    in | out | in_exiting | out_exiting | out_exited
+.br
+.fi
+.nf
+
+\fBtrace_tag_send()\fR\& = send | send_to_non_existing_process
+.br
+.fi
+.nf
+
+\fBtrace_tag()\fR\& = 
+.br
+    \fBtrace_tag_send()\fR\& |
+.br
+    \fBtrace_tag_receive()\fR\& |
+.br
+    \fBtrace_tag_call()\fR\& |
+.br
+    \fBtrace_tag_procs()\fR\& |
+.br
+    \fBtrace_tag_ports()\fR\& |
+.br
+    \fBtrace_tag_running_procs()\fR\& |
+.br
+    \fBtrace_tag_running_ports()\fR\& |
+.br
+    \fBtrace_tag_gc()\fR\&
+.br
+.fi
+.RS
+.LP
+The different trace tags that the tracer is called with\&. Each trace tag is described in detail in \fB\fIModule:trace/5\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBtracee()\fR\& = port() | pid() | undefined
+.br
+.fi
+.RS
+.LP
+The process or port that the trace belongs to\&.
+.RE
+.nf
+
+\fBtrace_opts()\fR\& = 
+.br
+    #{extra => term(),
+.br
+      match_spec_result => term(),
+.br
+      scheduler_id => integer() >= 0,
+.br
+      timestamp =>
+.br
+          timestamp | cpu_timestamp | monotonic | strict_monotonic}
+.br
+.fi
+.RS
+.LP
+The options for the tracee:
+.RS 2
+.TP 2
+.B
+\fItimestamp\fR\&:
+If set the tracer has been requested to include a time stamp\&.
+.TP 2
+.B
+\fIextra\fR\&:
+If set the tracepoint has included additonal data about the trace event\&. What the additional data is depends on which \fITraceTag\fR\& has been triggered\&. The \fIextra\fR\& trace data corresponds to the fifth element in the trace tuples described in \fB erlang:trace/3\fR\&\&.
+.TP 2
+.B
+\fImatch_spec_result\fR\&:
+If set the tracer has been requested to include the output of a match specification that was run\&.
+.TP 2
+.B
+\fIscheduler_id\fR\&:
+If set the scheduler id is to be included by the tracer\&.
+.RE
+.RE
+.nf
+
+\fBtracer_state()\fR\& = term()
+.br
+.fi
+.RS
+.LP
+The state specified when calling \fB\fIerlang:trace(PidPortSpec,true,[{tracer,Module,TracerState}])\fR\&\fR\&\&. The tracer state is an immutable value that is passed to \fIerl_tracer\fR\& callbacks and is to contain all the data that is needed to generate the trace event\&.
+.RE
+.SH "CALLBACK FUNCTIONS"
+
+.LP
+The following functions are to be exported from an \fIerl_tracer\fR\& callback module:
+.RS 2
+.TP 2
+.B
+\fB\fIModule:enabled/3\fR\&\fR\&:
+Mandatory
+.TP 2
+.B
+\fB\fIModule:trace/5\fR\&\fR\&:
+Mandatory
+.TP 2
+.B
+\fB\fIModule:enabled_call/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_call/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_garbage_collection/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_garbage_collection/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_ports/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_ports/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_procs/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_procs/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_receive/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_receive/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_running_ports/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_running_ports/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_running_procs/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_running_procs/5\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:enabled_send/3\fR\&\fR\&:
+Optional
+.TP 2
+.B
+\fB\fIModule:trace_send/5\fR\&\fR\&:
+Optional
+.RE
+.SH EXPORTS
+.LP
+.B
+Module:enabled(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag()\fR\& | trace_status
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint is triggered\&. It allows the tracer to decide whether a trace is to be generated or not\&. This check is made as early as possible to limit the amount of overhead associated with tracing\&. If \fItrace\fR\& is returned, the necessary trace data is created and the trace callback of the tracer is called\&. If \fIdiscard\fR\& is returned, this trace call is discarded and no call to trace is done\&.
+.LP
+\fItrace_status\fR\& is a special type of \fITraceTag\fR\&, which is used to check if the tracer is still to be active\&. It is called in multiple scenarios, but most significantly it is used when tracing is started using this tracer\&. If \fIremove\fR\& is returned when the \fItrace_status\fR\& is checked, the tracer is removed from the tracee\&.
+.LP
+This function can be called multiple times per tracepoint, so it is important that it is both fast and without side effects\&.
+.RE
+.LP
+.B
+Module:enabled_call(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_call()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIcall | return_to\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_call/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_garbage_collection(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_gc()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIgarbage_collection\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_garbage_collection/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_ports(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_ports()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIports\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_ports/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_procs(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_procs()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIprocs\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_procs/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_receive(TraceTag, TracerState, Tracee) -> Result 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_receive()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fI\&'receive\&'\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_receive/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_running_ports(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_running_ports()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIrunning_ports\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_running_ports/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_running_procs(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_running_procs()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIrunning_procs | running\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_running_procs/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:enabled_send(TraceTag, TracerState, Tracee) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_send()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+Result = trace | discard | remove
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called whenever a tracepoint with trace flag \fB\fIsend\fR\&\fR\& is triggered\&.
+.LP
+If \fIenabled_send/3\fR\& is undefined, \fB\fIModule:enabled/3\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled/3\fR\&\fR\& callback returned \fItrace\fR\&\&. In it any side effects needed by the tracer are to be done\&. The tracepoint payload is located in the \fITraceTerm\fR\&\&. The content of the \fITraceTerm\fR\& depends on which \fITraceTag\fR\& is triggered\&. \fITraceTerm\fR\& corresponds to the fourth element in the trace tuples described in \fB\fIerlang:trace/3\fR\&\fR\&\&.
+.LP
+If the trace tuple has five elements, the fifth element will be sent as the \fIextra\fR\& value in the \fIOpts\fR\& maps\&.
+.RE
+.LP
+.B
+Module:trace(seq_trace, TracerState, Label, SeqTraceInfo, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TracerState = term()
+.br
+Label = term()
+.br
+SeqTraceInfo = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+The \fITraceTag\fR\& \fIseq_trace\fR\& is handled slightly differently\&. There is no \fITracee\fR\& for \fIseq_trace\fR\&, instead the \fILabel\fR\& associated with the \fIseq_trace\fR\& event is specified\&.
+.LP
+For more information on what \fILabel\fR\& and \fISeqTraceInfo\fR\& can be, see \fB\fIseq_trace(3)\fR\&\fR\&\&.
+.RE
+.LP
+.B
+Module:trace_call(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_call()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_call/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_call/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_garbage_collection(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_gc()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_garbage_collection/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_garbage_collection/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_ports(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_ports/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_ports/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_procs(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_procs/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_procs/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_receive(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_receive()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_receive/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_receive/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_running_ports(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_running_ports()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_running_ports/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_running_ports/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_running_procs(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_running_procs()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_running_procs/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_running_procs/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.LP
+.B
+Module:trace_send(TraceTag, TracerState, Tracee, TraceTerm, Opts) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraceTag = \fB trace_tag_send()\fR\&
+.br
+TracerState = term()
+.br
+Tracee = \fBtracee()\fR\&
+.br
+TraceTerm = term()
+.br
+Opts = \fBtrace_opts()\fR\&
+.br
+Result = ok
+.br
+.RE
+.RE
+.RS
+.LP
+This callback is called when a tracepoint is triggered and the \fB\fIModule:enabled_send/3\fR\&\fR\& callback returned \fItrace\fR\&\&.
+.LP
+If \fItrace_send/5\fR\& is undefined, \fB\fIModule:trace/5\fR\&\fR\& is called instead\&.
+.RE
+.SH "ERL TRACER MODULE EXAMPLE"
+
+.LP
+In this example, a tracer module with a NIF back end sends a message for each \fIsend\fR\& trace tag containing only the sender and receiver\&. Using this tracer module, a much more lightweight message tracer is used, which only records who sent messages to who\&.
+.LP
+The following is an example session using it on Linux:
+.LP
+.nf
+
+$ gcc -I erts-8.0/include/ -fPIC -shared -o erl_msg_tracer.so erl_msg_tracer.c
+$ erl
+Erlang/OTP 19 [DEVELOPMENT] [erts-8.0] [source-ed2b56b] [64-bit] [smp:8:8] [async-threads:10] [hipe] [kernel-poll:false]
+
+Eshell V8.0  (abort with ^G)
+1> c(erl_msg_tracer), erl_msg_tracer:load().
+ok
+2> Tracer = spawn(fun F() -> receive M -> io:format("~p~n",[M]), F() end end).
+<0.37.0>
+3> erlang:trace(new, true, [send,{tracer, erl_msg_tracer, Tracer}]).
+0
+{<0.39.0>,<0.27.0>}
+4> {ok, D} = file:open("/tmp/tmp.data",[write]).
+{trace,#Port<0.486>,<0.40.0>}
+{trace,<0.40.0>,<0.21.0>}
+{trace,#Port<0.487>,<0.4.0>}
+{trace,#Port<0.488>,<0.4.0>}
+{trace,#Port<0.489>,<0.4.0>}
+{trace,#Port<0.490>,<0.4.0>}
+{ok,<0.40.0>}
+{trace,<0.41.0>,<0.27.0>}
+5>
+.fi
+.LP
+\fIerl_msg_tracer\&.erl\fR\&:
+.LP
+.nf
+
+-module(erl_msg_tracer).
+
+-export([enabled/3, trace/5, load/0]).
+
+load() ->
+    erlang:load_nif("erl_msg_tracer", []).
+
+enabled(_, _, _) ->
+    error.
+
+trace(_, _, _, _, _) ->
+    error.
+.fi
+.LP
+\fIerl_msg_tracer\&.c\fR\&:
+.LP
+.nf
+
+#include "erl_nif.h"
+
+/* NIF interface declarations */
+static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info);
+static int upgrade(ErlNifEnv* env, void** priv_data, void** old_priv_data, ERL_NIF_TERM load_info);
+static void unload(ErlNifEnv* env, void* priv_data);
+
+/* The NIFs: */
+static ERL_NIF_TERM enabled(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+static ERL_NIF_TERM trace(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]);
+
+static ErlNifFunc nif_funcs[] = {
+    {"enabled", 3, enabled},
+    {"trace", 5, trace}
+};
+
+ERL_NIF_INIT(erl_msg_tracer, nif_funcs, load, NULL, upgrade, unload)
+
+static int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info)
+{
+    *priv_data = NULL;
+    return 0;
+}
+
+static void unload(ErlNifEnv* env, void* priv_data)
+{
+
+}
+
+static int upgrade(ErlNifEnv* env, void** priv_data, void** old_priv_data,
+		   ERL_NIF_TERM load_info)
+{
+    if (*old_priv_data != NULL || *priv_data != NULL) {
+	return -1; /* Don't know how to do that */
+    }
+    if (load(env, priv_data, load_info)) {
+	return -1;
+    }
+    return 0;
+}
+
+/*
+ * argv[0]: TraceTag
+ * argv[1]: TracerState
+ * argv[2]: Tracee
+ */
+static ERL_NIF_TERM enabled(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifPid to_pid;
+    if (enif_get_local_pid(env, argv[1], &to_pid))
+        if (!enif_is_process_alive(env, &to_pid))
+            if (enif_is_identical(enif_make_atom(env, "trace_status"), argv[0]))
+                /* tracer is dead so we should remove this tracepoint */
+                return enif_make_atom(env, "remove");
+            else
+                return enif_make_atom(env, "discard");
+
+    /* Only generate trace for when tracer != tracee */
+    if (enif_is_identical(argv[1], argv[2]))
+        return enif_make_atom(env, "discard");
+
+    /* Only trigger trace messages on 'send' */
+    if (enif_is_identical(enif_make_atom(env, "send"), argv[0]))
+        return enif_make_atom(env, "trace");
+
+    /* Have to answer trace_status */
+    if (enif_is_identical(enif_make_atom(env, "trace_status"), argv[0]))
+        return enif_make_atom(env, "trace");
+
+    return enif_make_atom(env, "discard");
+}
+
+/*
+ * argv[0]: TraceTag, should only be 'send'
+ * argv[1]: TracerState, process to send {argv[2], argv[4]} to
+ * argv[2]: Tracee
+ * argv[3]: Recipient
+ * argv[4]: Options, ignored
+ */
+static ERL_NIF_TERM trace(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[])
+{
+    ErlNifPid to_pid;
+
+    if (enif_get_local_pid(env, argv[1], &to_pid)) {
+        ERL_NIF_TERM msg = enif_make_tuple3(env, enif_make_atom(env, "trace"), argv[2], argv[4]);
+        enif_send(env, &to_pid, NULL, msg);
+    }
+
+    return enif_make_atom(env, "ok");
+}
+.fi

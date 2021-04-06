@@ -1,0 +1,1543 @@
+.TH qlc 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+qlc \- Query interface to Mnesia, ETS, Dets, and so on.
+  
+.SH DESCRIPTION
+.LP
+This module provides a query interface to \fBMnesia\fR\&, \fBETS\fR\&, \fBDets\fR\&, and other data structures that provide an iterator style traversal of objects\&.
+.SH "OVERVIEW"
+
+.LP
+This module provides a query interface to \fIQLC tables\fR\&\&. Typical QLC tables are Mnesia, ETS, and Dets tables\&. Support is also provided for user-defined tables, see section \fB Implementing a QLC Table\fR\&\&. A \fIquery\fR\& is expressed using \fIQuery List Comprehensions\fR\& (QLCs)\&. The answers to a query are determined by data in QLC tables that fulfill the constraints expressed by the QLCs of the query\&. QLCs are similar to ordinary list comprehensions as described in \fB Erlang Reference Manual\fR\& and \fB Programming Examples\fR\&, except that variables introduced in patterns cannot be used in list expressions\&. In the absence of optimizations and options such as \fIcache\fR\& and \fIunique\fR\& (see section \fBCommon Options\fR\&, every QLC free of QLC tables evaluates to the same list of answers as the identical ordinary list comprehension\&.
+.LP
+While ordinary list comprehensions evaluate to lists, calling \fB\fIq/1,2\fR\&\fR\& returns a \fIquery handle\fR\&\&. To obtain all the answers to a query, \fB\fIeval/1,2\fR\&\fR\& is to be called with the query handle as first argument\&. Query handles are essentially functional objects (funs) created in the module calling \fIq/1,2\fR\&\&. As the funs refer to the module code, be careful not to keep query handles too long if the module code is to be replaced\&. Code replacement is described in section \fB Compilation and Code Loading\fR\& in the Erlang Reference Manual\&. The list of answers can also be traversed in chunks by use of a \fIquery cursor\fR\&\&. Query cursors are created by calling \fB\fIcursor/1,2\fR\&\fR\& with a query handle as first argument\&. Query cursors are essentially Erlang processes\&. One answer at a time is sent from the query cursor process to the process that created the cursor\&.
+.SH "SYNTAX"
+
+.LP
+Syntactically QLCs have the same parts as ordinary list comprehensions:
+.LP
+.nf
+
+[Expression || Qualifier1, Qualifier2, ...]
+.fi
+.LP
+\fIExpression\fR\& (the \fItemplate\fR\&) is any Erlang expression\&. Qualifiers are either \fIfilters\fR\& or \fIgenerators\fR\&\&. Filters are Erlang expressions returning \fIboolean()\fR\&\&. Generators have the form \fIPattern <- ListExpression\fR\&, where \fIListExpression\fR\& is an expression evaluating to a query handle or a list\&. Query handles are returned from \fB\fIappend/1,2\fR\&\fR\&, \fB\fIkeysort/2,3\fR\&\fR\&, \fB\fIq/1,2\fR\&\fR\&, \fB\fIsort/1,2\fR\&\fR\&, \fB\fIstring_to_handle/1,2,3\fR\&\fR\&, and \fB\fItable/2\fR\&\fR\&\&.
+.SH "EVALUATION"
+
+.LP
+A query handle is evaluated in the following order:
+.RS 2
+.TP 2
+*
+Inspection of options and the collection of information about tables\&. As a result, qualifiers are modified during the optimization phase\&.
+.LP
+.TP 2
+*
+All list expressions are evaluated\&. If a cursor has been created, evaluation takes place in the cursor process\&. For list expressions that are QLCs, the list expressions of the generators of the QLCs are evaluated as well\&. Be careful if list expressions have side effects, as list expressions are evaluated in unspecified order\&.
+.LP
+.TP 2
+*
+The answers are found by evaluating the qualifiers from left to right, backtracking when some filter returns \fIfalse\fR\&, or collecting the template when all filters return \fItrue\fR\&\&.
+.LP
+.RE
+
+.LP
+Filters that do not return \fIboolean()\fR\& but fail are handled differently depending on their syntax: if the filter is a guard, it returns \fIfalse\fR\&, otherwise the query evaluation fails\&. This behavior makes it possible for the \fIqlc\fR\& module to do some optimizations without affecting the meaning of a query\&. For example, when testing some position of a table and one or more constants for equality, only the objects with equal values are candidates for further evaluation\&. The other objects are guaranteed to make the filter return \fIfalse\fR\&, but never fail\&. The (small) set of candidate objects can often be found by looking up some key values of the table or by traversing the table using a match specification\&. It is necessary to place the guard filters immediately after the table generator, otherwise the candidate objects are not restricted to a small set\&. The reason is that objects that could make the query evaluation fail must not be excluded by looking up a key or running a match specification\&.
+.SH "JOIN"
+
+.LP
+The \fIqlc\fR\& module supports fast join of two query handles\&. Fast join is possible if some position \fIP1\fR\& of one query handler and some position \fIP2\fR\& of another query handler are tested for equality\&. Two fast join methods are provided:
+.RS 2
+.TP 2
+*
+\fILookup join\fR\& traverses all objects of one query handle and finds objects of the other handle (a QLC table) such that the values at \fIP1\fR\& and \fIP2\fR\& match or compare equal\&. The \fIqlc\fR\& module does not create any indexes but looks up values using the key position and the indexed positions of the QLC table\&.
+.LP
+.TP 2
+*
+\fIMerge join\fR\& sorts the objects of each query handle if necessary and filters out objects where the values at \fIP1\fR\& and \fIP2\fR\& do not compare equal\&. If many objects with the same value of \fIP2\fR\& exist, a temporary file is used for the equivalence classes\&.
+.LP
+.RE
+
+.LP
+The \fIqlc\fR\& module warns at compile time if a QLC combines query handles in such a way that more than one join is possible\&. That is, no query planner is provided that can select a good order between possible join operations\&. It is up to the user to order the joins by introducing query handles\&.
+.LP
+The join is to be expressed as a guard filter\&. The filter must be placed immediately after the two joined generators, possibly after guard filters that use variables from no other generators but the two joined generators\&. The \fIqlc\fR\& module inspects the operands of \fI=:=/2\fR\&, \fI==/2\fR\&, \fIis_record/2\fR\&, \fIelement/2\fR\&, and logical operators (\fIand/2\fR\&, \fIor/2\fR\&, \fIandalso/2\fR\&, \fIorelse/2\fR\&, \fIxor/2\fR\&) when determining which joins to consider\&.
+.SH "COMMON OPTIONS"
+
+.LP
+The following options are accepted by \fB\fIcursor/2\fR\&\fR\&, \fB\fIeval/2\fR\&\fR\&, \fB\fIfold/4\fR\&\fR\&, and \fB\fIinfo/2\fR\&\fR\&:
+.RS 2
+.TP 2
+*
+\fI{cache_all, Cache}\fR\&, where \fICache\fR\& is equal to \fIets\fR\& or \fIlist\fR\& adds a \fI{cache, Cache}\fR\& option to every list expression of the query except tables and lists\&. Defaults to \fI{cache_all, no}\fR\&\&. Option \fIcache_all\fR\& is equivalent to \fI{cache_all, ets}\fR\&\&.
+.LP
+.TP 2
+*
+\fI{max_list_size, MaxListSize}\fR\&, where \fIMaxListSize\fR\& is the size in bytes of terms on the external format\&. If the accumulated size of collected objects exceeds \fIMaxListSize\fR\&, the objects are written onto a temporary file\&. This option is used by option \fI{cache, list}\fR\& and by the merge join method\&. Defaults to 512*1024 bytes\&.
+.LP
+.TP 2
+*
+\fI{tmpdir_usage, TmpFileUsage}\fR\& determines the action taken when \fIqlc\fR\& is about to create temporary files on the directory set by option \fItmpdir\fR\&\&. If the value is \fInot_allowed\fR\&, an error tuple is returned, otherwise temporary files are created as needed\&. Default is \fIallowed\fR\&, which means that no further action is taken\&. The values \fIinfo_msg\fR\&, \fIwarning_msg\fR\&, and \fIerror_msg\fR\& mean that the function with the corresponding name in module \fB\fIerror_logger\fR\&\fR\& is called for printing some information (currently the stacktrace)\&.
+.LP
+.TP 2
+*
+\fI{tmpdir, TempDirectory}\fR\& sets the directory used by merge join for temporary files and by option \fI{cache, list}\fR\&\&. The option also overrides option \fItmpdir\fR\& of \fB\fIkeysort/3\fR\&\fR\& and \fB\fIsort/2\fR\&\fR\&\&. Defaults to \fI""\fR\&, which means that the directory returned by \fIfile:get_cwd()\fR\& is used\&.
+.LP
+.TP 2
+*
+\fI{unique_all, true}\fR\& adds a \fI{unique, true}\fR\& option to every list expression of the query\&. Defaults to \fI{unique_all, false}\fR\&\&. Option \fIunique_all\fR\& is equivalent to \fI{unique_all, true}\fR\&\&.
+.LP
+.RE
+
+.SH "GETTING STARTED"
+
+.LP
+As mentioned earlier, queries are expressed in the list comprehension syntax as described in section \fBExpressions\fR\& in Erlang Reference Manual\&. In the following, some familiarity with list comprehensions is assumed\&. The examples in section \fB List Comprehensions\fR\& in Programming Examples can get you started\&. Notice that list comprehensions do not add any computational power to the language; anything that can be done with list comprehensions can also be done without them\&. But they add syntax for expressing simple search problems, which is compact and clear once you get used to it\&.
+.LP
+Many list comprehension expressions can be evaluated by the \fIqlc\fR\& module\&. Exceptions are expressions, such that variables introduced in patterns (or filters) are used in some generator later in the list comprehension\&. As an example, consider an implementation of \fIlists:append(L)\fR\&: \fI[X ||Y <- L, X <- Y]\fR\&\&. \fIY\fR\& is introduced in the first generator and used in the second\&. The ordinary list comprehension is normally to be preferred when there is a choice as to which to use\&. One difference is that \fB\fIeval/1,2\fR\&\fR\& collects answers in a list that is finally reversed, while list comprehensions collect answers on the stack that is finally unwound\&.
+.LP
+What the \fIqlc\fR\& module primarily adds to list comprehensions is that data can be read from QLC tables in small chunks\&. A QLC table is created by calling \fB\fIqlc:table/2\fR\&\fR\&\&. Usually \fIqlc:table/2\fR\& is not called directly from the query but through an interface function of some data structure\&. Erlang/OTP includes a few examples of such functions: \fB\fImnesia:table/1,2\fR\&\fR\&, \fB\fIets:table/1,2\fR\&\fR\&, and \fB\fIdets:table/1,2\fR\&\fR\&\&. For a given data structure, many functions can create QLC tables, but common for these functions is that they return a query handle created by \fB\fIqlc:table/2\fR\&\fR\&\&. Using the QLC tables provided by Erlang/OTP is usually probably sufficient, but for the more advanced user section \fBImplementing a QLC Table\fR\& describes the implementation of a function calling \fIqlc:table/2\fR\&\&.
+.LP
+Besides \fIqlc:table/2\fR\&, other functions return query handles\&. They are used more seldom than tables, but are sometimes useful\&. \fB\fIqlc:append/1,2\fR\&\fR\& traverses objects from many tables or lists after each other\&. If, for example, you want to traverse all answers to a query \fIQH\fR\& and then finish off by a term \fI{finished}\fR\&, you can do that by calling \fIqlc:append(QH, [{finished}])\fR\&\&. \fIappend/2\fR\& first returns all objects of \fIQH\fR\&, then \fI{finished}\fR\&\&. If a tuple \fI{finished}\fR\& exists among the answers to \fIQH\fR\&, it is returned twice from \fIappend/2\fR\&\&.
+.LP
+As another example, consider concatenating the answers to two queries \fIQH1\fR\& and \fIQH2\fR\& while removing all duplicates\&. This is accomplished by using option \fIunique\fR\&:
+.LP
+.nf
+
+qlc:q([X || X <- qlc:append(QH1, QH2)], {unique, true})
+.fi
+.LP
+The cost is substantial: every returned answer is stored in an ETS table\&. Before returning an answer, it is looked up in the ETS table to check if it has already been returned\&. Without the \fIunique\fR\& option, all answers to \fIQH1\fR\& would be returned followed by all answers to \fIQH2\fR\&\&. The \fIunique\fR\& option keeps the order between the remaining answers\&.
+.LP
+If the order of the answers is not important, there is an alternative to the \fIunique\fR\& option, namely to sort the answers uniquely:
+.LP
+.nf
+
+qlc:sort(qlc:q([X || X <- qlc:append(QH1, QH2)], {unique, true})).
+.fi
+.LP
+This query also removes duplicates but the answers are sorted\&. If there are many answers, temporary files are used\&. Notice that to get the first unique answer, all answers must be found and sorted\&. Both alternatives find duplicates by comparing answers, that is, if \fIA1\fR\& and \fIA2\fR\& are answers found in that order, then \fIA2\fR\& is a removed if \fIA1 == A2\fR\&\&.
+.LP
+To return only a few answers, cursors can be used\&. The following code returns no more than five answers using an ETS table for storing the unique answers:
+.LP
+.nf
+
+C = qlc:cursor(qlc:q([X || X <- qlc:append(QH1, QH2)],{unique,true})),
+R = qlc:next_answers(C, 5),
+ok = qlc:delete_cursor(C),
+R.
+.fi
+.LP
+QLCs are convenient for stating constraints on data from two or more tables\&. The following example does a natural join on two query handles on position 2:
+.LP
+.nf
+
+qlc:q([{X1,X2,X3,Y1} || 
+          {X1,X2,X3} <- QH1, 
+          {Y1,Y2} <- QH2, 
+          X2 =:= Y2])
+.fi
+.LP
+The \fIqlc\fR\& module evaluates this differently depending on the query handles \fIQH1\fR\& and \fIQH2\fR\&\&. If, for example, \fIX2\fR\& is matched against the key of a QLC table, the lookup join method traverses the objects of \fIQH2\fR\& while looking up key values in the table\&. However, if not \fIX2\fR\& or \fIY2\fR\& is matched against the key or an indexed position of a QLC table, the merge join method ensures that \fIQH1\fR\& and \fIQH2\fR\& are both sorted on position 2 and next do the join by traversing the objects one by one\&.
+.LP
+Option \fIjoin\fR\& can be used to force the \fIqlc\fR\& module to use a certain join method\&. For the rest of this section it is assumed that the excessively slow join method called "nested loop" has been chosen:
+.LP
+.nf
+
+qlc:q([{X1,X2,X3,Y1} || 
+          {X1,X2,X3} <- QH1, 
+          {Y1,Y2} <- QH2, 
+          X2 =:= Y2],
+      {join, nested_loop})
+.fi
+.LP
+In this case the filter is applied to every possible pair of answers to \fIQH1\fR\& and \fIQH2\fR\&, one at a time\&. If there are M answers to \fIQH1\fR\& and N answers to \fIQH2\fR\&, the filter is run M*N times\&.
+.LP
+If \fIQH2\fR\& is a call to the function for \fB\fIgb_trees\fR\&\fR\&, as defined in section \fBImplementing a QLC Table\fR\&, then \fIgb_table:table/1\fR\&, the iterator for the gb-tree is initiated for each answer to \fIQH1\fR\&\&. The objects of the gb-tree are then returned one by one\&. This is probably the most efficient way of traversing the table in that case, as it takes minimal computational power to get the following object\&. But if \fIQH2\fR\& is not a table but a more complicated QLC, it can be more efficient to use some RAM memory for collecting the answers in a cache, particularly if there are only a few answers\&. It must then be assumed that evaluating \fIQH2\fR\& has no side effects so that the meaning of the query does not change if \fIQH2\fR\& is evaluated only once\&. One way of caching the answers is to evaluate \fIQH2\fR\& first of all and substitute the list of answers for \fIQH2\fR\& in the query\&. Another way is to use option \fIcache\fR\&\&. It is expressed like this:
+.LP
+.nf
+
+QH2' = qlc:q([X || X <- QH2], {cache, ets})
+.fi
+.LP
+or only
+.LP
+.nf
+
+QH2' = qlc:q([X || X <- QH2], cache)
+.fi
+.LP
+The effect of option \fIcache\fR\& is that when generator \fIQH2\&'\fR\& is run the first time, every answer is stored in an ETS table\&. When the next answer of \fIQH1\fR\& is tried, answers to \fIQH2\&'\fR\& are copied from the ETS table, which is very fast\&. As for option \fIunique\fR\& the cost is a possibly substantial amount of RAM memory\&.
+.LP
+Option \fI{cache, list}\fR\& offers the possibility to store the answers in a list on the process heap\&. This has the potential of being faster than ETS tables, as there is no need to copy answers from the table\&. However, it can often result in slower evaluation because of more garbage collections of the process heap and increased RAM memory consumption because of larger heaps\&. Another drawback with cache lists is that if the list size exceeds a limit, a temporary file is used\&. Reading the answers from a file is much slower than copying them from an ETS table\&. But if the available RAM memory is scarce, setting the \fBlimit\fR\& to some low value is an alternative\&.
+.LP
+Option \fIcache_all\fR\& can be set to \fIets\fR\& or \fIlist\fR\& when evaluating a query\&. It adds a \fIcache\fR\& or \fI{cache, list}\fR\& option to every list expression except QLC tables and lists on all levels of the query\&. This can be used for testing if caching would improve efficiency at all\&. If the answer is yes, further testing is needed to pinpoint the generators that are to be cached\&.
+.SH "IMPLEMENTING A QLC TABLE"
+
+.LP
+As an example of how to use function \fB\fItable/2\fR\&\fR\&, the implementation of a QLC table for the \fB\fIgb_trees\fR\&\fR\& module is given:
+.LP
+.nf
+
+-module(gb_table).
+
+-export([table/1]).
+
+table(T) ->
+    TF = fun() -> qlc_next(gb_trees:next(gb_trees:iterator(T))) end,
+    InfoFun = fun(num_of_objects) -> gb_trees:size(T);
+                 (keypos) -> 1;
+                 (is_sorted_key) -> true;
+                 (is_unique_objects) -> true;
+                 (_) -> undefined
+              end,
+    LookupFun =
+        fun(1, Ks) ->
+                lists:flatmap(fun(K) ->
+                                      case gb_trees:lookup(K, T) of
+                                          {value, V} -> [{K,V}];
+                                          none -> []
+                                      end
+                              end, Ks)
+        end,
+    FormatFun =
+        fun({all, NElements, ElementFun}) ->
+                ValsS = io_lib:format("gb_trees:from_orddict(~w)",
+                                      [gb_nodes(T, NElements, ElementFun)]),
+                io_lib:format("gb_table:table(~s)", [ValsS]);
+           ({lookup, 1, KeyValues, _NElements, ElementFun}) ->
+                ValsS = io_lib:format("gb_trees:from_orddict(~w)",
+                                      [gb_nodes(T, infinity, ElementFun)]),
+                io_lib:format("lists:flatmap(fun(K) -> "
+                              "case gb_trees:lookup(K, ~s) of "
+                              "{value, V} -> [{K,V}];none -> [] end "
+                              "end, ~w)",
+                              [ValsS, [ElementFun(KV) || KV <- KeyValues]])
+        end,
+    qlc:table(TF, [{info_fun, InfoFun}, {format_fun, FormatFun},
+                   {lookup_fun, LookupFun},{key_equality,'=='}]).
+
+qlc_next({X, V, S}) ->
+    [{X,V} | fun() -> qlc_next(gb_trees:next(S)) end];
+qlc_next(none) ->
+    [].
+
+gb_nodes(T, infinity, ElementFun) ->
+    gb_nodes(T, -1, ElementFun);
+gb_nodes(T, NElements, ElementFun) ->
+    gb_iter(gb_trees:iterator(T), NElements, ElementFun).
+
+gb_iter(_I, 0, _EFun) ->
+    '...';
+gb_iter(I0, N, EFun) ->
+    case gb_trees:next(I0) of
+        {X, V, I} ->
+            [EFun({X,V}) | gb_iter(I, N-1, EFun)];
+        none ->
+            []
+    end.
+.fi
+.LP
+\fITF\fR\& is the traversal function\&. The \fIqlc\fR\& module requires that there is a way of traversing all objects of the data structure\&. \fIgb_trees\fR\& has an iterator function suitable for that purpose\&. Notice that for each object returned, a new fun is created\&. As long as the list is not terminated by \fI[]\fR\&, it is assumed that the tail of the list is a nullary function and that calling the function returns further objects (and functions)\&.
+.LP
+The lookup function is optional\&. It is assumed that the lookup function always finds values much faster than it would take to traverse the table\&. The first argument is the position of the key\&. As \fIqlc_next/1\fR\& returns the objects as \fI{Key, Value}\fR\& pairs, the position is 1\&. Notice that the lookup function is to return \fI{Key, Value}\fR\& pairs, as the traversal function does\&.
+.LP
+The format function is also optional\&. It is called by \fB\fIinfo/1,2\fR\&\fR\& to give feedback at runtime of how the query is to be evaluated\&. Try to give as good feedback as possible without showing too much details\&. In the example, at most seven objects of the table are shown\&. The format function handles two cases: \fIall\fR\& means that all objects of the table are traversed; \fI{lookup, 1, KeyValues}\fR\& means that the lookup function is used for looking up key values\&.
+.LP
+Whether the whole table is traversed or only some keys looked up depends on how the query is expressed\&. If the query has the form
+.LP
+.nf
+
+qlc:q([T || P <- LE, F])
+.fi
+.LP
+and \fIP\fR\& is a tuple, the \fIqlc\fR\& module analyzes \fIP\fR\& and \fIF\fR\& in compile time to find positions of tuple \fIP\fR\& that are tested for equality to constants\&. If such a position at runtime turns out to be the key position, the lookup function can be used, otherwise all objects of the table must be traversed\&. The info function \fIInfoFun\fR\& returns the key position\&. There can be indexed positions as well, also returned by the info function\&. An index is an extra table that makes lookup on some position fast\&. Mnesia maintains indexes upon request, and introduces so called secondary keys\&. The \fIqlc\fR\& module prefers to look up objects using the key before secondary keys regardless of the number of constants to look up\&.
+.SH "KEY EQUALITY"
+
+.LP
+Erlang/OTP has two operators for testing term equality: \fI==/2\fR\& and \fI=:=/2\fR\&\&. The difference is all about the integers that can be represented by floats\&. For example, \fI2 == 2\&.0\fR\& evaluates to \fItrue\fR\& while \fI2 =:= 2\&.0\fR\& evaluates to \fIfalse\fR\&\&. Normally this is a minor issue, but the \fIqlc\fR\& module cannot ignore the difference, which affects the user\&'s choice of operators in QLCs\&.
+.LP
+If the \fIqlc\fR\& module at compile time can determine that some constant is free of integers, it does not matter which one of \fI==/2\fR\& or \fI=:=/2\fR\& is used:
+.LP
+.nf
+
+1> E1 = ets:new(t, [set]), % uses =:=/2 for key equality
+Q1 = qlc:q([K ||
+{K} <- ets:table(E1),
+K == 2\&.71 orelse K == a]),
+io:format("~s~n", [qlc:info(Q1)])\&.
+ets:match_spec_run(lists:flatmap(fun(V) ->
+                                        ets:lookup(20493, V)
+                                 end,
+                                 [a,2.71]),
+                   ets:match_spec_compile([{{'$1'},[],['$1']}]))
+.fi
+.LP
+In the example, operator \fI==/2\fR\& has been handled exactly as \fI=:=/2\fR\& would have been handled\&. However, if it cannot be determined at compile time that some constant is free of integers, and the table uses \fI=:=/2\fR\& when comparing keys for equality (see option \fBkey_equality\fR\&), then the \fIqlc\fR\& module does not try to look up the constant\&. The reason is that there is in the general case no upper limit on the number of key values that can compare equal to such a constant; every combination of integers and floats must be looked up:
+.LP
+.nf
+
+2> E2 = ets:new(t, [set]),
+true = ets:insert(E2, [{{2,2},a},{{2,2\&.0},b},{{2\&.0,2},c}]),
+F2 = fun(I) ->
+qlc:q([V || {K,V} <- ets:table(E2), K == I])
+end,
+Q2 = F2({2,2}),
+io:format("~s~n", [qlc:info(Q2)])\&.
+ets:table(53264,
+          [{traverse,
+            {select,[{{'$1','$2'},[{'==','$1',{const,{2,2}}}],['$2']}]}}])
+3> lists:sort(qlc:e(Q2))\&.
+[a,b,c]
+.fi
+.LP
+Looking up only \fI{2,2}\fR\& would not return \fIb\fR\& and \fIc\fR\&\&.
+.LP
+If the table uses \fI==/2\fR\& when comparing keys for equality, the \fIqlc\fR\& module looks up the constant regardless of which operator is used in the QLC\&. However, \fI==/2\fR\& is to be preferred:
+.LP
+.nf
+
+4> E3 = ets:new(t, [ordered_set]), % uses ==/2 for key equality
+true = ets:insert(E3, [{{2,2\&.0},b}]),
+F3 = fun(I) ->
+qlc:q([V || {K,V} <- ets:table(E3), K == I])
+end,
+Q3 = F3({2,2}),
+io:format("~s~n", [qlc:info(Q3)])\&.
+ets:match_spec_run(ets:lookup(86033, {2,2}),
+                   ets:match_spec_compile([{{'$1','$2'},[],['$2']}]))
+5> qlc:e(Q3)\&.
+[b]
+.fi
+.LP
+Lookup join is handled analogously to lookup of constants in a table: if the join operator is \fI==/2\fR\&, and the table where constants are to be looked up uses \fI=:=/2\fR\& when testing keys for equality, then the \fIqlc\fR\& module does not consider lookup join for that table\&.
+.SH DATA TYPES
+.nf
+
+\fBabstract_expr()\fR\& = \fBerl_parse:abstract_expr()\fR\&
+.br
+.fi
+.RS
+.LP
+Parse trees for Erlang expression, see section \fBThe Abstract Format\fR\& in the ERTS User\&'s Guide\&.
+.RE
+.nf
+
+\fBanswer()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBanswers()\fR\& = [\fBanswer()\fR\&]
+.br
+.fi
+.nf
+
+\fBcache()\fR\& = ets | list | no
+.br
+.fi
+.nf
+
+\fBmatch_expression()\fR\& = \fBets:match_spec()\fR\&
+.br
+.fi
+.RS
+.LP
+Match specification, see section \fBMatch Specifications in Erlang\fR\& in the ERTS User\&'s Guide and \fB\fIms_transform(3)\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBno_files()\fR\& = integer() >= 1
+.br
+.fi
+.RS
+.LP
+An integer > 1\&.
+.RE
+.nf
+
+\fBkey_pos()\fR\& = integer() >= 1 | [integer() >= 1]
+.br
+.fi
+.nf
+
+\fBmax_list_size()\fR\& = integer() >= 0
+.br
+.fi
+.nf
+
+\fBorder()\fR\& = ascending | descending | \fBorder_fun()\fR\&
+.br
+.fi
+.nf
+
+\fBorder_fun()\fR\& = fun((term(), term()) -> boolean())
+.br
+.fi
+.nf
+
+\fBquery_cursor()\fR\&
+.br
+.fi
+.RS
+.LP
+A \fBquery cursor\fR\&\&.
+.RE
+.nf
+
+\fBquery_handle()\fR\&
+.br
+.fi
+.RS
+.LP
+A \fBquery handle\fR\&\&.
+.RE
+.nf
+
+\fBquery_handle_or_list()\fR\& = \fBquery_handle()\fR\& | list()
+.br
+.fi
+.nf
+
+\fBquery_list_comprehension()\fR\& = term()
+.br
+.fi
+.RS
+.LP
+A literal \fBquery list comprehension\fR\&\&.
+.RE
+.nf
+
+\fBspawn_options()\fR\& = default | [\fBproc_lib:spawn_option()\fR\&]
+.br
+.fi
+.nf
+
+\fBsort_options()\fR\& = [\fBsort_option()\fR\&] | \fBsort_option()\fR\&
+.br
+.fi
+.nf
+
+\fBsort_option()\fR\& = 
+.br
+    {compressed, boolean()} |
+.br
+    {no_files, \fBno_files()\fR\&} |
+.br
+    {order, \fBorder()\fR\&} |
+.br
+    {size, integer() >= 1} |
+.br
+    {tmpdir, \fBtmp_directory()\fR\&} |
+.br
+    {unique, boolean()}
+.br
+.fi
+.RS
+.LP
+See \fB\fIfile_sorter(3)\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBtmp_directory()\fR\& = [] | \fBfile:name()\fR\&
+.br
+.fi
+.nf
+
+\fBtmp_file_usage()\fR\& = 
+.br
+    allowed | not_allowed | info_msg | warning_msg | error_msg
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+append(QHL) -> QH
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QHL = [\fBquery_handle_or_list()\fR\&]
+.br
+QH = \fBquery_handle()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a query handle\&. When evaluating query handle \fIQH\fR\&, all answers to the first query handle in \fIQHL\fR\& are returned, followed by all answers to the remaining query handles in \fIQHL\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+append(QH1, QH2) -> QH3
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QH1 = QH2 = \fBquery_handle_or_list()\fR\&
+.br
+QH3 = \fBquery_handle()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a query handle\&. When evaluating query handle \fIQH3\fR\&, all answers to \fIQH1\fR\& are returned, followed by all answers to \fIQH2\fR\&\&.
+.LP
+\fIappend(QH1, QH2)\fR\& is equivalent to \fIappend([QH1, QH2])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+cursor(QH) -> Cursor
+.br
+.fi
+.br
+.nf
+
+.B
+cursor(QH, Options) -> Cursor
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QH = \fBquery_handle_or_list()\fR\&
+.br
+Options = [Option] | Option
+.br
+Option = 
+.br
+    {cache_all, \fBcache()\fR\&} |
+.br
+    cache_all |
+.br
+    {max_list_size, \fBmax_list_size()\fR\&} |
+.br
+    {spawn_options, \fBspawn_options()\fR\&} |
+.br
+    {tmpdir_usage, \fBtmp_file_usage()\fR\&} |
+.br
+    {tmpdir, \fBtmp_directory()\fR\&} |
+.br
+    {unique_all, boolean()} |
+.br
+    unique_all
+.br
+Cursor = \fBquery_cursor()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a query cursor and makes the calling process the owner of the cursor\&. The cursor is to be used as argument to \fB\fInext_answers/1,2\fR\&\fR\& and (eventually) \fB\fIdelete_cursor/1\fR\&\fR\&\&. Calls \fB\fIerlang:spawn_opt/2\fR\&\fR\& to spawn and link to a process that evaluates the query handle\&. The value of option \fIspawn_options\fR\& is used as last argument when calling \fIspawn_opt/2\fR\&\&. Defaults to \fI[link]\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> QH = qlc:q([{X,Y} || X <- [a,b], Y <- [1,2]]),
+QC = qlc:cursor(QH),
+qlc:next_answers(QC, 1)\&.
+[{a,1}]
+2> qlc:next_answers(QC, 1)\&.
+[{a,2}]
+3> qlc:next_answers(QC, all_remaining)\&.
+[{b,1},{b,2}]
+4> qlc:delete_cursor(QC)\&.
+ok
+.fi
+.LP
+\fIcursor(QH)\fR\& is equivalent to \fIcursor(QH, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete_cursor(QueryCursor) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryCursor = \fBquery_cursor()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes a query cursor\&. Only the owner of the cursor can delete the cursor\&.
+.RE
+.LP
+.nf
+
+.B
+e(QH) -> Answers | Error
+.br
+.fi
+.br
+.nf
+
+.B
+e(QH, Options) -> Answers | Error
+.br
+.fi
+.br
+.nf
+
+.B
+eval(QH) -> Answers | Error
+.br
+.fi
+.br
+.nf
+
+.B
+eval(QH, Options) -> Answers | Error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QH = \fBquery_handle_or_list()\fR\&
+.br
+Answers = \fBanswers()\fR\&
+.br
+Options = [Option] | Option
+.br
+Option = 
+.br
+    {cache_all, \fBcache()\fR\&} |
+.br
+    cache_all |
+.br
+    {max_list_size, \fBmax_list_size()\fR\&} |
+.br
+    {tmpdir_usage, \fBtmp_file_usage()\fR\&} |
+.br
+    {tmpdir, \fBtmp_directory()\fR\&} |
+.br
+    {unique_all, boolean()} |
+.br
+    unique_all
+.br
+Error = {error, module(), Reason}
+.br
+Reason = \fBfile_sorter:reason()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Evaluates a query handle in the calling process and collects all answers in a list\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> QH = qlc:q([{X,Y} || X <- [a,b], Y <- [1,2]]),
+qlc:eval(QH)\&.
+[{a,1},{a,2},{b,1},{b,2}]
+.fi
+.LP
+\fIeval(QH)\fR\& is equivalent to \fIeval(QH, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+fold(Function, Acc0, QH) -> Acc1 | Error
+.br
+.fi
+.br
+.nf
+
+.B
+fold(Function, Acc0, QH, Options) -> Acc1 | Error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QH = \fBquery_handle_or_list()\fR\&
+.br
+Function = fun((\fBanswer()\fR\&, AccIn) -> AccOut)
+.br
+Acc0 = Acc1 = AccIn = AccOut = term()
+.br
+Options = [Option] | Option
+.br
+Option = 
+.br
+    {cache_all, \fBcache()\fR\&} |
+.br
+    cache_all |
+.br
+    {max_list_size, \fBmax_list_size()\fR\&} |
+.br
+    {tmpdir_usage, \fBtmp_file_usage()\fR\&} |
+.br
+    {tmpdir, \fBtmp_directory()\fR\&} |
+.br
+    {unique_all, boolean()} |
+.br
+    unique_all
+.br
+Error = {error, module(), Reason}
+.br
+Reason = \fBfile_sorter:reason()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Calls \fIFunction\fR\& on successive answers to the query handle together with an extra argument \fIAccIn\fR\&\&. The query handle and the function are evaluated in the calling process\&. \fIFunction\fR\& must return a new accumulator, which is passed to the next call\&. \fIAcc0\fR\& is returned if there are no answers to the query handle\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> QH = [1,2,3,4,5,6],
+qlc:fold(fun(X, Sum) -> X + Sum end, 0, QH)\&.
+21
+.fi
+.LP
+\fIfold(Function, Acc0, QH)\fR\& is equivalent to \fIfold(Function, Acc0, QH, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+format_error(Error) -> Chars
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Error = {error, module(), term()}
+.br
+Chars = \fBio_lib:chars()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a descriptive string in English of an error tuple returned by some of the functions of the \fIqlc\fR\& module or the parse transform\&. This function is mainly used by the compiler invoking the parse transform\&.
+.RE
+.LP
+.nf
+
+.B
+info(QH) -> Info
+.br
+.fi
+.br
+.nf
+
+.B
+info(QH, Options) -> Info
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QH = \fBquery_handle_or_list()\fR\&
+.br
+Options = [Option] | Option
+.br
+Option = EvalOption | ReturnOption
+.br
+EvalOption = 
+.br
+    {cache_all, \fBcache()\fR\&} |
+.br
+    cache_all |
+.br
+    {max_list_size, \fBmax_list_size()\fR\&} |
+.br
+    {tmpdir_usage, \fBtmp_file_usage()\fR\&} |
+.br
+    {tmpdir, \fBtmp_directory()\fR\&} |
+.br
+    {unique_all, boolean()} |
+.br
+    unique_all
+.br
+ReturnOption = 
+.br
+    {depth, Depth} |
+.br
+    {flat, boolean()} |
+.br
+    {format, Format} |
+.br
+    {n_elements, NElements}
+.br
+Depth = infinity | integer() >= 0
+.br
+Format = abstract_code | string
+.br
+NElements = infinity | integer() >= 1
+.br
+Info = \fBabstract_expr()\fR\& | string()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns information about a query handle\&. The information describes the simplifications and optimizations that are the results of preparing the query for evaluation\&. This function is probably mainly useful during debugging\&.
+.LP
+The information has the form of an Erlang expression where QLCs most likely occur\&. Depending on the format functions of mentioned QLC tables, it is not certain that the information is absolutely accurate\&.
+.LP
+Options:
+.RS 2
+.TP 2
+*
+The default is to return a sequence of QLCs in a block, but if option \fI{flat, false}\fR\& is specified, one single QLC is returned\&.
+.LP
+.TP 2
+*
+The default is to return a string, but if option \fI{format, abstract_code}\fR\& is specified, abstract code is returned instead\&. In the abstract code, port identifiers, references, and pids are represented by strings\&.
+.LP
+.TP 2
+*
+The default is to return all elements in lists, but if option \fI{n_elements, NElements}\fR\& is specified, only a limited number of elements are returned\&.
+.LP
+.TP 2
+*
+The default is to show all parts of objects and match specifications, but if option \fI{depth, Depth}\fR\& is specified, parts of terms below a certain depth are replaced by \fI\&'\&.\&.\&.\&'\fR\&\&.
+.LP
+.RE
+
+.LP
+\fIinfo(QH)\fR\& is equivalent to \fIinfo(QH, [])\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+In the following example two simple QLCs are inserted only to hold option \fI{unique, true}\fR\&:
+.LP
+.nf
+
+1> QH = qlc:q([{X,Y} || X <- [x,y], Y <- [a,b]]),
+io:format("~s~n", [qlc:info(QH, unique_all)])\&.
+begin
+    V1 =
+        qlc:q([
+               SQV ||
+                   SQV <- [x,y]
+              ],
+              [{unique,true}]),
+    V2 =
+        qlc:q([
+               SQV ||
+                   SQV <- [a,b]
+              ],
+              [{unique,true}]),
+    qlc:q([
+           {X,Y} ||
+               X <- V1,
+               Y <- V2
+          ],
+          [{unique,true}])
+end
+.fi
+.LP
+In the following example QLC \fIV2\fR\& has been inserted to show the joined generators and the join method chosen\&. A convention is used for lookup join: the first generator (\fIG2\fR\&) is the one traversed, the second (\fIG1\fR\&) is the table where constants are looked up\&.
+.LP
+.nf
+
+1> E1 = ets:new(e1, []),
+E2 = ets:new(e2, []),
+true = ets:insert(E1, [{1,a},{2,b}]),
+true = ets:insert(E2, [{a,1},{b,2}]),
+Q = qlc:q([{X,Z,W} ||
+{X, Z} <- ets:table(E1),
+{W, Y} <- ets:table(E2),
+X =:= Y]),
+io:format("~s~n", [qlc:info(Q)])\&.
+begin
+    V1 =
+        qlc:q([
+               P0 ||
+                   P0 = {W,Y} <- ets:table(17)
+              ]),
+    V2 =
+        qlc:q([
+               [G1|G2] ||
+                   G2 <- V1,
+                   G1 <- ets:table(16),
+                   element(2, G1) =:= element(1, G2)
+              ],
+              [{join,lookup}]),
+    qlc:q([
+           {X,Z,W} ||
+               [{X,Z}|{W,Y}] <- V2
+          ])
+end
+.fi
+.RE
+.LP
+.nf
+
+.B
+keysort(KeyPos, QH1) -> QH2
+.br
+.fi
+.br
+.nf
+
+.B
+keysort(KeyPos, QH1, SortOptions) -> QH2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyPos = \fBkey_pos()\fR\&
+.br
+SortOptions = \fBsort_options()\fR\&
+.br
+QH1 = \fBquery_handle_or_list()\fR\&
+.br
+QH2 = \fBquery_handle()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a query handle\&. When evaluating query handle \fIQH2\fR\&, the answers to query handle \fIQH1\fR\& are sorted by \fB\fIfile_sorter:keysort/4\fR\&\fR\& according to the options\&.
+.LP
+The sorter uses temporary files only if \fIQH1\fR\& does not evaluate to a list and the size of the binary representation of the answers exceeds \fISize\fR\& bytes, where \fISize\fR\& is the value of option \fIsize\fR\&\&.
+.LP
+\fIkeysort(KeyPos, QH1)\fR\& is equivalent to \fIkeysort(KeyPos, QH1, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+next_answers(QueryCursor) -> Answers | Error
+.br
+.fi
+.br
+.nf
+
+.B
+next_answers(QueryCursor, NumberOfAnswers) -> Answers | Error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryCursor = \fBquery_cursor()\fR\&
+.br
+Answers = \fBanswers()\fR\&
+.br
+NumberOfAnswers = all_remaining | integer() >= 1
+.br
+Error = {error, module(), Reason}
+.br
+Reason = \fBfile_sorter:reason()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns some or all of the remaining answers to a query cursor\&. Only the owner of \fIQueryCursor\fR\& can retrieve answers\&.
+.LP
+Optional argument \fINumberOfAnswers\fR\& determines the maximum number of answers returned\&. Defaults to \fI10\fR\&\&. If less than the requested number of answers is returned, subsequent calls to \fInext_answers\fR\& return \fI[]\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+q(QLC) -> QH
+.br
+.fi
+.br
+.nf
+
+.B
+q(QLC, Options) -> QH
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QH = \fBquery_handle()\fR\&
+.br
+Options = [Option] | Option
+.br
+Option = 
+.br
+    {max_lookup, MaxLookup} |
+.br
+    {cache, \fBcache()\fR\&} |
+.br
+    cache |
+.br
+    {join, Join} |
+.br
+    {lookup, Lookup} |
+.br
+    {unique, boolean()} |
+.br
+    unique
+.br
+MaxLookup = integer() >= 0 | infinity
+.br
+Join = any | lookup | merge | nested_loop
+.br
+Lookup = boolean() | any
+.br
+QLC = \fBquery_list_comprehension()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a query handle for a QLC\&. The QLC must be the first argument to this function, otherwise it is evaluated as an ordinary list comprehension\&. It is also necessary to add the following line to the source code:
+.LP
+.nf
+
+-include_lib("stdlib/include/qlc.hrl").
+.fi
+.LP
+This causes a parse transform to substitute a fun for the QLC\&. The (compiled) fun is called when the query handle is evaluated\&.
+.LP
+When calling \fIqlc:q/1,2\fR\& from the Erlang shell, the parse transform is automatically called\&. When this occurs, the fun substituted for the QLC is not compiled but is evaluated by \fB\fIerl_eval(3)\fR\&\fR\&\&. This is also true when expressions are evaluated by \fIfile:eval/1,2\fR\& or in the debugger\&.
+.LP
+To be explicit, this does not work:
+.LP
+.nf
+
+...
+A = [X || {X} <- [{1},{2}]],
+QH = qlc:q(A),
+...
+.fi
+.LP
+Variable \fIA\fR\& is bound to the evaluated value of the list comprehension (\fI[1,2]\fR\&)\&. The compiler complains with an error message ("argument is not a query list comprehension"); the shell process stops with a \fIbadarg\fR\& reason\&.
+.LP
+\fIq(QLC)\fR\& is equivalent to \fIq(QLC, [])\fR\&\&.
+.LP
+Options:
+.RS 2
+.TP 2
+*
+Option \fI{cache, ets}\fR\& can be used to cache the answers to a QLC\&. The answers are stored in one ETS table for each cached QLC\&. When a cached QLC is evaluated again, answers are fetched from the table without any further computations\&. Therefore, when all answers to a cached QLC have been found, the ETS tables used for caching answers to the qualifiers of the QLC can be emptied\&. Option \fIcache\fR\& is equivalent to \fI{cache, ets}\fR\&\&.
+.LP
+.TP 2
+*
+Option \fI{cache, list}\fR\& can be used to cache the answers to a QLC like \fI{cache, ets}\fR\&\&. The difference is that the answers are kept in a list (on the process heap)\&. If the answers would occupy more than a certain amount of RAM memory, a temporary file is used for storing the answers\&. Option \fImax_list_size\fR\& sets the limit in bytes and the temporary file is put on the directory set by option \fItmpdir\fR\&\&.
+.RS 2
+.LP
+Option \fIcache\fR\& has no effect if it is known that the QLC is to be evaluated at most once\&. This is always true for the top-most QLC and also for the list expression of the first generator in a list of qualifiers\&. Notice that in the presence of side effects in filters or callback functions, the answers to QLCs can be affected by option \fIcache\fR\&\&.
+.RE
+.LP
+.TP 2
+*
+Option \fI{unique, true}\fR\& can be used to remove duplicate answers to a QLC\&. The unique answers are stored in one ETS table for each QLC\&. The table is emptied every time it is known that there are no more answers to the QLC\&. Option \fIunique\fR\& is equivalent to \fI{unique, true}\fR\&\&. If option \fIunique\fR\& is combined with option \fI{cache, ets}\fR\&, two ETS tables are used, but the full answers are stored in one table only\&. If option \fIunique\fR\& is combined with option \fI{cache, list}\fR\&, the answers are sorted twice using \fB\fIkeysort/3\fR\&\fR\&; once to remove duplicates and once to restore the order\&.
+.LP
+.RE
+
+.LP
+Options \fIcache\fR\& and \fIunique\fR\& apply not only to the QLC itself but also to the results of looking up constants, running match specifications, and joining handles\&.
+.LP
+\fIExample:\fR\&
+.LP
+In the following example the cached results of the merge join are traversed for each value of \fIA\fR\&\&. Notice that without option \fIcache\fR\& the join would have been carried out three times, once for each value of \fIA\fR\&\&.
+.LP
+.nf
+
+1> Q = qlc:q([{A,X,Z,W} ||
+A <- [a,b,c],
+{X,Z} <- [{a,1},{b,4},{c,6}],
+{W,Y} <- [{2,a},{3,b},{4,c}],
+X =:= Y],
+{cache, list}),
+io:format("~s~n", [qlc:info(Q)])\&.
+begin
+    V1 =
+        qlc:q([
+               P0 ||
+                   P0 = {X,Z} <-
+                       qlc:keysort(1, [{a,1},{b,4},{c,6}], [])
+              ]),
+    V2 =
+        qlc:q([
+               P0 ||
+                   P0 = {W,Y} <-
+                       qlc:keysort(2, [{2,a},{3,b},{4,c}], [])
+              ]),
+    V3 =
+        qlc:q([
+               [G1|G2] ||
+                   G1 <- V1,
+                   G2 <- V2,
+                   element(1, G1) == element(2, G2)
+              ],
+              [{join,merge},{cache,list}]),
+    qlc:q([
+           {A,X,Z,W} ||
+               A <- [a,b,c],
+               [{X,Z}|{W,Y}] <- V3,
+               X =:= Y
+          ])
+end
+.fi
+.LP
+\fB\fIsort/1,2\fR\&\fR\& and \fB\fIkeysort/2,3\fR\&\fR\& can also be used for caching answers and for removing duplicates\&. When sorting answers are cached in a list, possibly stored on a temporary file, and no ETS tables are used\&.
+.LP
+Sometimes (see \fB\fItable/2\fR\&\fR\&) traversal of tables can be done by looking up key values, which is assumed to be fast\&. Under certain (rare) circumstances there can be too many key values to look up\&. Option \fI{max_lookup, MaxLookup}\fR\& can then be used to limit the number of lookups: if more than \fIMaxLookup\fR\& lookups would be required, no lookups are done but the table is traversed instead\&. Defaults to \fIinfinity\fR\&, which means that there is no limit on the number of keys to look up\&.
+.LP
+\fIExample:\fR\&
+.LP
+In the following example, using the \fIgb_table\fR\& module from section \fBImplementing a QLC Table\fR\&, there are six keys to look up: \fI{1,a}\fR\&, \fI{1,b}\fR\&, \fI{1,c}\fR\&, \fI{2,a}\fR\&, \fI{2,b}\fR\&, and \fI{2,c}\fR\&\&. The reason is that the two elements of key \fI{X, Y}\fR\& are compared separately\&.
+.LP
+.nf
+
+1> T = gb_trees:empty(),
+QH = qlc:q([X || {{X,Y},_} <- gb_table:table(T),
+((X == 1) or (X == 2)) andalso
+((Y == a) or (Y == b) or (Y == c))]),
+io:format("~s~n", [qlc:info(QH)])\&.
+ets:match_spec_run(
+       lists:flatmap(fun(K) ->
+                            case
+                                gb_trees:lookup(K,
+                                                gb_trees:from_orddict([]))
+                            of
+                                {value,V} ->
+                                    [{K,V}];
+                                none ->
+                                    []
+                            end
+                     end,
+                     [{1,a},{1,b},{1,c},{2,a},{2,b},{2,c}]),
+       ets:match_spec_compile([{{{'$1','$2'},'_'},[],['$1']}]))
+.fi
+.LP
+Options:
+.RS 2
+.TP 2
+*
+Option \fI{lookup, true}\fR\& can be used to ensure that the \fIqlc\fR\& module looks up constants in some QLC table\&. If there are more than one QLC table among the list expressions of the generators, constants must be looked up in at least one of the tables\&. The evaluation of the query fails if there are no constants to look up\&. This option is useful when it would be unacceptable to traverse all objects in some table\&. Setting option \fIlookup\fR\& to \fIfalse\fR\& ensures that no constants are looked up (\fI{max_lookup, 0}\fR\& has the same effect)\&. Defaults to \fIany\fR\&, which means that constants are looked up whenever possible\&.
+.LP
+.TP 2
+*
+Option \fI{join, Join}\fR\& can be used to ensure that a certain join method is used:
+.RS 2
+.TP 2
+*
+\fI{join, lookup}\fR\& invokes the lookup join method\&.
+.LP
+.TP 2
+*
+\fI{join, merge}\fR\& invokes the merge join method\&.
+.LP
+.TP 2
+*
+\fI{join, nested_loop}\fR\& invokes the method of matching every pair of objects from two handles\&. This method is mostly very slow\&.
+.LP
+.RE
+
+.RS 2
+.LP
+The evaluation of the query fails if the \fIqlc\fR\& module cannot carry out the chosen join method\&. Defaults to \fIany\fR\&, which means that some fast join method is used if possible\&.
+.RE
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+sort(QH1) -> QH2
+.br
+.fi
+.br
+.nf
+
+.B
+sort(QH1, SortOptions) -> QH2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SortOptions = \fBsort_options()\fR\&
+.br
+QH1 = \fBquery_handle_or_list()\fR\&
+.br
+QH2 = \fBquery_handle()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a query handle\&. When evaluating query handle \fIQH2\fR\&, the answers to query handle \fIQH1\fR\& are sorted by \fB\fIfile_sorter:sort/3\fR\&\fR\& according to the options\&.
+.LP
+The sorter uses temporary files only if \fIQH1\fR\& does not evaluate to a list and the size of the binary representation of the answers exceeds \fISize\fR\& bytes, where \fISize\fR\& is the value of option \fIsize\fR\&\&.
+.LP
+\fIsort(QH1)\fR\& is equivalent to \fIsort(QH1, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+string_to_handle(QueryString) -> QH | Error
+.br
+.fi
+.br
+.nf
+
+.B
+string_to_handle(QueryString, Options) -> QH | Error
+.br
+.fi
+.br
+.nf
+
+.B
+string_to_handle(QueryString, Options, Bindings) -> QH | Error
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+QueryString = string()
+.br
+Options = [Option] | Option
+.br
+Option = 
+.br
+    {max_lookup, MaxLookup} |
+.br
+    {cache, \fBcache()\fR\&} |
+.br
+    cache |
+.br
+    {join, Join} |
+.br
+    {lookup, Lookup} |
+.br
+    {unique, boolean()} |
+.br
+    unique
+.br
+MaxLookup = integer() >= 0 | infinity
+.br
+Join = any | lookup | merge | nested_loop
+.br
+Lookup = boolean() | any
+.br
+Bindings = \fBerl_eval:binding_struct()\fR\&
+.br
+QH = \fBquery_handle()\fR\&
+.br
+Error = {error, module(), Reason}
+.br
+Reason = \fBerl_parse:error_info()\fR\& | \fBerl_scan:error_info()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+A string version of \fB\fIq/1,2\fR\&\fR\&\&. When the query handle is evaluated, the fun created by the parse transform is interpreted by \fB\fIerl_eval(3)\fR\&\fR\&\&. The query string is to be one single QLC terminated by a period\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> L = [1,2,3],
+Bs = erl_eval:add_binding(\&'L\&', L, erl_eval:new_bindings()),
+QH = qlc:string_to_handle("[X+1 || X <- L]\&.", [], Bs),
+qlc:eval(QH)\&.
+[2,3,4]
+.fi
+.LP
+\fIstring_to_handle(QueryString)\fR\& is equivalent to \fIstring_to_handle(QueryString, [])\fR\&\&.
+.LP
+\fIstring_to_handle(QueryString, Options)\fR\& is equivalent to \fIstring_to_handle(QueryString, Options, erl_eval:new_bindings())\fR\&\&.
+.LP
+This function is probably mainly useful when called from outside of Erlang, for example from a driver written in C\&.
+.RE
+.LP
+.nf
+
+.B
+table(TraverseFun, Options) -> QH
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+TraverseFun = TraverseFun0 | TraverseFun1
+.br
+TraverseFun0 = fun(() -> TraverseResult)
+.br
+TraverseFun1 = fun((\fBmatch_expression()\fR\&) -> TraverseResult)
+.br
+TraverseResult = Objects | term()
+.br
+Objects = [] | [term() | ObjectList]
+.br
+ObjectList = TraverseFun0 | Objects
+.br
+Options = [Option] | Option
+.br
+Option = 
+.br
+    {format_fun, FormatFun} |
+.br
+    {info_fun, InfoFun} |
+.br
+    {lookup_fun, LookupFun} |
+.br
+    {parent_fun, ParentFun} |
+.br
+    {post_fun, PostFun} |
+.br
+    {pre_fun, PreFun} |
+.br
+    {key_equality, KeyComparison}
+.br
+FormatFun = undefined | fun((SelectedObjects) -> FormatedTable)
+.br
+SelectedObjects = 
+.br
+    all |
+.br
+    {all, NElements, DepthFun} |
+.br
+    {match_spec, \fBmatch_expression()\fR\&} |
+.br
+    {lookup, Position, Keys} |
+.br
+    {lookup, Position, Keys, NElements, DepthFun}
+.br
+NElements = infinity | integer() >= 1
+.br
+DepthFun = fun((term()) -> term())
+.br
+FormatedTable = {Mod, Fun, Args} | \fBabstract_expr()\fR\& | string()
+.br
+InfoFun = undefined | fun((InfoTag) -> InfoValue)
+.br
+InfoTag = indices | is_unique_objects | keypos | num_of_objects
+.br
+InfoValue = undefined | term()
+.br
+LookupFun = undefined | fun((Position, Keys) -> LookupResult)
+.br
+LookupResult = [term()] | term()
+.br
+ParentFun = undefined | fun(() -> ParentFunValue)
+.br
+PostFun = undefined | fun(() -> term())
+.br
+PreFun = undefined | fun((PreArgs) -> term())
+.br
+PreArgs = [PreArg]
+.br
+PreArg = {parent_value, ParentFunValue} | {stop_fun, StopFun}
+.br
+ParentFunValue = undefined | term()
+.br
+StopFun = undefined | fun(() -> term())
+.br
+KeyComparison = \&'=:=\&' | \&'==\&'
+.br
+Position = integer() >= 1
+.br
+Keys = [term()]
+.br
+Mod = Fun = atom()
+.br
+Args = [term()]
+.br
+QH = \fBquery_handle()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a query handle for a QLC table\&. In Erlang/OTP there is support for ETS, Dets, and Mnesia tables, but many other data structures can be turned into QLC tables\&. This is accomplished by letting function(s) in the module implementing the data structure create a query handle by calling \fIqlc:table/2\fR\&\&. The different ways to traverse the table and properties of the table are handled by callback functions provided as options to \fIqlc:table/2\fR\&\&.
+.RS 2
+.TP 2
+*
+Callback function \fITraverseFun\fR\& is used for traversing the table\&. It is to return a list of objects terminated by either \fI[]\fR\& or a nullary fun to be used for traversing the not yet traversed objects of the table\&. Any other return value is immediately returned as value of the query evaluation\&. Unary \fITraverseFun\fR\&s are to accept a match specification as argument\&. The match specification is created by the parse transform by analyzing the pattern of the generator calling \fIqlc:table/2\fR\& and filters using variables introduced in the pattern\&. If the parse transform cannot find a match specification equivalent to the pattern and filters, \fITraverseFun\fR\& is called with a match specification returning every object\&.
+.RS 2
+.TP 2
+*
+Modules that can use match specifications for optimized traversal of tables are to call \fIqlc:table/2\fR\& with an unary \fITraverseFun\fR\&\&. An example is \fB\fIets:table/2\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+Other modules can provide a nullary \fITraverseFun\fR\&\&. An example is \fIgb_table:table/1\fR\& in section \fBImplementing a QLC Table\fR\&\&.
+.LP
+.RE
+
+.LP
+.TP 2
+*
+Unary callback function \fIPreFun\fR\& is called once before the table is read for the first time\&. If the call fails, the query evaluation fails\&.
+.RS 2
+.LP
+Argument \fIPreArgs\fR\& is a list of tagged values\&. There are two tags, \fIparent_value\fR\& and \fIstop_fun\fR\&, used by Mnesia for managing transactions\&.
+.RE
+.RS 2
+.TP 2
+*
+The value of \fIparent_value\fR\& is the value returned by \fIParentFun\fR\&, or \fIundefined\fR\& if there is no \fIParentFun\fR\&\&. \fIParentFun\fR\& is called once just before the call of \fIPreFun\fR\& in the context of the process calling \fB\fIeval/1,2\fR\&\fR\&, \fB\fIfold/3,4\fR\&\fR\&, or \fB\fIcursor/1,2\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+The value of \fIstop_fun\fR\& is a nullary fun that deletes the cursor if called from the parent, or \fIundefined\fR\& if there is no cursor\&.
+.LP
+.RE
+
+.LP
+.TP 2
+*
+Nullary callback function \fIPostFun\fR\& is called once after the table was last read\&. The return value, which is caught, is ignored\&. If \fIPreFun\fR\& has been called for a table, \fIPostFun\fR\& is guaranteed to be called for that table, even if the evaluation of the query fails for some reason\&.
+.RS 2
+.LP
+The pre (post) functions for different tables are evaluated in unspecified order\&.
+.RE
+.RS 2
+.LP
+Other table access than reading, such as calling \fIInfoFun\fR\&, is assumed to be OK at any time\&.
+.RE
+.LP
+.TP 2
+*
+Binary callback function \fILookupFun\fR\& is used for looking up objects in the table\&. The first argument \fIPosition\fR\& is the key position or an indexed position and the second argument \fIKeys\fR\& is a sorted list of unique values\&. The return value is to be a list of all objects (tuples), such that the element at \fIPosition\fR\& is a member of \fIKeys\fR\&\&. Any other return value is immediately returned as value of the query evaluation\&. \fILookupFun\fR\& is called instead of traversing the table if the parse transform at compile time can determine that the filters match and compare the element at \fIPosition\fR\& in such a way that only \fIKeys\fR\& need to be looked up to find all potential answers\&.
+.RS 2
+.LP
+The key position is obtained by calling \fIInfoFun(keypos)\fR\& and the indexed positions by calling \fIInfoFun(indices)\fR\&\&. If the key position can be used for lookup, it is always chosen, otherwise the indexed position requiring the least number of lookups is chosen\&. If there is a tie between two indexed positions, the one occurring first in the list returned by \fIInfoFun\fR\& is chosen\&. Positions requiring more than \fBmax_lookup\fR\& lookups are ignored\&.
+.RE
+.LP
+.TP 2
+*
+Unary callback function \fIInfoFun\fR\& is to return information about the table\&. \fIundefined\fR\& is to be returned if the value of some tag is unknown:
+.RS 2
+.TP 2
+.B
+\fIindices\fR\&:
+Returns a list of indexed positions, a list of positive integers\&.
+.TP 2
+.B
+\fIis_unique_objects\fR\&:
+Returns \fItrue\fR\& if the objects returned by \fITraverseFun\fR\& are unique\&. 
+.TP 2
+.B
+\fIkeypos\fR\&:
+Returns the position of the table key, a positive integer\&. 
+.TP 2
+.B
+\fIis_sorted_key\fR\&:
+Returns \fItrue\fR\& if the objects returned by \fITraverseFun\fR\& are sorted on the key\&. 
+.TP 2
+.B
+\fInum_of_objects\fR\&:
+Returns the number of objects in the table, a non-negative integer\&. 
+.RE
+.LP
+.TP 2
+*
+Unary callback function \fIFormatFun\fR\& is used by \fB\fIinfo/1,2\fR\&\fR\& for displaying the call that created the query handle of the table\&. Defaults to \fIundefined\fR\&, which means that \fIinfo/1,2\fR\& displays a call to \fI\&'$MOD\&':\&'$FUN\&'/0\fR\&\&. It is up to \fIFormatFun\fR\& to present the selected objects of the table in a suitable way\&. However, if a character list is chosen for presentation, it must be an Erlang expression that can be scanned and parsed (a trailing dot is added by \fIinfo/1,2\fR\& though)\&.
+.RS 2
+.LP
+\fIFormatFun\fR\& is called with an argument that describes the selected objects based on optimizations done as a result of analyzing the filters of the QLC where the call to \fIqlc:table/2\fR\& occurs\&. The argument can have the following values:
+.RE
+.RS 2
+.TP 2
+.B
+\fI{lookup, Position, Keys, NElements, DepthFun}\fR\&\&.:
+\fILookupFun\fR\& is used for looking up objects in the table\&.
+.TP 2
+.B
+\fI{match_spec, MatchExpression}\fR\&:
+No way of finding all possible answers by looking up keys was found, but the filters could be transformed into a match specification\&. All answers are found by calling \fITraverseFun(MatchExpression)\fR\&\&.
+.TP 2
+.B
+\fI{all, NElements, DepthFun}\fR\&:
+No optimization was found\&. A match specification matching all objects is used if \fITraverseFun\fR\& is unary\&.
+.RS 2
+.LP
+\fINElements\fR\& is the value of the \fIinfo/1,2\fR\& option \fIn_elements\fR\&\&.
+.RE
+.RS 2
+.LP
+\fIDepthFun\fR\& is a function that can be used for limiting the size of terms; calling \fIDepthFun(Term)\fR\& substitutes \fI\&'\&.\&.\&.\&'\fR\& for parts of \fITerm\fR\& below the depth specified by the \fIinfo/1,2\fR\& option \fIdepth\fR\&\&.
+.RE
+.RS 2
+.LP
+If calling \fIFormatFun\fR\& with an argument including \fINElements\fR\& and \fIDepthFun\fR\& fails, \fIFormatFun\fR\& is called once again with an argument excluding \fINElements\fR\& and \fIDepthFun\fR\& (\fI{lookup, Position, Keys}\fR\& or \fIall\fR\&)\&.
+.RE
+.RE
+.LP
+.TP 2
+*
+The value of option \fIkey_equality\fR\& is to be \fI\&'=:=\&'\fR\& if the table considers two keys equal if they match, and to be \fI\&'==\&'\fR\& if two keys are equal if they compare equal\&. Defaults to \fI\&'=:=\&'\fR\&\&.
+.LP
+.RE
+
+.LP
+For the various options recognized by \fItable/1,2\fR\& in respective module, see \fB\fIets(3)\fR\&\fR\&, \fB\fIdets(3)\fR\&\fR\&, and \fB\fImnesia(3)\fR\&\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIdets(3)\fR\&\fR\&, \fB\fIerl_eval(3)\fR\&\fR\&, \fB\fIerlang(3)\fR\&\fR\&, \fB\fIerror_logger(3)\fR\&\fR\&, \fB\fIets(3)\fR\&\fR\&, \fB\fIfile(3)\fR\&\fR\&, \fB\fIfile_sorter(3)\fR\&\fR\&, \fB\fImnesia(3)\fR\&\fR\&, \fB\fIshell(3)\fR\&\fR\&, \fB Erlang Reference Manual\fR\&, \fB Programming Examples\fR\&

@@ -1,0 +1,131 @@
+.TH sasl 7 "sasl 3.0.3" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+sasl \- The SASL application
+.SH DESCRIPTION
+.LP
+The SASL application provides the following services:
+.RS 2
+.TP 2
+*
+\fIalarm_handler\fR\&
+.LP
+.TP 2
+*
+\fIrb\fR\&
+.LP
+.TP 2
+*
+\fIrelease_handler\fR\&
+.LP
+.TP 2
+*
+\fIsystools\fR\&
+.LP
+.RE
+
+.LP
+The SASL application also includes \fIerror_logger\fR\& event handlers for formatting SASL error and crash reports\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The SASL application in OTP has nothing to do with "Simple Authentication and Security Layer" (RFC 4422)\&.
+
+.SH "ERROR LOGGER EVENT HANDLERS"
+
+.LP
+The following error logger event handlers are used by the SASL application\&.
+.RS 2
+.TP 2
+.B
+\fIsasl_report_tty_h\fR\&:
+Formats and writes \fIsupervisor reports\fR\&, \fIcrash reports\fR\&, and \fIprogress reports\fR\& to \fIstdio\fR\&\&. This error logger event handler uses \fBerror_logger_format_depth\fR\& in the Kernel application to limit how much detail is printed in crash and supervisor reports\&.
+.TP 2
+.B
+\fIsasl_report_file_h\fR\&:
+Formats and writes \fIsupervisor reports\fR\&, \fIcrash report\fR\&, and \fIprogress report\fR\& to a single file\&. This error logger event handler uses \fBerror_logger_format_depth\fR\& in the Kernel application to limit the details printed in crash and supervisor reports\&.
+.TP 2
+.B
+\fIlog_mf_h\fR\&:
+This error logger writes \fIall\fR\& events sent to the error logger to disk\&. Multiple files and log rotation are used\&. For efficiency reasons, each event is written as a binary\&. For more information about this handler, see \fBthe STDLIB Reference Manual\fR\&\&.
+.RS 2
+.LP
+To activate this event handler, three SASL configuration parameters must be set, \fIerror_logger_mf_dir\fR\&, \fIerror_logger_mf_maxbytes\fR\&, and \fIerror_logger_mf_maxfiles\fR\&\&. The next section provides more information about the configuration parameters\&.
+.RE
+.RE
+.SH "CONFIGURATION"
+
+.LP
+The following configuration parameters are defined for the SASL application\&. For more information about configuration parameters, see \fB\fIapp(4)\fR\&\fR\& in Kernel\&.
+.LP
+All configuration parameters are optional\&.
+.RS 2
+.TP 2
+.B
+\fIsasl_error_logger = Value \fR\&:
+\fIValue\fR\& is one of the following:
+.RS 2
+.TP 2
+.B
+\fItty\fR\&:
+Installs \fIsasl_report_tty_h\fR\& in the error logger\&. This is the default option\&.
+.TP 2
+.B
+\fI{file,FileName}\fR\&:
+Installs \fIsasl_report_file_h\fR\& in the error logger\&. All reports go to file \fIFileName\fR\&, which is a string\&.
+.TP 2
+.B
+\fI{file,FileName,Modes}\fR\&:
+Same as \fI{file,FileName}\fR\&, except that \fIModes\fR\& allows you to specify the modes used for opening the \fIFileName\fR\& given to the \fBfile:open/2\fR\& call\&. When not specified, \fIModes\fR\& defaults to \fI[write]\fR\&\&. Use \fI[append]\fR\& to have the \fIFileName\fR\& open in append mode\&. \fIFileName\fR\& is a string\&.
+.TP 2
+.B
+\fIfalse\fR\&:
+No SASL error logger handler is installed\&.
+.RE
+.TP 2
+.B
+\fIerrlog_type = error | progress | all \fR\&:
+Restricts the error logging performed by the specified \fIsasl_error_logger\fR\& to error reports or progress reports, or both\&. Default is \fIall\fR\&\&.
+.TP 2
+.B
+\fIerror_logger_mf_dir = string() | false \fR\&:
+Specifies in which directory \fIlog_mf_h\fR\& is to store its files\&. If this parameter is undefined or \fIfalse\fR\&, the \fIlog_mf_h\fR\& handler is not installed\&.
+.TP 2
+.B
+\fIerror_logger_mf_maxbytes = integer() \fR\&:
+Specifies the maximum size of each individual file written by \fIlog_mf_h\fR\&\&. If this parameter is undefined, the \fIlog_mf_h\fR\& handler is not installed\&.
+.TP 2
+.B
+\fIerror_logger_mf_maxfiles = 0<integer()<256 \fR\&:
+Specifies the number of files used by \fIlog_mf_h\fR\&\&. If this parameter is undefined, the \fIlog_mf_h\fR\& handler is not installed\&.
+.TP 2
+.B
+\fIstart_prg = string() \fR\&:
+Specifies the program to be used when restarting the system during release installation\&. Default is \fI$OTP_ROOT/bin/start\fR\&\&.
+.TP 2
+.B
+\fImasters = [atom()] \fR\&:
+Specifies the nodes used by this node to read/write release information\&. This parameter is ignored if parameter \fIclient_directory\fR\& is not set\&.
+.TP 2
+.B
+\fIclient_directory = string() \fR\&:
+This parameter specifies the client directory at the master nodes\&. For details, see \fBRelease Handling\fR\& in \fIOTP Design Principles\fR\&\&. This parameter is ignored if parameter \fImasters\fR\& is not set\&.
+.TP 2
+.B
+\fIstatic_emulator = true | false \fR\&:
+Indicates if the Erlang emulator is statically installed\&. A node with a static emulator cannot switch dynamically to a new emulator, as the executable files are written into memory statically\&. This parameter is ignored if parameters \fImasters\fR\& and \fIclient_directory\fR\& are not set\&.
+.TP 2
+.B
+\fIreleases_dir = string() \fR\&:
+Indicates where the \fIreleases\fR\& directory is located\&. The release handler writes all its files to this directory\&. If this parameter is not set, the OS environment parameter \fIRELDIR\fR\& is used\&. By default, this is \fI$OTP_ROOT/releases\fR\&\&.
+.TP 2
+.B
+\fIutc_log = true | false \fR\&:
+If set to \fItrue\fR\&, all dates in textual log outputs are displayed in Universal Coordinated Time with the string \fIUTC\fR\& appended\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIalarm_handler(3)\fR\&\fR\&, \fB\fIerror_logger(3)\fR\&\fR\&, \fB\fIlog_mf_h(3)\fR\&\fR\&, \fB\fIrb(3)\fR\&\fR\&, \fB\fIrelease_handler(3)\fR\&\fR\&, \fB\fIsystools(3)\fR\&\fR\&

@@ -1,0 +1,496 @@
+.TH erl_parse 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_parse \- The Erlang parser.
+.SH DESCRIPTION
+.LP
+This module is the basic Erlang parser that converts tokens into the abstract form of either forms (that is, top-level constructs), expressions, or terms\&. The Abstract Format is described in the \fBERTS User\&'s Guide\fR\&\&. Notice that a token list must end with the \fIdot\fR\& token to be acceptable to the parse functions (see the \fB\fIerl_scan(3)\fR\&\fR\&) module\&.
+.SH DATA TYPES
+.nf
+
+.B
+abstract_clause()
+.br
+.fi
+.RS
+.LP
+Abstract form of an Erlang clause\&.
+.RE
+.nf
+
+.B
+abstract_expr()
+.br
+.fi
+.RS
+.LP
+Abstract form of an Erlang expression\&.
+.RE
+.nf
+
+.B
+abstract_form()
+.br
+.fi
+.RS
+.LP
+Abstract form of an Erlang form\&.
+.RE
+.nf
+
+.B
+abstract_type()
+.br
+.fi
+.RS
+.LP
+Abstract form of an Erlang type\&.
+.RE
+.nf
+
+\fBerl_parse_tree()\fR\& = 
+.br
+    \fBabstract_clause()\fR\& |
+.br
+    \fBabstract_expr()\fR\& |
+.br
+    \fBabstract_form()\fR\& |
+.br
+    \fBabstract_type()\fR\&
+.br
+.fi
+.nf
+
+\fBerror_description()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBerror_info()\fR\& = {\fBerl_anno:line()\fR\&, module(), \fBerror_description()\fR\&}
+.br
+.fi
+.nf
+
+\fBform_info()\fR\& = 
+.br
+    {eof, \fBerl_anno:line()\fR\&} |
+.br
+    {error, \fBerl_scan:error_info()\fR\& | \fBerror_info()\fR\&} |
+.br
+    {warning, \fBerl_scan:error_info()\fR\& | \fBerror_info()\fR\&}
+.br
+.fi
+.RS
+.LP
+Tuples \fI{error, error_info()}\fR\& and \fI{warning, error_info()}\fR\&, denoting syntactically incorrect forms and warnings, and \fI{eof, line()}\fR\&, denoting an end-of-stream encountered before a complete form had been parsed\&.
+.RE
+.nf
+
+\fBtoken()\fR\& = \fBerl_scan:token()\fR\&
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+abstract(Data) -> AbsTerm
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Data = term()
+.br
+AbsTerm = \fBabstract_expr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Converts the Erlang data structure \fIData\fR\& into an abstract form of type \fIAbsTerm\fR\&\&. This function is the inverse of \fB\fInormalise/1\fR\&\fR\&\&.
+.LP
+\fIerl_parse:abstract(T)\fR\& is equivalent to \fIerl_parse:abstract(T, 0)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+abstract(Data, Options) -> AbsTerm
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Data = term()
+.br
+Options = Line | [Option]
+.br
+Option = {line, Line} | {encoding, Encoding}
+.br
+Encoding = latin1 | unicode | utf8 | none | \fBencoding_func()\fR\&
+.br
+Line = \fBerl_anno:line()\fR\&
+.br
+AbsTerm = \fBabstract_expr()\fR\&
+.br
+.nf
+\fBencoding_func()\fR\& = fun((integer() >= 0) -> boolean())
+.fi
+.br
+.RE
+.RE
+.RS
+.LP
+Converts the Erlang data structure \fIData\fR\& into an abstract form of type \fIAbsTerm\fR\&\&.
+.LP
+Option \fILine\fR\& is the line to be assigned to each node of \fIAbsTerm\fR\&\&.
+.LP
+Option \fIEncoding\fR\& is used for selecting which integer lists to be considered as strings\&. The default is to use the encoding returned by function \fB\fIepp:default_encoding/0\fR\&\fR\&\&. Value \fInone\fR\& means that no integer lists are considered as strings\&. \fIencoding_func()\fR\& is called with one integer of a list at a time; if it returns \fItrue\fR\& for every integer, the list is considered a string\&.
+.RE
+.LP
+.nf
+
+.B
+anno_from_term(Term) -> erl_parse_tree()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Term = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Assumes that \fITerm\fR\& is a term with the same structure as a \fIerl_parse\fR\& tree, but with terms, say \fIT\fR\&, where a \fIerl_parse\fR\& tree has collections of annotations\&. Returns a \fIerl_parse\fR\& tree where each term \fIT\fR\& is replaced by the value returned by \fB\fIerl_anno:from_term(T)\fR\&\fR\&\&. The term \fITerm\fR\& is traversed in a depth-first, left-to-right fashion\&.
+.RE
+.LP
+.nf
+
+.B
+anno_to_term(Abstr) -> term()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Abstr = \fBerl_parse_tree()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a term where each collection of annotations \fIAnno\fR\& of the nodes of the \fIerl_parse\fR\& tree \fIAbstr\fR\& is replaced by the term returned by \fB\fIerl_anno:to_term(Anno)\fR\&\fR\&\&. The \fIerl_parse\fR\& tree is traversed in a depth-first, left-to-right fashion\&.
+.RE
+.LP
+.nf
+
+.B
+fold_anno(Fun, Acc0, Abstr) -> Acc1
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Fun = fun((Anno, AccIn) -> AccOut)
+.br
+Anno = \fBerl_anno:anno()\fR\&
+.br
+Acc0 = Acc1 = AccIn = AccOut = term()
+.br
+Abstr = \fBerl_parse_tree()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Updates an accumulator by applying \fIFun\fR\& on each collection of annotations of the \fIerl_parse\fR\& tree \fIAbstr\fR\&\&. The first call to \fIFun\fR\& has \fIAccIn\fR\& as argument, the returned accumulator \fIAccOut\fR\& is passed to the next call, and so on\&. The final value of the accumulator is returned\&. The \fIerl_parse\fR\& tree is traversed in a depth-first, left-to-right fashion\&.
+.RE
+.LP
+.B
+format_error(ErrorDescriptor) -> Chars
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ErrorDescriptor = \fBerror_description()\fR\&
+.br
+Chars = [char() | Chars]
+.br
+.RE
+.RE
+.RS
+.LP
+Uses an \fIErrorDescriptor\fR\& and returns a string that describes the error\&. This function is usually called implicitly when an \fIErrorInfo\fR\& structure is processed (see section \fB Error Information\fR\&)\&.
+.RE
+.LP
+.nf
+
+.B
+map_anno(Fun, Abstr) -> NewAbstr
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Fun = fun((Anno) -> NewAnno)
+.br
+Anno = NewAnno = \fBerl_anno:anno()\fR\&
+.br
+Abstr = NewAbstr = \fBerl_parse_tree()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the \fIerl_parse\fR\& tree \fIAbstr\fR\& by applying \fIFun\fR\& on each collection of annotations of the nodes of the \fIerl_parse\fR\& tree\&. The \fIerl_parse\fR\& tree is traversed in a depth-first, left-to-right fashion\&.
+.RE
+.LP
+.nf
+
+.B
+mapfold_anno(Fun, Acc0, Abstr) -> {NewAbstr, Acc1}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Fun = fun((Anno, AccIn) -> {NewAnno, AccOut})
+.br
+Anno = NewAnno = \fBerl_anno:anno()\fR\&
+.br
+Acc0 = Acc1 = AccIn = AccOut = term()
+.br
+Abstr = NewAbstr = \fBerl_parse_tree()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Modifies the \fIerl_parse\fR\& tree \fIAbstr\fR\& by applying \fIFun\fR\& on each collection of annotations of the nodes of the \fIerl_parse\fR\& tree, while at the same time updating an accumulator\&. The first call to \fIFun\fR\& has \fIAccIn\fR\& as second argument, the returned accumulator \fIAccOut\fR\& is passed to the next call, and so on\&. The modified \fIerl_parse\fR\& tree and the final value of the accumulator are returned\&. The \fIerl_parse\fR\& tree is traversed in a depth-first, left-to-right fashion\&.
+.RE
+.LP
+.nf
+
+.B
+new_anno(Term) -> Abstr
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Term = term()
+.br
+Abstr = \fBerl_parse_tree()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Assumes that \fITerm\fR\& is a term with the same structure as a \fIerl_parse\fR\& tree, but with \fBlocations\fR\& where a \fIerl_parse\fR\& tree has collections of annotations\&. Returns a \fIerl_parse\fR\& tree where each location \fIL\fR\& is replaced by the value returned by \fB\fIerl_anno:new(L)\fR\&\fR\&\&. The term \fITerm\fR\& is traversed in a depth-first, left-to-right fashion\&.
+.RE
+.LP
+.nf
+
+.B
+normalise(AbsTerm) -> Data
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+AbsTerm = \fBabstract_expr()\fR\&
+.br
+Data = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Converts the abstract form \fIAbsTerm\fR\& of a term into a conventional Erlang data structure (that is, the term itself)\&. This function is the inverse of \fB\fIabstract/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+parse_exprs(Tokens) -> {ok, ExprList} | {error, ErrorInfo}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tokens = [\fBtoken()\fR\&]
+.br
+ExprList = [\fBabstract_expr()\fR\&]
+.br
+ErrorInfo = \fBerror_info()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Parses \fITokens\fR\& as if it was a list of expressions\&. Returns one of the following:
+.RS 2
+.TP 2
+.B
+\fI{ok, ExprList}\fR\&:
+The parsing was successful\&. \fIExprList\fR\& is a list of the abstract forms of the parsed expressions\&.
+.TP 2
+.B
+\fI{error, ErrorInfo}\fR\&:
+An error occurred\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+parse_form(Tokens) -> {ok, AbsForm} | {error, ErrorInfo}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tokens = [\fBtoken()\fR\&]
+.br
+AbsForm = \fBabstract_form()\fR\&
+.br
+ErrorInfo = \fBerror_info()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Parses \fITokens\fR\& as if it was a form\&. Returns one of the following:
+.RS 2
+.TP 2
+.B
+\fI{ok, AbsForm}\fR\&:
+The parsing was successful\&. \fIAbsForm\fR\& is the abstract form of the parsed form\&.
+.TP 2
+.B
+\fI{error, ErrorInfo}\fR\&:
+An error occurred\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+parse_term(Tokens) -> {ok, Term} | {error, ErrorInfo}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tokens = [\fBtoken()\fR\&]
+.br
+Term = term()
+.br
+ErrorInfo = \fBerror_info()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Parses \fITokens\fR\& as if it was a term\&. Returns one of the following:
+.RS 2
+.TP 2
+.B
+\fI{ok, Term}\fR\&:
+The parsing was successful\&. \fITerm\fR\& is the Erlang term corresponding to the token list\&.
+.TP 2
+.B
+\fI{error, ErrorInfo}\fR\&:
+An error occurred\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+tokens(AbsTerm) -> Tokens
+.br
+.fi
+.br
+.nf
+
+.B
+tokens(AbsTerm, MoreTokens) -> Tokens
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+AbsTerm = \fBabstract_expr()\fR\&
+.br
+MoreTokens = Tokens = [\fBtoken()\fR\&]
+.br
+.RE
+.RE
+.RS
+.LP
+Generates a list of tokens representing the abstract form \fIAbsTerm\fR\& of an expression\&. Optionally, \fIMoreTokens\fR\& is appended\&.
+.RE
+.SH "ERROR INFORMATION"
+
+.LP
+\fIErrorInfo\fR\& is the standard \fIErrorInfo\fR\& structure that is returned from all I/O modules\&. The format is as follows:
+.LP
+.nf
+
+{ErrorLine, Module, ErrorDescriptor}
+.fi
+.LP
+A string describing the error is obtained with the following call:
+.LP
+.nf
+
+Module:format_error(ErrorDescriptor)
+.fi
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerl_anno(3)\fR\&\fR\&, \fB\fIerl_scan(3)\fR\&\fR\&, \fB\fIio(3)\fR\&\fR\&, section \fBThe Abstract Format\fR\& in the ERTS User\&'s Guide

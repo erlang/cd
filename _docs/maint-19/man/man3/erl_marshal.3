@@ -1,0 +1,289 @@
+.TH erl_marshal 3 "erl_interface 3.9.3" "Ericsson AB" "C Library Functions"
+.SH NAME
+erl_marshal \- Encoding and decoding of Erlang terms.
+.SH DESCRIPTION
+.LP
+This module contains functions for encoding Erlang terms into a sequence of bytes, and for decoding Erlang terms from a sequence of bytes\&.
+.SH EXPORTS
+.LP
+.B
+int erl_compare_ext(bufp1, bufp2)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned char *bufp1,*bufp2;
+.br
+.RE
+.RE
+.RS
+.LP
+Compares two encoded terms\&.
+.RS 2
+.TP 2
+*
+\fIbufp1\fR\& is a buffer containing an encoded Erlang term term1\&.
+.LP
+.TP 2
+*
+\fIbufp2\fR\& is a buffer containing an encoded Erlang term term2\&.
+.LP
+.RE
+
+.LP
+Returns \fI0\fR\& if the terms are equal, \fI-1\fR\& if \fIterm1\fR\& < \fIterm2\fR\&, or \fI1\fR\& if \fIterm2\fR\& < \fIterm1\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_decode(bufp)
+.br
+.B
+ETERM *erl_decode_buf(bufpp)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned char *bufp;
+.br
+unsigned char **bufpp;
+.br
+.RE
+.RE
+.RS
+.LP
+\fIerl_decode()\fR\& and \fIerl_decode_buf()\fR\& decode the contents of a buffer and return the corresponding Erlang term\&. \fIerl_decode_buf()\fR\& provides a simple mechanism for dealing with several encoded terms stored consecutively in the buffer\&.
+.RS 2
+.TP 2
+*
+\fIbufp\fR\& is a pointer to a buffer containing one or more encoded Erlang terms\&.
+.LP
+.TP 2
+*
+\fIbufpp\fR\& is the address of a buffer pointer\&. The buffer contains one or more consecutively encoded Erlang terms\&. Following a successful call to \fIerl_decode_buf()\fR\&, \fIbufpp\fR\& is updated so that it points to the next encoded term\&.
+.LP
+.RE
+
+.LP
+\fIerl_decode()\fR\& returns an Erlang term corresponding to the contents of \fIbufp\fR\& on success, otherwise \fINULL\fR\&\&. \fIerl_decode_buf()\fR\& returns an Erlang term corresponding to the first of the consecutive terms in \fIbufpp\fR\& and moves \fIbufpp\fR\& forward to point to the next term in the buffer\&. On failure, each of the functions return \fINULL\fR\&\&.
+.RE
+.LP
+.B
+int erl_encode(term, bufp)
+.br
+.B
+int erl_encode_buf(term, bufpp)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *term;
+.br
+unsigned char *bufp;
+.br
+unsigned char **bufpp;
+.br
+.RE
+.RE
+.RS
+.LP
+\fIerl_encode()\fR\& and \fIerl_encode_buf()\fR\& encode Erlang terms into external format for storage or transmission\&. \fIerl_encode_buf()\fR\& provides a simple mechanism for encoding several terms consecutively in the same buffer\&.
+.RS 2
+.TP 2
+*
+\fIterm\fR\& is an Erlang term to be encoded\&.
+.LP
+.TP 2
+*
+\fIbufp\fR\& is a pointer to a buffer containing one or more encoded Erlang terms\&.
+.LP
+.TP 2
+*
+\fIbufpp\fR\& is a pointer to a pointer to a buffer containing one or more consecutively encoded Erlang terms\&. Following a successful call to \fIerl_encode_buf()\fR\&, \fIbufpp\fR\& is updated so that it points to the position for the next encoded term\&.
+.LP
+.RE
+
+.LP
+These functions return the number of bytes written to buffer on success, otherwise \fI0\fR\&\&.
+.LP
+Notice that no bounds checking is done on the buffer\&. It is the caller\&'s responsibility to ensure that the buffer is large enough to hold the encoded terms\&. You can either use a static buffer that is large enough to hold the terms you expect to need in your program, or use \fIerl_term_len()\fR\& to determine the exact requirements for a given term\&.
+.LP
+The following can help you estimate the buffer requirements for a term\&. Notice that this information is implementation-specific, and can change in future versions\&. If you are unsure, use \fIerl_term_len()\fR\&\&.
+.LP
+Erlang terms are encoded with a 1 byte tag that identifies the type of object, a 2- or 4-byte length field, and then the data itself\&. Specifically:
+.RS 2
+.TP 2
+.B
+\fITuples\fR\&:
+Need 5 bytes, plus the space for each element\&.
+.TP 2
+.B
+\fILists\fR\&:
+Need 5 bytes, plus the space for each element, and 1 more byte for the empty list at the end\&.
+.TP 2
+.B
+\fIStrings and atoms\fR\&:
+Need 3 bytes, plus 1 byte for each character (the terminating 0 is not encoded)\&. Really long strings (more than 64k characters) are encoded as lists\&. Atoms cannot contain more than 256 characters\&.
+.TP 2
+.B
+\fIIntegers\fR\&:
+Need 5 bytes\&.
+.TP 2
+.B
+\fICharacters\fR\&:
+(Integers < 256) need 2 bytes\&.
+.TP 2
+.B
+\fIFloating point numbers\fR\&:
+Need 32 bytes\&.
+.TP 2
+.B
+\fIPids\fR\&:
+Need 10 bytes, plus the space for the node name, which is an atom\&.
+.TP 2
+.B
+\fIPorts and Refs\fR\&:
+Need 6 bytes, plus the space for the node name, which is an atom\&.
+.RE
+.LP
+The total space required is the result calculated from the information above, plus 1 more byte for a version identifier\&.
+.RE
+.LP
+.B
+int erl_ext_size(bufp)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned char *bufp;
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the number of elements in an encoded term\&.
+.RE
+.LP
+.B
+unsigned char erl_ext_type(bufp)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned char *bufp;
+.br
+.RE
+.RE
+.RS
+.LP
+Identifies and returns the type of Erlang term encoded in a buffer\&. It skips a trailing \fImagic\fR\& identifier\&.
+.LP
+Returns \fI0\fR\& if the type cannot be determined or one of:
+.RS 2
+.TP 2
+*
+\fIERL_INTEGER\fR\&
+.LP
+.TP 2
+*
+\fIERL_ATOM\fR\&
+.LP
+.TP 2
+*
+\fIERL_PID\fR\& (Erlang process identifier) 
+.LP
+.TP 2
+*
+\fIERL_PORT\fR\&
+.LP
+.TP 2
+*
+\fIERL_REF\fR\& (Erlang reference) 
+.LP
+.TP 2
+*
+\fIERL_EMPTY_LIST\fR\&
+.LP
+.TP 2
+*
+\fIERL_LIST\fR\&
+.LP
+.TP 2
+*
+\fIERL_TUPLE\fR\&
+.LP
+.TP 2
+*
+\fIERL_FLOAT\fR\&
+.LP
+.TP 2
+*
+\fIERL_BINARY\fR\&
+.LP
+.TP 2
+*
+\fIERL_FUNCTION\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.B
+unsigned char *erl_peek_ext(bufp, pos)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned char *bufp;
+.br
+int pos;
+.br
+.RE
+.RE
+.RS
+.LP
+This function is used for stepping over one or more encoded terms in a buffer, to directly access later term\&.
+.RS 2
+.TP 2
+*
+\fIbufp\fR\& is a pointer to a buffer containing one or more encoded Erlang terms\&.
+.LP
+.TP 2
+*
+\fIpos\fR\& indicates how many terms to step over in the buffer\&.
+.LP
+.RE
+
+.LP
+Returns a pointer to a subterm that can be used in a later call to \fIerl_decode()\fR\& to retrieve the term at that position\&. If there is no term, or \fIpos\fR\& would exceed the size of the terms in the buffer, \fINULL\fR\& is returned\&.
+.RE
+.LP
+.B
+int erl_term_len(t)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *t;
+.br
+.RE
+.RE
+.RS
+.LP
+Determines the buffer space that would be needed by \fIt\fR\& if it were encoded into Erlang external format by \fIerl_encode()\fR\&\&.
+.LP
+Returns the size in bytes\&.
+.RE

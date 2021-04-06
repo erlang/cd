@@ -1,0 +1,886 @@
+.TH filename 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+filename \- Filename manipulation functions.
+.SH DESCRIPTION
+.LP
+This module provides functions for analyzing and manipulating filenames\&. These functions are designed so that the Erlang code can work on many different platforms with different filename formats\&. With filename is meant all strings that can be used to denote a file\&. The filename can be a short relative name like \fIfoo\&.erl\fR\&, a long absolute name including a drive designator, a directory name like \fID:\\usr/local\\bin\\erl/lib\\tools\\foo\&.erl\fR\&, or any variations in between\&.
+.LP
+In Windows, all functions return filenames with forward slashes only, even if the arguments contain backslashes\&. To normalize a filename by removing redundant directory separators, use \fB\fIjoin/1\fR\&\fR\&\&.
+.LP
+The module supports raw filenames in the way that if a binary is present, or the filename cannot be interpreted according to the return value of \fB\fIfile:native_name_encoding/0\fR\&\fR\&, a raw filename is also returned\&. For example, \fIjoin/1\fR\& provided with a path component that is a binary (and cannot be interpreted under the current native filename encoding) results in a raw filename that is returned (the join operation is performed of course)\&. For more information about raw filenames, see the \fB\fIfile\fR\&\fR\& module\&.
+.SH DATA TYPES
+.nf
+
+\fBbasedir_type()\fR\& = 
+.br
+    user_cache |
+.br
+    user_config |
+.br
+    user_data |
+.br
+    user_log |
+.br
+    site_config |
+.br
+    site_data
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+absname(Filename) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Converts a relative \fIFilename\fR\& and returns an absolute name\&. No attempt is made to create the shortest absolute name, as this can give incorrect results on file systems that allow links\&.
+.LP
+\fIUnix examples:\fR\&
+.LP
+.nf
+
+1> pwd()\&.
+"/usr/local"
+2> filename:absname("foo")\&.
+"/usr/local/foo"
+3> filename:absname("\&.\&./x")\&.
+"/usr/local/../x"
+4> filename:absname("/")\&.
+"/"
+.fi
+.LP
+\fIWindows examples:\fR\&
+.LP
+.nf
+
+1> pwd()\&.
+"D:/usr/local"
+2> filename:absname("foo")\&.
+"D:/usr/local/foo"
+3> filename:absname("\&.\&./x")\&.
+"D:/usr/local/../x"
+4> filename:absname("/")\&.
+"D:/"
+.fi
+.RE
+.LP
+.nf
+
+.B
+absname(Filename, Dir) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = Dir = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fB\fIabsname/1\fR\&\fR\&, except that the directory to which the filename is to be made relative is specified in argument \fIDir\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+absname_join(Dir, Filename) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Dir = Filename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Joins an absolute directory with a relative filename\&. Similar to \fB\fIjoin/2\fR\&\fR\&, but on platforms with tight restrictions on raw filename length and no support for symbolic links (read: VxWorks), leading parent directory components in \fIFilename\fR\& are matched against trailing directory components in \fIDir\fR\& so they can be removed from the result - minimizing its length\&.
+.RE
+.LP
+.nf
+
+.B
+basedir(Type, Application) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = \fBbasedir_type()\fR\&
+.br
+Application = string() | binary()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fB basedir(Type, Application, #{})\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+basedir(Type, Application, Opts) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = \fBbasedir_type()\fR\&
+.br
+Application = string() | binary()
+.br
+Opts = 
+.br
+    #{author => string() | binary(),
+.br
+      os => windows | darwin | linux,
+.br
+      version => string() | binary()}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a suitable path, or paths, for a given type\&. If \fIos\fR\& is not set in \fIOpts\fR\& the function will default to the native option, that is \fI\&'linux\&'\fR\&, \fI\&'darwin\&'\fR\& or \fI\&'windows\&'\fR\&, as understood by \fIos:type/0\fR\&\&. Anything not recognized as \fI\&'darwin\&'\fR\& or \fI\&'windows\&'\fR\& is interpreted as \fI\&'linux\&'\fR\&\&.
+.LP
+The options \fI\&'author\&'\fR\& and \fI\&'version\&'\fR\& are only used with \fI\&'windows\&'\fR\& option mode\&.
+.RS 2
+.TP 2
+*
+\fIuser_cache\fR\&
+.RS 2
+.LP
+The path location is intended for transient data files on a local machine\&.
+.RE
+.RS 2
+.LP
+On Linux: Respects the os environment variable \fIXDG_CACHE_HOME\fR\&\&.
+.RE
+.LP
+.nf
+
+1> filename:basedir(user_cache, "my_application", #{os=>linux})\&.
+"/home/otptest/.cache/my_application"
+.fi On Darwin: 
+.LP
+.nf
+
+1> filename:basedir(user_cache, "my_application", #{os=>darwin})\&.
+"/home/otptest/Library/Caches/my_application"
+.fi On Windows: 
+.LP
+.nf
+
+1> filename:basedir(user_cache, "My App")\&.
+"c:/Users/otptest/AppData/Local/My App/Cache"
+2> filename:basedir(user_cache, "My App")\&.
+"c:/Users/otptest/AppData/Local/My App/Cache"
+3> filename:basedir(user_cache, "My App", #{author=>"Erlang"})\&.
+"c:/Users/otptest/AppData/Local/Erlang/My App/Cache"
+4> filename:basedir(user_cache, "My App", #{version=>"1\&.2"})\&.
+"c:/Users/otptest/AppData/Local/My App/1.2/Cache"
+5> filename:basedir(user_cache, "My App", #{author=>"Erlang",version=>"1\&.2"})\&.
+"c:/Users/otptest/AppData/Local/Erlang/My App/1.2/Cache"
+.fi
+.LP
+.TP 2
+*
+\fIuser_config\fR\&
+.RS 2
+.LP
+The path location is intended for persistent configuration files\&.
+.RE
+.RS 2
+.LP
+On Linux: Respects the os environment variable \fIXDG_CONFIG_HOME\fR\&\&.
+.RE
+.LP
+.nf
+
+2> filename:basedir(user_config, "my_application", #{os=>linux})\&.
+"/home/otptest/.config/my_application"
+.fi On Darwin:
+.LP
+.nf
+
+2> filename:basedir(user_config, "my_application", #{os=>darwin})\&.
+"/home/otptest/Library/Application Support/my_application"
+.fi On Windows:
+.LP
+.nf
+
+1> filename:basedir(user_config, "My App")\&.
+"c:/Users/otptest/AppData/Roaming/My App"
+2> filename:basedir(user_config, "My App", #{author=>"Erlang", version=>"1\&.2"})\&.
+"c:/Users/otptest/AppData/Roaming/Erlang/My App/1.2"
+.fi
+.LP
+.TP 2
+*
+\fIuser_data\fR\&
+.RS 2
+.LP
+The path location is intended for persistent data files\&.
+.RE
+.RS 2
+.LP
+On Linux: Respects the os environment variable \fIXDG_DATA_HOME\fR\&\&.
+.RE
+.LP
+.nf
+
+3> filename:basedir(user_data, "my_application", #{os=>linux})\&.
+"/home/otptest/.local/my_application"
+.fi On Darwin:
+.LP
+.nf
+
+3> filename:basedir(user_data, "my_application", #{os=>darwin})\&.
+"/home/otptest/Library/Application Support/my_application"
+.fi On Windows:
+.LP
+.nf
+
+8> filename:basedir(user_data, "My App")\&.
+"c:/Users/otptest/AppData/Local/My App"
+9> filename:basedir(user_data, "My App",#{author=>"Erlang",version=>"1\&.2"})\&.
+"c:/Users/otptest/AppData/Local/Erlang/My App/1.2"
+.fi
+.LP
+.TP 2
+*
+\fIuser_log\fR\&
+.RS 2
+.LP
+The path location is intended for transient log files on a local machine\&.
+.RE
+.RS 2
+.LP
+On Linux: Respects the os environment variable \fIXDG_CACHE_HOME\fR\&\&.
+.RE
+.LP
+.nf
+
+4> filename:basedir(user_log, "my_application", #{os=>linux})\&.
+"/home/otptest/.cache/my_application/log"
+.fi On Darwin:
+.LP
+.nf
+
+4> filename:basedir(user_log, "my_application", #{os=>darwin})\&.
+"/home/otptest/Library/Caches/my_application"
+.fi On Windows:
+.LP
+.nf
+
+12> filename:basedir(user_log, "My App")\&.
+"c:/Users/otptest/AppData/Local/My App/Logs"
+13> filename:basedir(user_log, "My App",#{author=>"Erlang",version=>"1\&.2"})\&.
+"c:/Users/otptest/AppData/Local/Erlang/My App/1.2/Logs"
+.fi
+.LP
+.TP 2
+*
+\fIsite_config\fR\&
+.RS 2
+.LP
+On Linux: Respects the os environment variable \fIXDG_CONFIG_DIRS\fR\&\&.
+.RE
+.LP
+.nf
+
+5> filename:basedir(site_data, "my_application", #{os=>linux})\&.
+["/usr/local/share/my_application",
+ "/usr/share/my_application"]
+6> os:getenv("XDG_CONFIG_DIRS")\&.
+"/etc/xdg/xdg-ubuntu:/usr/share/upstart/xdg:/etc/xdg"
+7> filename:basedir(site_config, "my_application", #{os=>linux})\&.
+["/etc/xdg/xdg-ubuntu/my_application",
+ "/usr/share/upstart/xdg/my_application",
+ "/etc/xdg/my_application"]
+8> os:unsetenv("XDG_CONFIG_DIRS")\&.
+true
+9> filename:basedir(site_config, "my_application", #{os=>linux})\&.
+["/etc/xdg/my_application"]
+.fi On Darwin:
+.LP
+.nf
+
+5> filename:basedir(site_config, "my_application", #{os=>darwin})\&.
+["/Library/Application Support/my_application"]
+.fi
+.LP
+.TP 2
+*
+\fIsite_data\fR\&
+.RS 2
+.LP
+On Linux: Respects the os environment variable \fIXDG_DATA_DIRS\fR\&\&.
+.RE
+.LP
+.nf
+
+10> os:getenv("XDG_DATA_DIRS")\&.
+"/usr/share/ubuntu:/usr/share/gnome:/usr/local/share/:/usr/share/"
+11> filename:basedir(site_data, "my_application", #{os=>linux})\&.
+["/usr/share/ubuntu/my_application",
+ "/usr/share/gnome/my_application",
+ "/usr/local/share/my_application",
+ "/usr/share/my_application"]
+12> os:unsetenv("XDG_DATA_DIRS")\&.
+true
+13> filename:basedir(site_data, "my_application", #{os=>linux})\&.
+["/usr/local/share/my_application",
+ "/usr/share/my_application"]
+.fi On Darwin:
+.LP
+.nf
+
+5> filename:basedir(site_data, "my_application", #{os=>darwin})\&.
+["/Library/Application Support/my_application"]
+.fi
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+basename(Filename) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the last component of \fIFilename\fR\&, or \fIFilename\fR\& itself if it does not contain any directory separators\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+5> filename:basename("foo")\&.
+"foo"
+6> filename:basename("/usr/foo")\&.
+"foo"
+7> filename:basename("/")\&.
+[]
+.fi
+.RE
+.LP
+.nf
+
+.B
+basename(Filename, Ext) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = Ext = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the last component of \fIFilename\fR\& with extension \fIExt\fR\& stripped\&. This function is to be used to remove a (possible) specific extension\&. To remove an existing extension when you are unsure which one it is, use \fIrootname(basename(Filename))\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+8> filename:basename("~/src/kalle\&.erl", "\&.erl")\&.
+"kalle"
+9> filename:basename("~/src/kalle\&.beam", "\&.erl")\&.
+"kalle.beam"
+10> filename:basename("~/src/kalle\&.old\&.erl", "\&.erl")\&.
+"kalle.old"
+11> filename:rootname(filename:basename("~/src/kalle\&.erl"))\&.
+"kalle"
+12> filename:rootname(filename:basename("~/src/kalle\&.beam"))\&.
+"kalle"
+.fi
+.RE
+.LP
+.nf
+
+.B
+dirname(Filename) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the directory part of \fIFilename\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+13> filename:dirname("/usr/src/kalle\&.erl")\&.
+"/usr/src"
+14> filename:dirname("kalle\&.erl")\&.
+"."
+.fi
+.LP
+.nf
+
+5> filename:dirname("\\\\usr\\\\src/kalle\&.erl")\&. % Windows
+"/usr/src"
+.fi
+.RE
+.LP
+.nf
+
+.B
+extension(Filename) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the file extension of \fIFilename\fR\&, including the period\&. Returns an empty string if no extension exists\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+15> filename:extension("foo\&.erl")\&.
+".erl"
+16> filename:extension("beam\&.src/kalle")\&.
+[]
+.fi
+.RE
+.LP
+.nf
+
+.B
+find_src(Beam) ->
+.B
+            {SourceFile, Options} | {error, {ErrorReason, Module}}
+.br
+.fi
+.br
+.nf
+
+.B
+find_src(Beam, Rules) ->
+.B
+            {SourceFile, Options} | {error, {ErrorReason, Module}}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Beam = Module | Filename
+.br
+Filename = atom() | string()
+.br
+Rules = [{BinSuffix :: string(), SourceSuffix :: string()}]
+.br
+Module = module()
+.br
+SourceFile = string()
+.br
+Options = [Option]
+.br
+Option = 
+.br
+    {i, Path :: string()} |
+.br
+    {outdir, Path :: string()} |
+.br
+    {d, atom()}
+.br
+ErrorReason = non_existing | preloaded | interpreted
+.br
+.RE
+.RE
+.RS
+.LP
+Finds the source filename and compiler options for a module\&. The result can be fed to \fB\fIcompile:file/2\fR\&\fR\& to compile the file again\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+It is not recommended to use this function\&. If possible, use the \fB\fIbeam_lib(3)\fR\&\fR\& module to extract the abstract code format from the Beam file and compile that instead\&.
+
+.LP
+Argument \fIBeam\fR\&, which can be a string or an atom, specifies either the module name or the path to the source code, with or without extension \fI"\&.erl"\fR\&\&. In either case, the module must be known by the code server, that is, \fIcode:which(Module)\fR\& must succeed\&.
+.LP
+\fIRules\fR\& describes how the source directory can be found when the object code directory is known\&. It is a list of tuples \fI{BinSuffix, SourceSuffix}\fR\& and is interpreted as follows: if the end of the directory name where the object is located matches \fIBinSuffix\fR\&, then the source code directory has the same name, but with \fIBinSuffix\fR\& replaced by \fISourceSuffix\fR\&\&. \fIRules\fR\& defaults to:
+.LP
+.nf
+
+[{"", ""}, {"ebin", "src"}, {"ebin", "esrc"}]
+.fi
+.LP
+If the source file is found in the resulting directory, the function returns that location together with \fIOptions\fR\&\&. Otherwise the next rule is tried, and so on\&.
+.LP
+The function returns \fI{SourceFile, Options}\fR\& if it succeeds\&. \fISourceFile\fR\& is the absolute path to the source file without extension \fI"\&.erl"\fR\&\&. \fIOptions\fR\& includes the options that are necessary to recompile the file with \fIcompile:file/2\fR\&, but excludes options such as \fIreport\fR\& and \fIverbose\fR\&, which do not change the way code is generated\&. The paths in options \fI{outdir, Path}\fR\& and \fI{i, Path}\fR\& are guaranteed to be absolute\&.
+.RE
+.LP
+.nf
+
+.B
+flatten(Filename) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Converts a possibly deep list filename consisting of characters and atoms into the corresponding flat string filename\&.
+.RE
+.LP
+.nf
+
+.B
+join(Components) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Components = [\fBfile:name_all()\fR\&]
+.br
+.RE
+.RE
+.RS
+.LP
+Joins a list of filename \fIComponents\fR\& with directory separators\&. If one of the elements of \fIComponents\fR\& includes an absolute path, such as \fI"/xxx"\fR\&, the preceding elements, if any, are removed from the result\&.
+.LP
+The result is "normalized":
+.RS 2
+.TP 2
+*
+Redundant directory separators are removed\&.
+.LP
+.TP 2
+*
+In Windows, all directory separators are forward slashes and the drive letter is in lower case\&.
+.LP
+.RE
+
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+17> filename:join(["/usr", "local", "bin"])\&.
+"/usr/local/bin"
+18> filename:join(["a/b///c/"])\&.
+"a/b/c"
+.fi
+.LP
+.nf
+
+6> filename:join(["B:a\\\\b///c/"])\&. % Windows
+"b:a/b/c"
+.fi
+.RE
+.LP
+.nf
+
+.B
+join(Name1, Name2) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name1 = Name2 = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Joins two filename components with directory separators\&. Equivalent to \fIjoin([Name1, Name2])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+nativename(Path) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Converts \fIPath\fR\& to a form accepted by the command shell and native applications on the current platform\&. On Windows, forward slashes are converted to backward slashes\&. On all platforms, the name is normalized as done by \fB\fIjoin/1\fR\&\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+19> filename:nativename("/usr/local/bin/")\&. % Unix
+"/usr/local/bin"
+.fi
+.LP
+.nf
+
+7> filename:nativename("/usr/local/bin/")\&. % Windows
+"\\\\usr\\\\local\\\\bin"
+.fi
+.RE
+.LP
+.nf
+
+.B
+pathtype(Path) -> absolute | relative | volumerelative
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the path type, which is one of the following:
+.RS 2
+.TP 2
+.B
+\fIabsolute\fR\&:
+The path name refers to a specific file on a specific volume\&.
+.RS 2
+.LP
+Unix example: \fI/usr/local/bin\fR\&
+.RE
+.RS 2
+.LP
+Windows example: \fID:/usr/local/bin\fR\&
+.RE
+.TP 2
+.B
+\fIrelative\fR\&:
+The path name is relative to the current working directory on the current volume\&.
+.RS 2
+.LP
+Example: \fIfoo/bar, \&.\&./src\fR\&
+.RE
+.TP 2
+.B
+\fIvolumerelative\fR\&:
+The path name is relative to the current working directory on a specified volume, or it is a specific file on the current working volume\&.
+.RS 2
+.LP
+Windows example: \fID:bar\&.erl, /bar/foo\&.erl\fR\&
+.RE
+.RE
+.RE
+.LP
+.nf
+
+.B
+rootname(Filename) -> file:filename_all()
+.br
+.fi
+.br
+.nf
+
+.B
+rootname(Filename, Ext) -> file:filename_all()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = Ext = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Removes a filename extension\&. \fIrootname/2\fR\& works as \fIrootname/1\fR\&, except that the extension is removed only if it is \fIExt\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+20> filename:rootname("/beam\&.src/kalle")\&.
+/beam.src/kalle"
+21> filename:rootname("/beam\&.src/foo\&.erl")\&.
+"/beam.src/foo"
+22> filename:rootname("/beam\&.src/foo\&.erl", "\&.erl")\&.
+"/beam.src/foo"
+23> filename:rootname("/beam\&.src/foo\&.beam", "\&.erl")\&.
+"/beam.src/foo.beam"
+.fi
+.RE
+.LP
+.nf
+
+.B
+safe_relative_path(Filename) -> unsafe | SafeFilename
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = SafeFilename = \fBfile:name_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Sanitizes the relative path by eliminating "\&.\&." and "\&." components to protect against directory traversal attacks\&. Either returns the sanitized path name, or the atom \fIunsafe\fR\& if the path is unsafe\&. The path is considered unsafe in the following circumstances:
+.RS 2
+.TP 2
+*
+The path is not relative\&.
+.LP
+.TP 2
+*
+A "\&.\&." component would climb up above the root of the relative path\&.
+.LP
+.RE
+
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+1> filename:safe_relative_path("dir/sub_dir/\&.\&.")\&.
+"dir"
+2> filename:safe_relative_path("dir/\&.\&.")\&.
+[]
+3> filename:safe_relative_path("dir/\&.\&./\&.\&.")\&.
+unsafe
+4> filename:safe_relative_path("/abs/path")\&.
+unsafe
+.fi
+.RE
+.LP
+.nf
+
+.B
+split(Filename) -> Components
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name_all()\fR\&
+.br
+Components = [\fBfile:name_all()\fR\&]
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list whose elements are the path components of \fIFilename\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+24> filename:split("/usr/local/bin")\&.
+["/","usr","local","bin"]
+25> filename:split("foo/bar")\&.
+["foo","bar"]
+26> filename:split("a:\\\\msdev\\\\include")\&.
+["a:/","msdev","include"]
+.fi
+.RE

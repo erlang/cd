@@ -1,0 +1,112 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- Event Tracer (ET) Users Guide</title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/et-1.5.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>Event Tracer (ET)</strong><br><strong>User's Guide</strong><br><small>Version 1.5</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu">
+<li id="no" title="Introduction" expanded="false">Introduction<ul>
+<li><a href="et_intro.html">
+              Top of chapter
+            </a></li>
+<li title="Scope and Purpose"><a href="et_intro.html#idm5784736">Scope and Purpose</a></li>
+<li title="Prerequisites"><a href="et_intro.html#idm5787968">Prerequisites</a></li>
+<li title="About This Manual"><a href="et_intro.html#idm5791024">About This Manual</a></li>
+<li title="Where to Find More Information"><a href="et_intro.html#idm5575024">Where to Find More Information</a></li>
+</ul>
+</li>
+<li id="no" title="Tutorial" expanded="false">Tutorial<ul>
+<li><a href="et_tutorial.html">
+              Top of chapter
+            </a></li>
+<li title="Visualizing Message Sequence Charts"><a href="et_tutorial.html#idm5633104">Visualizing Message Sequence Charts</a></li>
+<li title="Four Modules"><a href="et_tutorial.html#idm5798736">Four Modules</a></li>
+<li title="The Event Tracer Interface"><a href="et_tutorial.html#idm5517456">The Event Tracer Interface</a></li>
+<li title="The Collector and Viewer"><a href="et_tutorial.html#idm5634784">The Collector and Viewer</a></li>
+<li title="The Selector"><a href="et_tutorial.html#idm5580368">The Selector</a></li>
+<li title="How To Put It Together"><a href="et_tutorial.html#idm5540048">How To Put It Together</a></li>
+</ul>
+</li>
+<li id="no" title="Description" expanded="false">Description<ul>
+<li><a href="et_desc.html">
+              Top of chapter
+            </a></li>
+<li title="Overview"><a href="et_desc.html#idp24349280">Overview</a></li>
+<li title="Filters and dictionary"><a href="et_desc.html#idp24266864">Filters and dictionary</a></li>
+<li title="Trace clients"><a href="et_desc.html#idp24270864">Trace clients</a></li>
+<li title="Global tracing"><a href="et_desc.html#idp24288512">Global tracing</a></li>
+<li title="Viewer window"><a href="et_desc.html#idp24305424">Viewer window</a></li>
+<li title="Configuration"><a href="et_desc.html#idp24594640">Configuration</a></li>
+<li title="Contents viewer window"><a href="et_desc.html#idp24598432">Contents viewer window</a></li>
+</ul>
+</li>
+<li id="no" title="Advanced examples" expanded="false">Advanced examples<ul>
+<li><a href="et_examples.html">
+              Top of chapter
+            </a></li>
+<li title="A simulated Mnesia transaction"><a href="et_examples.html#idp24630944">A simulated Mnesia transaction</a></li>
+<li title="Some convenient functions used in the Mnesia transaction
+    example"><a href="et_examples.html#idp24643984">Some convenient functions used in the Mnesia transaction
+    example</a></li>
+<li title="Erlang trace of a real Mnesia transaction"><a href="et_examples.html#idp24662752">Erlang trace of a real Mnesia transaction</a></li>
+<li title="Erlang trace of Megaco startup"><a href="et_examples.html#idp24677664">Erlang trace of Megaco startup</a></li>
+</ul>
+</li>
+</ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Event Tracer (ET) User's Guide</h1></center>
+<center><h4>Version 1.5</h4></center>
+<center><h4>June 15, 2018</h4></center>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 2002-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

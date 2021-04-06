@@ -1,0 +1,580 @@
+.TH file_sorter 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+file_sorter \- File sorter.
+.SH DESCRIPTION
+.LP
+This module contains functions for sorting terms on files, merging already sorted files, and checking files for sortedness\&. Chunks containing binary terms are read from a sequence of files, sorted internally in memory and written on temporary files, which are merged producing one sorted file as output\&. Merging is provided as an optimization; it is faster when the files are already sorted, but it always works to sort instead of merge\&.
+.LP
+On a file, a term is represented by a header and a binary\&. Two options define the format of terms on files:
+.RS 2
+.TP 2
+.B
+\fI{header, HeaderLength}\fR\&:
+\fIHeaderLength\fR\& determines the number of bytes preceding each binary and containing the length of the binary in bytes\&. Defaults to 4\&. The order of the header bytes is defined as follows: if \fIB\fR\& is a binary containing a header only, size \fISize\fR\& of the binary is calculated as \fI<<Size:HeaderLength/unit:8>> = B\fR\&\&.
+.TP 2
+.B
+\fI{format, Format}\fR\&:
+Option \fIFormat\fR\& determines the function that is applied to binaries to create the terms to be sorted\&. Defaults to \fIbinary_term\fR\&, which is equivalent to \fIfun binary_to_term/1\fR\&\&. Value \fIbinary\fR\& is equivalent to \fIfun(X) -> X end\fR\&, which means that the binaries are sorted as they are\&. This is the fastest format\&. If \fIFormat\fR\& is \fIterm\fR\&, \fIio:read/2\fR\& is called to read terms\&. In that case, only the default value of option \fIheader\fR\& is allowed\&.
+.RS 2
+.LP
+Option \fIformat\fR\& also determines what is written to the sorted output file: if \fIFormat\fR\& is \fIterm\fR\&, then \fIio:format/3\fR\& is called to write each term, otherwise the binary prefixed by a header is written\&. Notice that the binary written is the same binary that was read; the results of applying function \fIFormat\fR\& are thrown away when the terms have been sorted\&. Reading and writing terms using the \fIio\fR\& module is much slower than reading and writing binaries\&.
+.RE
+.RE
+.LP
+Other options are:
+.RS 2
+.TP 2
+.B
+\fI{order, Order}\fR\&:
+The default is to sort terms in ascending order, but that can be changed by value \fIdescending\fR\& or by specifying an ordering function \fIFun\fR\&\&. An ordering function is antisymmetric, transitive, and total\&. \fIFun(A, B)\fR\& is to return \fItrue\fR\& if \fIA\fR\& comes before \fIB\fR\& in the ordering, otherwise \fIfalse\fR\&\&. An example of a typical ordering function is less than or equal to, \fI=</2\fR\&\&. Using an ordering function slows down the sort considerably\&. Functions \fIkeysort\fR\&, \fIkeymerge\fR\& and \fIkeycheck\fR\& do not accept ordering functions\&.
+.TP 2
+.B
+\fI{unique, boolean()}\fR\&:
+When sorting or merging files, only the first of a sequence of terms that compare equal (\fI==\fR\&) is output if this option is set to \fItrue\fR\&\&. Defaults to \fIfalse\fR\&, which implies that all terms that compare equal are output\&. When checking files for sortedness, a check that no pair of consecutive terms compares equal is done if this option is set to \fItrue\fR\&\&.
+.TP 2
+.B
+\fI{tmpdir, TempDirectory}\fR\&:
+The directory where temporary files are put can be chosen explicitly\&. The default, implied by value \fI""\fR\&, is to put temporary files on the same directory as the sorted output file\&. If output is a function (see below), the directory returned by \fIfile:get_cwd()\fR\& is used instead\&. The names of temporary files are derived from the Erlang nodename (\fInode()\fR\&), the process identifier of the current Erlang emulator (\fIos:getpid()\fR\&), and a unique integer (\fIerlang:unique_integer([positive])\fR\&)\&. A typical name is \fIfs_mynode@myhost_1763_4711\&.17\fR\&, where \fI17\fR\& is a sequence number\&. Existing files are overwritten\&. Temporary files are deleted unless some uncaught \fIEXIT\fR\& signal occurs\&.
+.TP 2
+.B
+\fI{compressed, boolean()}\fR\&:
+Temporary files and the output file can be compressed\&. Defaults \fIfalse\fR\&, which implies that written files are not compressed\&. Regardless of the value of option \fIcompressed\fR\&, compressed files can always be read\&. Notice that reading and writing compressed files are significantly slower than reading and writing uncompressed files\&.
+.TP 2
+.B
+\fI{size, Size}\fR\&:
+By default about 512*1024 bytes read from files are sorted internally\&. This option is rarely needed\&.
+.TP 2
+.B
+\fI{no_files, NoFiles}\fR\&:
+By default 16 files are merged at a time\&. This option is rarely needed\&.
+.RE
+.LP
+As an alternative to sorting files, a function of one argument can be specified as input\&. When called with argument \fIread\fR\&, the function is assumed to return either of the following:
+.RS 2
+.TP 2
+*
+\fIend_of_input\fR\& or \fI{end_of_input, Value}}\fR\& when there is no more input (\fIValue\fR\& is explained below)\&.
+.LP
+.TP 2
+*
+\fI{Objects, Fun}\fR\&, where \fIObjects\fR\& is a list of binaries or terms depending on the format, and \fIFun\fR\& is a new input function\&.
+.LP
+.RE
+
+.LP
+Any other value is immediately returned as value of the current call to \fIsort\fR\& or \fIkeysort\fR\&\&. Each input function is called exactly once\&. If an error occurs, the last function is called with argument \fIclose\fR\&, the reply of which is ignored\&.
+.LP
+A function of one argument can be specified as output\&. The results of sorting or merging the input is collected in a non-empty sequence of variable length lists of binaries or terms depending on the format\&. The output function is called with one list at a time, and is assumed to return a new output function\&. Any other return value is immediately returned as value of the current call to the sort or merge function\&. Each output function is called exactly once\&. When some output function has been applied to all of the results or an error occurs, the last function is called with argument \fIclose\fR\&, and the reply is returned as value of the current call to the sort or merge function\&.
+.LP
+If a function is specified as input and the last input function returns \fI{end_of_input, Value}\fR\&, the function specified as output is called with argument \fI{value, Value}\fR\&\&. This makes it easy to initiate the sequence of output functions with a value calculated by the input functions\&.
+.LP
+As an example, consider sorting the terms on a disk log file\&. A function that reads chunks from the disk log and returns a list of binaries is used as input\&. The results are collected in a list of terms\&.
+.LP
+.nf
+
+sort(Log) ->
+    {ok, _} = disk_log:open([{name,Log}, {mode,read_only}]),
+    Input = input(Log, start),
+    Output = output([]),
+    Reply = file_sorter:sort(Input, Output, {format,term}),
+    ok = disk_log:close(Log),
+    Reply.
+
+input(Log, Cont) ->
+    fun(close) ->
+            ok;
+       (read) ->
+            case disk_log:chunk(Log, Cont) of
+                {error, Reason} ->
+                    {error, Reason};
+                {Cont2, Terms} ->
+                    {Terms, input(Log, Cont2)};
+                {Cont2, Terms, _Badbytes} ->
+                    {Terms, input(Log, Cont2)};
+                eof ->
+                    end_of_input
+            end
+    end.
+
+output(L) ->
+    fun(close) ->
+            lists:append(lists:reverse(L));
+       (Terms) ->
+            output([Terms | L])
+    end.
+.fi
+.LP
+For more examples of functions as input and output, see the end of the \fIfile_sorter\fR\& module; the \fIterm\fR\& format is implemented with functions\&.
+.LP
+The possible values of \fIReason\fR\& returned when an error occurs are:
+.RS 2
+.TP 2
+*
+\fIbad_object\fR\&, \fI{bad_object, FileName}\fR\& - Applying the format function failed for some binary, or the key(s) could not be extracted from some term\&.
+.LP
+.TP 2
+*
+\fI{bad_term, FileName}\fR\& - \fIio:read/2\fR\& failed to read some term\&.
+.LP
+.TP 2
+*
+\fI{file_error, FileName, file:posix()}\fR\& - For an explanation of \fIfile:posix()\fR\&, see \fB\fIfile(3)\fR\&\fR\&\&.
+.LP
+.TP 2
+*
+\fI{premature_eof, FileName}\fR\& - End-of-file was encountered inside some binary term\&.
+.LP
+.RE
+
+.SH DATA TYPES
+.nf
+
+\fBfile_name()\fR\& = \fBfile:name()\fR\&
+.br
+.fi
+.nf
+
+\fBfile_names()\fR\& = [\fBfile:name()\fR\&]
+.br
+.fi
+.nf
+
+\fBi_command()\fR\& = read | close
+.br
+.fi
+.nf
+
+\fBi_reply()\fR\& = 
+.br
+    end_of_input |
+.br
+    {end_of_input, \fBvalue()\fR\&} |
+.br
+    {[\fBobject()\fR\&], \fBinfun()\fR\&} |
+.br
+    \fBinput_reply()\fR\&
+.br
+.fi
+.nf
+
+\fBinfun()\fR\& = fun((\fBi_command()\fR\&) -> \fBi_reply()\fR\&)
+.br
+.fi
+.nf
+
+\fBinput()\fR\& = \fBfile_names()\fR\& | \fBinfun()\fR\&
+.br
+.fi
+.nf
+
+\fBinput_reply()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBo_command()\fR\& = {value, \fBvalue()\fR\&} | [\fBobject()\fR\&] | close
+.br
+.fi
+.nf
+
+\fBo_reply()\fR\& = \fBoutfun()\fR\& | \fBoutput_reply()\fR\&
+.br
+.fi
+.nf
+
+\fBobject()\fR\& = term() | binary()
+.br
+.fi
+.nf
+
+\fBoutfun()\fR\& = fun((\fBo_command()\fR\&) -> \fBo_reply()\fR\&)
+.br
+.fi
+.nf
+
+\fBoutput()\fR\& = \fBfile_name()\fR\& | \fBoutfun()\fR\&
+.br
+.fi
+.nf
+
+\fBoutput_reply()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBvalue()\fR\& = term()
+.br
+.fi
+.nf
+
+\fBoptions()\fR\& = [\fBoption()\fR\&] | \fBoption()\fR\&
+.br
+.fi
+.nf
+
+\fBoption()\fR\& = 
+.br
+    {compressed, boolean()} |
+.br
+    {header, \fBheader_length()\fR\&} |
+.br
+    {format, \fBformat()\fR\&} |
+.br
+    {no_files, \fBno_files()\fR\&} |
+.br
+    {order, \fBorder()\fR\&} |
+.br
+    {size, \fBsize()\fR\&} |
+.br
+    {tmpdir, \fBtmp_directory()\fR\&} |
+.br
+    {unique, boolean()}
+.br
+.fi
+.nf
+
+\fBformat()\fR\& = binary_term | term | binary | \fBformat_fun()\fR\&
+.br
+.fi
+.nf
+
+\fBformat_fun()\fR\& = fun((binary()) -> term())
+.br
+.fi
+.nf
+
+\fBheader_length()\fR\& = integer() >= 1
+.br
+.fi
+.nf
+
+\fBkey_pos()\fR\& = integer() >= 1 | [integer() >= 1]
+.br
+.fi
+.nf
+
+\fBno_files()\fR\& = integer() >= 1
+.br
+.fi
+.nf
+
+\fBorder()\fR\& = ascending | descending | \fBorder_fun()\fR\&
+.br
+.fi
+.nf
+
+\fBorder_fun()\fR\& = fun((term(), term()) -> boolean())
+.br
+.fi
+.nf
+
+\fBsize()\fR\& = integer() >= 0
+.br
+.fi
+.nf
+
+\fBtmp_directory()\fR\& = [] | \fBfile:name()\fR\&
+.br
+.fi
+.nf
+
+\fBreason()\fR\& = 
+.br
+    bad_object |
+.br
+    {bad_object, \fBfile_name()\fR\&} |
+.br
+    {bad_term, \fBfile_name()\fR\&} |
+.br
+    {file_error,
+.br
+     \fBfile_name()\fR\&,
+.br
+     \fBfile:posix()\fR\& | badarg | system_limit} |
+.br
+    {premature_eof, \fBfile_name()\fR\&}
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+check(FileName) -> Reply
+.br
+.fi
+.br
+.nf
+
+.B
+check(FileNames, Options) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FileNames = \fBfile_names()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Reply = {ok, [Result]} | {error, \fBreason()\fR\&}
+.br
+Result = {FileName, TermPosition, term()}
+.br
+FileName = \fBfile_name()\fR\&
+.br
+TermPosition = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+Checks files for sortedness\&. If a file is not sorted, the first out-of-order element is returned\&. The first term on a file has position 1\&.
+.LP
+\fIcheck(FileName)\fR\& is equivalent to \fIcheck([FileName], [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+keycheck(KeyPos, FileName) -> Reply
+.br
+.fi
+.br
+.nf
+
+.B
+keycheck(KeyPos, FileNames, Options) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyPos = \fBkey_pos()\fR\&
+.br
+FileNames = \fBfile_names()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Reply = {ok, [Result]} | {error, \fBreason()\fR\&}
+.br
+Result = {FileName, TermPosition, term()}
+.br
+FileName = \fBfile_name()\fR\&
+.br
+TermPosition = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+Checks files for sortedness\&. If a file is not sorted, the first out-of-order element is returned\&. The first term on a file has position 1\&.
+.LP
+\fIkeycheck(KeyPos, FileName)\fR\& is equivalent to \fIkeycheck(KeyPos, [FileName], [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+keymerge(KeyPos, FileNames, Output) -> Reply
+.br
+.fi
+.br
+.nf
+
+.B
+keymerge(KeyPos, FileNames, Output, Options) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyPos = \fBkey_pos()\fR\&
+.br
+FileNames = \fBfile_names()\fR\&
+.br
+Output = \fBoutput()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Reply = ok | {error, \fBreason()\fR\&} | \fBoutput_reply()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Merges tuples on files\&. Each input file is assumed to be sorted on key(s)\&.
+.LP
+\fIkeymerge(KeyPos, FileNames, Output)\fR\& is equivalent to \fIkeymerge(KeyPos, FileNames, Output, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+keysort(KeyPos, FileName) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyPos = \fBkey_pos()\fR\&
+.br
+FileName = \fBfile_name()\fR\&
+.br
+Reply = ok | {error, \fBreason()\fR\&} | \fBinput_reply()\fR\& | \fBoutput_reply()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Sorts tuples on files\&.
+.LP
+\fIkeysort(N, FileName)\fR\& is equivalent to \fIkeysort(N, [FileName], FileName)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+keysort(KeyPos, Input, Output) -> Reply
+.br
+.fi
+.br
+.nf
+
+.B
+keysort(KeyPos, Input, Output, Options) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+KeyPos = \fBkey_pos()\fR\&
+.br
+Input = \fBinput()\fR\&
+.br
+Output = \fBoutput()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Reply = ok | {error, \fBreason()\fR\&} | \fBinput_reply()\fR\& | \fBoutput_reply()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Sorts tuples on files\&. The sort is performed on the element(s) mentioned in \fIKeyPos\fR\&\&. If two tuples compare equal (\fI==\fR\&) on one element, the next element according to \fIKeyPos\fR\& is compared\&. The sort is stable\&.
+.LP
+\fIkeysort(N, Input, Output)\fR\& is equivalent to \fIkeysort(N, Input, Output, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+merge(FileNames, Output) -> Reply
+.br
+.fi
+.br
+.nf
+
+.B
+merge(FileNames, Output, Options) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FileNames = \fBfile_names()\fR\&
+.br
+Output = \fBoutput()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Reply = ok | {error, \fBreason()\fR\&} | \fBoutput_reply()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Merges terms on files\&. Each input file is assumed to be sorted\&.
+.LP
+\fImerge(FileNames, Output)\fR\& is equivalent to \fImerge(FileNames, Output, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sort(FileName) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FileName = \fBfile_name()\fR\&
+.br
+Reply = ok | {error, \fBreason()\fR\&} | \fBinput_reply()\fR\& | \fBoutput_reply()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Sorts terms on files\&.
+.LP
+\fIsort(FileName)\fR\& is equivalent to \fIsort([FileName], FileName)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sort(Input, Output) -> Reply
+.br
+.fi
+.br
+.nf
+
+.B
+sort(Input, Output, Options) -> Reply
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Input = \fBinput()\fR\&
+.br
+Output = \fBoutput()\fR\&
+.br
+Options = \fBoptions()\fR\&
+.br
+Reply = ok | {error, \fBreason()\fR\&} | \fBinput_reply()\fR\& | \fBoutput_reply()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Sorts terms on files\&.
+.LP
+\fIsort(Input, Output)\fR\& is equivalent to \fIsort(Input, Output, [])\fR\&\&.
+.RE

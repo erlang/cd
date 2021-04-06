@@ -1,0 +1,312 @@
+.TH filelib 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+filelib \- File utilities, such as wildcard matching of filenames.
+  
+.SH DESCRIPTION
+.LP
+This module contains utilities on a higher level than the \fB\fIfile\fR\&\fR\& module\&.
+.LP
+This module does not support "raw" filenames (that is, files whose names do not comply with the expected encoding)\&. Such files are ignored by the functions in this module\&.
+.LP
+For more information about raw filenames, see the \fB\fIfile\fR\&\fR\& module\&.
+.SH DATA TYPES
+.nf
+
+\fBfilename()\fR\& = \fBfile:name()\fR\&
+.br
+.fi
+.nf
+
+\fBdirname()\fR\& = \fBfilename()\fR\&
+.br
+.fi
+.nf
+
+\fBdirname_all()\fR\& = \fBfilename_all()\fR\&
+.br
+.fi
+.nf
+
+\fBfilename_all()\fR\& = \fBfile:name_all()\fR\&
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+ensure_dir(Name) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBfilename_all()\fR\& | \fBdirname_all()\fR\&
+.br
+Reason = \fBfile:posix()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Ensures that all parent directories for the specified file or directory name \fIName\fR\& exist, trying to create them if necessary\&.
+.LP
+Returns \fIok\fR\& if all parent directories already exist or can be created\&. Returns \fI{error, Reason}\fR\& if some parent directory does not exist and cannot be created\&.
+.RE
+.LP
+.nf
+
+.B
+file_size(Filename) -> integer() >= 0
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfilename_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the size of the specified file\&.
+.RE
+.LP
+.nf
+
+.B
+fold_files(Dir, RegExp, Recursive, Fun, AccIn) -> AccOut
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Dir = \fBdirname()\fR\&
+.br
+RegExp = string()
+.br
+Recursive = boolean()
+.br
+Fun = fun((F :: \fBfile:filename()\fR\&, AccIn) -> AccOut)
+.br
+AccIn = AccOut = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Folds function \fIFun\fR\& over all (regular) files \fIF\fR\& in directory \fIDir\fR\& that match the regular expression \fIRegExp\fR\& (for a description of the allowed regular expressions, see the \fB\fIre\fR\&\fR\& module)\&. If \fIRecursive\fR\& is \fItrue\fR\&, all subdirectories to \fIDir\fR\& are processed\&. The regular expression matching is only done on the filename without the directory part\&.
+.LP
+If Unicode filename translation is in effect and the file system is transparent, filenames that cannot be interpreted as Unicode can be encountered, in which case the \fIfun()\fR\& must be prepared to handle raw filenames (that is, binaries)\&. If the regular expression contains codepoints > 255, it does not match filenames that do not conform to the expected character encoding (that is, are not encoded in valid UTF-8)\&.
+.LP
+For more information about raw filenames, see the \fB\fIfile\fR\&\fR\& module\&.
+.RE
+.LP
+.nf
+
+.B
+is_dir(Name) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBfilename_all()\fR\& | \fBdirname_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fIName\fR\& refers to a directory, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_file(Name) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBfilename_all()\fR\& | \fBdirname_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fIName\fR\& refers to a file or a directory, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_regular(Name) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBfilename_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fIName\fR\& refers to a (regular) file, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+last_modified(Name) -> file:date_time() | 0
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBfilename_all()\fR\& | \fBdirname_all()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the date and time the specified file or directory was last modified, or \fI0\fR\& if the file does not exist\&.
+.RE
+.LP
+.nf
+
+.B
+wildcard(Wildcard) -> [file:filename()]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Wildcard = \fBfilename()\fR\& | \fBdirname()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all files that match Unix-style wildcard string \fIWildcard\fR\&\&.
+.LP
+The wildcard string looks like an ordinary filename, except that the following "wildcard characters" are interpreted in a special way:
+.RS 2
+.TP 2
+.B
+?:
+Matches one character\&.
+.TP 2
+.B
+*:
+Matches any number of characters up to the end of the filename, the next dot, or the next slash\&.
+.TP 2
+.B
+**:
+Two adjacent \fI*\fR\& used as a single pattern match all files and zero or more directories and subdirectories\&.
+.TP 2
+.B
+[Character1,Character2,\&.\&.\&.]:
+Matches any of the characters listed\&. Two characters separated by a hyphen match a range of characters\&. Example: \fI[A-Z]\fR\& matches any uppercase letter\&.
+.TP 2
+.B
+{Item,\&.\&.\&.}:
+Alternation\&. Matches one of the alternatives\&.
+.RE
+.LP
+Other characters represent themselves\&. Only filenames that have exactly the same character in the same position match\&. Matching is case-sensitive, for example, "a" does not match "A"\&.
+.LP
+Notice that multiple "*" characters are allowed (as in Unix wildcards, but opposed to Windows/DOS wildcards)\&.
+.LP
+\fIExamples:\fR\&
+.LP
+The following examples assume that the current directory is the top of an Erlang/OTP installation\&.
+.LP
+To find all \fI\&.beam\fR\& files in all applications, use the following line:
+.LP
+.nf
+
+filelib:wildcard("lib/*/ebin/*.beam").
+.fi
+.LP
+To find \fI\&.erl\fR\& or \fI\&.hrl\fR\& in all applications \fIsrc\fR\& directories, use either of the following lines:
+.LP
+.nf
+
+filelib:wildcard("lib/*/src/*.?rl")
+.fi
+.LP
+.nf
+
+filelib:wildcard("lib/*/src/*.{erl,hrl}")
+.fi
+.LP
+To find all \fI\&.hrl\fR\& files in \fIsrc\fR\& or \fIinclude\fR\& directories:
+.LP
+.nf
+
+filelib:wildcard("lib/*/{src,include}/*.hrl").
+.fi
+.LP
+To find all \fI\&.erl\fR\& or \fI\&.hrl\fR\& files in either \fIsrc\fR\& or \fIinclude\fR\& directories:
+.LP
+.nf
+
+filelib:wildcard("lib/*/{src,include}/*.{erl,hrl}")
+.fi
+.LP
+To find all \fI\&.erl\fR\& or \fI\&.hrl\fR\& files in any subdirectory:
+.LP
+.nf
+
+filelib:wildcard("lib/**/*.{erl,hrl}")
+.fi
+.RE
+.LP
+.nf
+
+.B
+wildcard(Wildcard, Cwd) -> [file:filename()]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Wildcard = \fBfilename()\fR\& | \fBdirname()\fR\&
+.br
+Cwd = \fBdirname()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fB\fIwildcard/1\fR\&\fR\&, except that \fICwd\fR\& is used instead of the working directory\&.
+.RE

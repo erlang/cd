@@ -1,0 +1,2229 @@
+.TH ssh 3 "ssh 4.10.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh \- Main API of the ssh application
+.SH DESCRIPTION
+.LP
+This is the interface module for the \fISSH\fR\& application\&. The Secure Shell (SSH) Protocol is a protocol for secure remote login and other secure network services over an insecure network\&. See ssh(6) for details of supported RFCs, versions, algorithms and unicode handling\&.
+.LP
+With the SSH application it is possible to start \fIclients\fR\&  and to start \fIdaemons\fR\&  (servers)\&.
+.LP
+Clients are started with connect/2, connect/3 or connect/4\&. They open an encrypted connection on top of TCP/IP\&. In that encrypted connection one or more channels could be opened with ssh_connection:session_channel/2,4\&.
+.LP
+Each channel is an isolated "pipe" between a client-side process and a server-side process\&. Those process pairs could handle for example file transfers (sftp) or remote command execution (shell, exec and/or cli)\&. If a custom shell is implemented, the user of the client could execute the special commands remotely\&. Note that the user is not necessarily a human but probably a system interfacing the SSH app\&.
+.LP
+A server-side subssystem (channel) server is requested by the client with ssh_connection:subsystem/4\&.
+.LP
+A server (daemon) is started with daemon/1, daemon/2 or daemon/3\&. Possible channel handlers (subsystems) are declared with the subsystem option when the daemon is started\&.
+.LP
+To just run a shell on a remote machine, there are functions that bundles the needed three steps needed into one: shell/1,2,3\&. Similarily, to just open an sftp (file transfer) connection to a remote machine, the simplest way is to use ssh_sftp:start_channel/1,2,3\&.
+.LP
+To write your own client channel handler, use the behaviour ssh_client_channel\&. For server channel handlers use ssh_server_channel behaviour (replaces ssh_daemon_channel)\&.
+.LP
+Both clients and daemons accepts options that controls the exact behaviour\&. Some options are common to both\&. The three sets are called Client Options, Daemon Options and Common Options\&.
+.LP
+The descriptions of the options uses the Erlang Type Language with explaining text\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The User\&'s Guide has examples and a Getting Started section\&.
+
+.SH "KEYS AND FILES"
+
+.LP
+A number of objects must be present for the SSH application to work\&. Those objects are per default stored in files\&. The default names, paths and file formats are the same as for OpenSSH\&. Keys could be generated with the \fIssh-keygen\fR\& program from OpenSSH\&. See the User\&'s Guide\&.
+.LP
+The paths could easily be changed by options: \fIuser_dir\fR\& and \fIsystem_dir\fR\&\&.
+.LP
+A completly different storage could be interfaced by writing call-back modules using the behaviours ssh_client_key_api and/or ssh_server_key_api\&. A callback module is installed with the option \fIkey_cb\fR\& to the client and/or the daemon\&.
+.SS "Daemons"
+
+.LP
+The keys are by default stored in files:
+.RS 2
+.TP 2
+*
+Mandatory: one or more \fIHost key(s)\fR\& , both private and public\&. Default is to store them in the directory \fI/etc/ssh\fR\& in the files 
+.RS 2
+.TP 2
+*
+\fIssh_host_dsa_key\fR\& and \fIssh_host_dsa_key\&.pub\fR\&
+.LP
+.TP 2
+*
+\fIssh_host_rsa_key\fR\& and \fIssh_host_rsa_key\&.pub\fR\&
+.LP
+.TP 2
+*
+\fIssh_host_ecdsa_key\fR\& and \fIssh_host_ecdsa_key\&.pub\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+The host keys directory could be changed with the option \fIsystem_dir\fR\&\&.
+.RE
+.LP
+.TP 2
+*
+Optional: one or more \fIUser\&'s public key\fR\&  in case of \fIpublickey\fR\& authorization\&. Default is to store them concatenated in the file \fI\&.ssh/authorized_keys\fR\& in the user\&'s home directory\&. 
+.RS 2
+.LP
+The user keys directory could be changed with the option \fIuser_dir\fR\&\&.
+.RE
+.LP
+.RE
+
+.SS "Clients"
+
+.LP
+The keys and some other data are by default stored in files in the directory \fI\&.ssh\fR\& in the user\&'s home directory\&.
+.LP
+The directory could be changed with the option \fIuser_dir\fR\&\&.
+.RS 2
+.TP 2
+*
+Optional: a list of \fIHost public key(s)\fR\&  for previously connected hosts\&. This list is handled by the SSH application without any need of user assistance\&. The default is to store them in the file \fIknown_hosts\fR\&\&. 
+.RS 2
+.LP
+The host_accepting_client_options() are associated with this list of keys\&.
+.RE
+.LP
+.TP 2
+*
+Optional: one or more \fIUser\&'s private key(s)\fR\&  in case of \fIpublickey\fR\& authorization\&. The default files are 
+.RS 2
+.TP 2
+*
+\fIid_dsa\fR\& and \fIid_dsa\&.pub\fR\&
+.LP
+.TP 2
+*
+\fIid_rsa\fR\& and \fIid_rsa\&.pub\fR\&
+.LP
+.TP 2
+*
+\fIid_ecdsa\fR\& and \fIid_ecdsa\&.pub\fR\&
+.LP
+.RE
+
+.LP
+.RE
+
+.SH DATA TYPES
+.SS Client Options
+.nf
+
+\fBclient_options()\fR\& = [client_option()]
+.br
+.fi
+.nf
+
+\fBclient_option()\fR\& = 
+.br
+    ssh_file:pubkey_passphrase_client_options() |
+.br
+    host_accepting_client_options() |
+.br
+    authentication_client_options() |
+.br
+    diffie_hellman_group_exchange_client_option() |
+.br
+    connect_timeout_client_option() |
+.br
+    recv_ext_info_client_option() |
+.br
+    opaque_client_options() |
+.br
+    gen_tcp:connect_option() |
+.br
+    common_option()
+.br
+.fi
+.RS
+.LP
+Options for clients\&. The individual options are further explained below or by following the hyperlinks\&.
+.LP
+Note that not every gen_tcp:connect_option() is accepted\&. See set_sock_opts/2 for a list of prohibited options\&.
+.LP
+Also note that setting a gen_tcp:connect_option() could change the socket in a way that impacts the ssh client\&'s behaviour negatively\&. You use it on your own risk\&.
+.RE
+.nf
+
+\fBhost_accepting_client_options()\fR\& = 
+.br
+    {silently_accept_hosts, accept_hosts()} |
+.br
+    {user_interaction, boolean()} |
+.br
+    {save_accepted_host, boolean()} |
+.br
+    {quiet_mode, boolean()}
+.br
+.fi
+.nf
+
+\fBaccept_hosts()\fR\& = 
+.br
+    boolean() |
+.br
+    accept_callback() |
+.br
+    {HashAlgoSpec :: fp_digest_alg(), accept_callback()}
+.br
+.fi
+.nf
+
+\fBfp_digest_alg()\fR\& = md5 | crypto:sha1() | crypto:sha2()
+.br
+.fi
+.nf
+
+\fBaccept_callback()\fR\& = 
+.br
+    fun((PeerName :: string(), fingerprint()) -> boolean()) |
+.br
+    fun((PeerName :: string(),
+.br
+         Port :: inet:port_number(),
+.br
+         fingerprint()) ->
+.br
+            boolean())
+.br
+.fi
+.nf
+
+\fBfingerprint()\fR\& = string() | [string()]
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+\fIsilently_accept_hosts\fR\&:
+This option guides the \fIconnect\fR\& function on how to act when the connected server presents a Host Key that the client has not seen before\&. The default is to ask the user with a question on stdio of whether to accept or reject the new Host Key\&. See the option \fIuser_dir\fR\& for specifying the path to the file \fIknown_hosts\fR\& where previously accepted Host Keys are recorded\&. See also the option key_cb for the general way to handle keys\&.
+.RS 2
+.LP
+The option can be given in three different forms as seen above:
+.RE
+.RS 2
+.TP 2
+*
+The value is a \fIboolean()\fR\&\&. The value \fItrue\fR\& will make the client accept any unknown Host Key without any user interaction\&. The value \fIfalse\fR\& preserves the default behaviour of asking the user on stdio\&. 
+.LP
+.TP 2
+*
+An \fIaccept_callback()\fR\& will be called and the boolean return value \fItrue\fR\& will make the client accept the Host Key\&. A return value of \fIfalse\fR\& will make the client to reject the Host Key and as a result the connection will be closed\&. The arguments to the fun are: 
+.RS 2
+.TP 2
+*
+\fIPeerName\fR\& - a string with the name or address of the remote host\&.
+.LP
+.TP 2
+*
+\fIFingerPrint\fR\& - the fingerprint of the Host Key as public_key:ssh_hostkey_fingerprint/1 calculates it\&. 
+.LP
+.RE
+
+.LP
+.TP 2
+*
+A tuple \fI{HashAlgoSpec, accept_callback}\fR\&\&. The \fIHashAlgoSpec\fR\& specifies which hash algorithm shall be used to calculate the fingerprint used in the call of the \fIaccept_callback()\fR\&\&. The \fIHashALgoSpec\fR\& is either an atom or a list of atoms as the first argument in public_key:ssh_hostkey_fingerprint/2\&. If it is a list of hash algorithm names, the \fIFingerPrint\fR\& argument in the \fIaccept_callback()\fR\& will be a list of fingerprints in the same order as the corresponding name in the \fIHashAlgoSpec\fR\& list\&. 
+.LP
+.RE
+
+.TP 2
+.B
+\fIuser_interaction\fR\&:
+If \fIfalse\fR\&, disables the client to connect to the server if any user interaction is needed, such as accepting the server to be added to the \fIknown_hosts\fR\& file, or supplying a password\&.
+.RS 2
+.LP
+Even if user interaction is allowed it can be suppressed by other options, such as \fIsilently_accept_hosts\fR\& and \fIpassword\fR\&\&. However, those options are not always desirable to use from a security point of view\&.
+.RE
+.RS 2
+.LP
+Defaults to \fItrue\fR\&\&.
+.RE
+.TP 2
+.B
+\fIsave_accepted_host\fR\&:
+If \fItrue\fR\&, the client saves an accepted host key to avoid the accept question the next time the same host is connected\&. If the option \fIkey_cb\fR\& is not present, the key is saved in the file "known_hosts"\&. See option \fIuser_dir\fR\& for the location of that file\&.
+.RS 2
+.LP
+If \fIfalse\fR\&, the key is not saved and the key will still be unknown at the next access of the same host\&.
+.RE
+.RS 2
+.LP
+Defaults to \fItrue\fR\&
+.RE
+.TP 2
+.B
+\fIquiet_mode\fR\&:
+If \fItrue\fR\&, the client does not print anything on authorization\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&
+.RE
+.RE
+.RE
+.nf
+
+\fBauthentication_client_options()\fR\& = 
+.br
+    {user, string()} | {password, string()}
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+\fIuser\fR\&:
+Provides the username\&. If this option is not given, \fIssh\fR\& reads from the environment (\fILOGNAME\fR\& or \fIUSER\fR\& on UNIX, \fIUSERNAME\fR\& on Windows)\&.
+.TP 2
+.B
+\fIpassword\fR\&:
+Provides a password for password authentication\&. If this option is not given, the user is asked for a password, if the password authentication method is attempted\&.
+.RE
+.RE
+.nf
+
+\fBdiffie_hellman_group_exchange_client_option()\fR\& = 
+.br
+    {dh_gex_limits,
+.br
+     {Min :: integer() >= 1,
+.br
+      I :: integer() >= 1,
+.br
+      Max :: integer() >= 1}}
+.br
+.fi
+.RS
+.LP
+Sets the three diffie-hellman-group-exchange parameters that guides the connected server in choosing a group\&. See RFC 4419 for the details\&. The default value is \fI{1024, 6144, 8192}\fR\&\&.
+.RE
+.nf
+
+\fBconnect_timeout_client_option()\fR\& = {connect_timeout, timeout()}
+.br
+.fi
+.RS
+.LP
+Sets a timeout on the transport layer connect time\&. For \fIgen_tcp\fR\& the time is in milli-seconds and the default value is \fIinfinity\fR\&\&.
+.LP
+See the parameter \fITimeout\fR\& in connect/4 for a timeout of the negotiation phase\&.
+.RE
+.nf
+
+\fBrecv_ext_info_client_option()\fR\& = {recv_ext_info, boolean()}
+.br
+.fi
+.RS
+.LP
+Make the client tell the server that the client accepts extension negotiation, that is, include \fIext-info-c\fR\& in the kexinit message sent\&. See RFC 8308 for details and ssh(6) for a list of currently implemented extensions\&.
+.LP
+Default value is \fItrue\fR\& which is compatible with other implementations not supporting ext-info\&.
+.RE
+.SS Daemon Options (Server Options)
+.nf
+
+\fBdaemon_options()\fR\& = [daemon_option()]
+.br
+.fi
+.nf
+
+\fBdaemon_option()\fR\& = 
+.br
+    subsystem_daemon_option() |
+.br
+    shell_daemon_option() |
+.br
+    exec_daemon_option() |
+.br
+    ssh_cli_daemon_option() |
+.br
+    tcpip_tunnel_out_daemon_option() |
+.br
+    tcpip_tunnel_in_daemon_option() |
+.br
+    authentication_daemon_options() |
+.br
+    diffie_hellman_group_exchange_daemon_option() |
+.br
+    negotiation_timeout_daemon_option() |
+.br
+    hello_timeout_daemon_option() |
+.br
+    hardening_daemon_options() |
+.br
+    callbacks_daemon_options() |
+.br
+    send_ext_info_daemon_option() |
+.br
+    opaque_daemon_options() |
+.br
+    gen_tcp:listen_option() |
+.br
+    common_option()
+.br
+.fi
+.RS
+.LP
+Options for daemons\&. The individual options are further explained below or by following the hyperlinks\&.
+.LP
+Note that not every gen_tcp:listen_option() is accepted\&. See set_sock_opts/2 for a list of prohibited options\&.
+.LP
+Also note that setting a gen_tcp:listen_option() could change the socket in a way that impacts the ssh deamon\&'s behaviour negatively\&. You use it on your own risk\&.
+.RE
+.nf
+
+\fBsubsystem_daemon_option()\fR\& = {subsystems, subsystem_specs()}
+.br
+.fi
+.nf
+
+\fBsubsystem_specs()\fR\& = [subsystem_spec()]
+.br
+.fi
+.nf
+
+\fBsubsystem_spec()\fR\& = {Name :: string(), mod_args()}
+.br
+.fi
+.RS
+.LP
+Defines a subsystem in the daemon\&.
+.LP
+The \fIsubsystem_name\fR\& is the name that a client requests to start with for example ssh_connection:subsystem/4\&.
+.LP
+The \fIchannel_callback\fR\& is the module that implements the ssh_server_channel (replaces ssh_daemon_channel) behaviour in the daemon\&. See the section Creating a Subsystem in the User\&'s Guide for more information and an example\&.
+.LP
+If the subsystems option is not present, the value of \fIssh_sftpd:subsystem_spec([])\fR\& is used\&. This enables the sftp subsystem by default\&. The option can be set to the empty list if you do not want the daemon to run any subsystems\&.
+.RE
+.nf
+
+\fBshell_daemon_option()\fR\& = {shell, shell_spec()}
+.br
+.fi
+.nf
+
+\fBshell_spec()\fR\& = mod_fun_args() | shell_fun() | disabled
+.br
+.fi
+.nf
+
+\fBshell_fun()\fR\& = \&'shell_fun/1\&'() | \&'shell_fun/2\&'()
+.br
+.fi
+.nf
+
+\fB\&'shell_fun/1\&'()\fR\& = fun((User :: string()) -> pid())
+.br
+.fi
+.nf
+
+\fB\&'shell_fun/2\&'()\fR\& = 
+.br
+    fun((User :: string(), PeerAddr :: inet:ip_address()) -> pid())
+.br
+.fi
+.RS
+.LP
+Defines the read-eval-print loop used in a daemon when a shell is requested by the client\&. The default is to use the Erlang shell: \fI{shell, start, []}\fR\& 
+.LP
+See the option \fIexec-option\fR\& for a description of how the daemon executes shell-requests and exec-requests depending on the shell- and exec-options\&.
+.RE
+.nf
+
+\fBexec_daemon_option()\fR\& = {exec, exec_spec()}
+.br
+.fi
+.nf
+
+\fBexec_spec()\fR\& = 
+.br
+    {direct, exec_fun()} | disabled | deprecated_exec_opt()
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fBexec_fun()\fR\& = \&'exec_fun/1\&'() | \&'exec_fun/2\&'() | \&'exec_fun/3\&'()
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fB\&'exec_fun/1\&'()\fR\& = fun((Cmd :: string()) -> exec_result())
+.br
+.fi
+.nf
+
+\fB\&'exec_fun/2\&'()\fR\& = 
+.br
+    fun((Cmd :: string(), User :: string()) -> exec_result())
+.br
+.fi
+.nf
+
+\fB\&'exec_fun/3\&'()\fR\& = 
+.br
+    fun((Cmd :: string(),
+.br
+         User :: string(),
+.br
+         ClientAddr :: ip_port()) ->
+.br
+            exec_result())
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fBexec_result()\fR\& = 
+.br
+    {ok, Result :: term()} | {error, Reason :: term()}
+.br
+.fi
+.RS
+.LP
+This option changes how the daemon executes exec-requests from clients\&. The term in the return value is formatted to a string if it is a non-string type\&. No trailing newline is added in the ok-case\&.
+.LP
+See the User\&'s Guide section on One-Time Execution for examples\&.
+.LP
+Error texts are returned on channel-type 1 which usually is piped to \fIstderr\fR\& on e\&.g Linux systems\&. Texts from a successful execution are returned on channel-type 0 and will in similar manner be piped to \fIstdout\fR\&\&. The exit-status code is set to 0 for success and 255 for errors\&. The exact results presented on the client side depends on the client and the client\&'s operating system\&.
+.LP
+In case of the \fI{direct, exec_fun()}\fR\& variant or no exec-option at all, all reads from \fIstandard_input\fR\& will be from the received data-events of type 0\&. Those are sent by the client\&. Similarily all writes to \fIstandard_output\fR\& will be sent as data-events to the client\&. An OS shell client like the command \&'ssh\&' will usally use stdin and stdout for the user interface\&.
+.LP
+The option cooperates with the daemon-option \fIshell\fR\& in the following way:
+.RS 2
+.TP 2
+.B
+1\&. If neither the \fIexec-option\fR\& nor the \fIshell-option\fR\& is present::
+The default Erlang evaluator is used both for exec and shell requests\&. The result is returned to the client\&.
+.TP 2
+.B
+2\&. If the \fIexec_spec\fR\&\&'s value is \fIdisabled\fR\& (the \fIshell-option\fR\& may or may not be present)::
+No exec-requests are executed but shell-requests are not affected, they follow the \fIshell_spec\fR\&\&'s value\&.
+.TP 2
+.B
+3\&. If the \fIexec-option\fR\& is present and the \fIexec_spec\fR\& value =/= \fIdisabled\fR\& (the \fIshell-option\fR\& may or may not be present)::
+The \fIexec_spec\fR\& \fIfun()\fR\& is called with the same number of parameters as the arity of the fun, and the result is returned to the client\&. Shell-requests are not affected, they follow the \fIshell_spec\fR\&\&'s value\&.
+.TP 2
+.B
+4\&. If the \fIexec-option\fR\& is absent, and the \fIshell-option\fR\& is present with the default Erlang shell as the \fIshell_spec\fR\&\&'s value::
+The default Erlang evaluator is used both for exec and shell requests\&. The result is returned to the client\&.
+.TP 2
+.B
+5\&. If the \fIexec-option\fR\& is absent, and the \fIshell-option\fR\& is present with a value that is neither the default Erlang shell nor the value \fIdisabled\fR\&::
+The exec-request is not evaluated and an error message is returned to the client\&. Shell-requests are executed according to the value of the \fIshell_spec\fR\&\&.
+.TP 2
+.B
+6\&. If the \fIexec-option\fR\& is absent, and the \fIshell_spec\fR\&\&'s value is \fIdisabled\fR\&::
+Exec requests are executed by the default shell, but shell-requests are not executed\&.
+.RE
+.LP
+If a custom CLI is installed (see the option \fIssh_cli\fR\&) the rules above are replaced by thoose implied by the custom CLI\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The \fIexec-option\fR\& has existed for a long time but has not previously been documented\&. The old definition and behaviour are retained but obey the rules 1-6 above if conflicting\&. The old and undocumented style should not be used in new programs\&.
+
+.RE
+.nf
+
+\fBdeprecated_exec_opt()\fR\& = function() | mod_fun_args()
+.br
+.fi
+.RS
+.LP
+Old-style exec specification that are kept for compatibility, but should not be used in new programs
+.RE
+.nf
+
+\fBssh_cli_daemon_option()\fR\& = {ssh_cli, mod_args() | no_cli}
+.br
+.fi
+.RS
+.LP
+Provides your own CLI implementation in a daemon\&.
+.LP
+It is a channel callback module that implements a shell and command execution\&. The shell\&'s read-eval-print loop can be customized, using the option \fIshell\fR\&\&. This means less work than implementing an own CLI channel\&. If \fIssh_cli\fR\& is set to \fIno_cli\fR\&, the CLI channels like \fIshell\fR\& and \fIexec\fR\& are disabled and only subsystem channels are allowed\&.
+.RE
+.nf
+
+\fBauthentication_daemon_options()\fR\& = 
+.br
+    ssh_file:system_dir_daemon_option() |
+.br
+    {auth_method_kb_interactive_data, prompt_texts()} |
+.br
+    {user_passwords, [{UserName :: string(), Pwd :: string()}]} |
+.br
+    {pk_check_user, boolean()} |
+.br
+    {password, string()} |
+.br
+    {pwdfun, pwdfun_2() | pwdfun_4()}
+.br
+.fi
+.nf
+
+\fBprompt_texts()\fR\& = 
+.br
+    kb_int_tuple() | kb_int_fun_3() | kb_int_fun_4()
+.br
+.fi
+.nf
+
+\fBkb_int_tuple()\fR\& = 
+.br
+    {Name :: string(),
+.br
+     Instruction :: string(),
+.br
+     Prompt :: string(),
+.br
+     Echo :: boolean()}
+.br
+.fi
+.nf
+
+\fBkb_int_fun_3()\fR\& = 
+.br
+    fun((Peer :: ip_port(), User :: string(), Service :: string()) ->
+.br
+            kb_int_tuple())
+.br
+.fi
+.nf
+
+\fBkb_int_fun_4()\fR\& = 
+.br
+    fun((Peer :: ip_port(),
+.br
+         User :: string(),
+.br
+         Service :: string(),
+.br
+         State :: any()) ->
+.br
+            kb_int_tuple())
+.br
+.fi
+.nf
+
+\fBpwdfun_2()\fR\& = 
+.br
+    fun((User :: string(), Password :: string() | pubkey) ->
+.br
+            boolean())
+.br
+.fi
+.nf
+
+\fBpwdfun_4()\fR\& = 
+.br
+    fun((User :: string(),
+.br
+         Password :: string() | pubkey,
+.br
+         PeerAddress :: ip_port(),
+.br
+         State :: any()) ->
+.br
+            boolean() |
+.br
+            disconnect |
+.br
+            {boolean(), NewState :: any()})
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+\fIauth_method_kb_interactive_data\fR\&:
+Sets the text strings that the daemon sends to the client for presentation to the user when using \fIkeyboard-interactive\fR\& authentication\&.
+.RS 2
+.LP
+If the fun/3 or fun/4 is used, it is called when the actual authentication occurs and may therefore return dynamic data like time, remote ip etc\&.
+.RE
+.RS 2
+.LP
+The parameter \fIEcho\fR\& guides the client about need to hide the password\&.
+.RE
+.RS 2
+.LP
+The default value is: \fI{auth_method_kb_interactive_data, {"SSH server", "Enter password for \\""++User++"\\"", "password: ", false}>\fR\& 
+.RE
+.TP 2
+.B
+\fIuser_passwords\fR\&:
+Provides passwords for password authentication\&. The passwords are used when someone tries to connect to the server and public key user-authentication fails\&. The option provides a list of valid usernames and the corresponding passwords\&.
+.TP 2
+.B
+\fIpk_check_user\fR\&:
+Enables checking of the client\&'s user name in the server when doing public key authentication\&. It is disabled by default\&.
+.RS 2
+.LP
+The term "user" is used differently in OpenSSH and SSH in Erlang/OTP: see more in the User\&'s Guide\&.
+.RE
+.RS 2
+.LP
+If the option is enabled, and no \fIpwdfun\fR\& is present, the user name must present in the user_passwords for the check to succeed but the value of the password is not checked\&.
+.RE
+.RS 2
+.LP
+In case of a \fIpwdfun\fR\& checking the user, the atom \fIpubkey\fR\& is put in the password argument\&.
+.RE
+.TP 2
+.B
+\fIpassword\fR\&:
+Provides a global password that authenticates any user\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Intended to facilitate testing\&.
+.LP
+From a security perspective this option makes the server very vulnerable\&.
+
+.TP 2
+.B
+\fIpwdfun\fR\& with \fIpwdfun_4()\fR\&:
+Provides a function for password validation\&. This could used for calling an external system or handeling passwords stored as hash values\&.
+.RS 2
+.LP
+This fun can also be used to make delays in authentication tries for example by calling timer:sleep/1\&.
+.RE
+.RS 2
+.LP
+To facilitate for instance counting of failed tries, the \fIState\fR\& variable could be used\&. This state is per connection only\&. The first time the pwdfun is called for a connection, the \fIState\fR\& variable has the value \fIundefined\fR\&\&.
+.RE
+.RS 2
+.LP
+The fun should return:
+.RE
+.RS 2
+.TP 2
+*
+\fItrue\fR\& if the user and password is valid
+.LP
+.TP 2
+*
+\fIfalse\fR\& if the user or password is invalid
+.LP
+.TP 2
+*
+\fIdisconnect\fR\& if a SSH_MSG_DISCONNECT message should be sent immediately\&. It will be followed by a close of the underlying tcp connection\&.
+.LP
+.TP 2
+*
+\fI{true, NewState:any()}\fR\& if the user and password is valid
+.LP
+.TP 2
+*
+\fI{false, NewState:any()}\fR\& if the user or password is invalid
+.LP
+.RE
+
+.RS 2
+.LP
+A third usage is to block login attempts from a missbehaving peer\&. The \fIState\fR\& described above can be used for this\&. The return value \fIdisconnect\fR\& is useful for this\&.
+.RE
+.RS 2
+.LP
+In case of the \fIpk_check_user\fR\& is set, the atom \fIpubkey\fR\& is put in the password argument when validating a public key login\&. The pwdfun is then responsible to check that the user name is valid\&.
+.RE
+.TP 2
+.B
+\fIpwdfun\fR\& with \fIpwdfun_2()\fR\&:
+Provides a function for password validation\&. This function is called with user and password as strings, and returns:
+.RS 2
+.TP 2
+*
+\fItrue\fR\& if the user and password is valid
+.LP
+.TP 2
+*
+\fIfalse\fR\& if the user or password is invalid
+.LP
+.RE
+
+.RS 2
+.LP
+In case of the \fIpk_check_user\fR\& is set, the atom \fIpubkey\fR\& is put in the password argument when validating a public key login\&. The pwdfun is then responsible to check that the user name is valid\&.
+.RE
+.RS 2
+.LP
+This variant is kept for compatibility\&.
+.RE
+.RE
+.RE
+.nf
+
+\fBdiffie_hellman_group_exchange_daemon_option()\fR\& = 
+.br
+    {dh_gex_groups,
+.br
+     [explicit_group()] |
+.br
+     explicit_group_file() |
+.br
+     ssh_moduli_file()} |
+.br
+    {dh_gex_limits, {Min :: integer() >= 1, Max :: integer() >= 1}}
+.br
+.fi
+.nf
+
+\fBexplicit_group()\fR\& = 
+.br
+    {Size :: integer() >= 1,
+.br
+     G :: integer() >= 1,
+.br
+     P :: integer() >= 1}
+.br
+.fi
+.nf
+
+\fBexplicit_group_file()\fR\& = {file, string()}
+.br
+.fi
+.nf
+
+\fBssh_moduli_file()\fR\& = {ssh_moduli_file, string()}
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+\fIdh_gex_groups\fR\&:
+Defines the groups the server may choose among when diffie-hellman-group-exchange is negotiated\&. See RFC 4419 for details\&. The three variants of this option are:
+.RS 2
+.TP 2
+.B
+\fI{Size=integer(),G=integer(),P=integer()}\fR\&:
+The groups are given explicitly in this list\&. There may be several elements with the same \fISize\fR\&\&. In such a case, the server will choose one randomly in the negotiated Size\&. 
+.TP 2
+.B
+\fI{file,filename()}\fR\&:
+The file must have one or more three-tuples \fI{Size=integer(),G=integer(),P=integer()}\fR\& terminated by a dot\&. The file is read when the daemon starts\&. 
+.TP 2
+.B
+\fI{ssh_moduli_file,filename()}\fR\&:
+The file must be in ssh-keygen moduli file format\&. The file is read when the daemon starts\&. 
+.RE
+.RS 2
+.LP
+The default list is fetched from the public_key application\&.
+.RE
+.TP 2
+.B
+\fIdh_gex_limits\fR\&:
+Limits what a client can ask for in diffie-hellman-group-exchange\&. The limits will be \fI{MaxUsed = min(MaxClient,Max), MinUsed = max(MinClient,Min)}\fR\& where \fIMaxClient\fR\& and \fIMinClient\fR\& are the values proposed by a connecting client\&.
+.RS 2
+.LP
+The default value is \fI{0,infinity}\fR\&\&.
+.RE
+.RS 2
+.LP
+If \fIMaxUsed < MinUsed\fR\& in a key exchange, it will fail with a disconnect\&.
+.RE
+.RS 2
+.LP
+See RFC 4419 for the function of the Max and Min values\&.
+.RE
+.RE
+.RE
+.nf
+
+\fBhello_timeout_daemon_option()\fR\& = {hello_timeout, timeout()}
+.br
+.fi
+.RS
+.LP
+Maximum time in milliseconds for the first part of the ssh session setup, the hello message exchange\&. Defaults to 30000 ms (30 seconds)\&. If the client fails to send the first message within this time, the connection is closed\&.
+.RE
+.nf
+
+\fBnegotiation_timeout_daemon_option()\fR\& = 
+.br
+    {negotiation_timeout, timeout()}
+.br
+.fi
+.RS
+.LP
+Maximum time in milliseconds for the authentication negotiation\&. Defaults to 120000 ms (2 minutes)\&. If the client fails to log in within this time, the connection is closed\&.
+.RE
+.nf
+
+\fBhardening_daemon_options()\fR\& = 
+.br
+    {max_sessions, integer() >= 1} |
+.br
+    {max_channels, integer() >= 1} |
+.br
+    {parallel_login, boolean()} |
+.br
+    {minimal_remote_max_packet_size, integer() >= 1}
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+\fImax_sessions\fR\&:
+The maximum number of simultaneous sessions that are accepted at any time for this daemon\&. This includes sessions that are being authorized\&. Thus, if set to \fIN\fR\&, and \fIN\fR\& clients have connected but not started the login process, connection attempt \fIN+1\fR\& is aborted\&. If \fIN\fR\& connections are authenticated and still logged in, no more logins are accepted until one of the existing ones log out\&.
+.RS 2
+.LP
+The counter is per listening port\&. Thus, if two daemons are started, one with \fI{max_sessions,N}\fR\& and the other with \fI{max_sessions,M}\fR\&, in total \fIN+M\fR\& connections are accepted for the whole \fIssh\fR\& application\&.
+.RE
+.RS 2
+.LP
+Notice that if \fIparallel_login\fR\& is \fIfalse\fR\&, only one client at a time can be in the authentication phase\&.
+.RE
+.RS 2
+.LP
+By default, this option is not set\&. This means that the number is not limited\&.
+.RE
+.TP 2
+.B
+\fImax_channels\fR\&:
+The maximum number of channels with active remote subsystem that are accepted for each connection to this daemon
+.RS 2
+.LP
+By default, this option is not set\&. This means that the number is not limited\&.
+.RE
+.TP 2
+.B
+\fIparallel_login\fR\&:
+If set to false (the default value), only one login is handled at a time\&. If set to true, an unlimited number of login attempts are allowed simultaneously\&.
+.RS 2
+.LP
+If the \fImax_sessions\fR\& option is set to \fIN\fR\& and \fIparallel_login\fR\& is set to \fItrue\fR\&, the maximum number of simultaneous login attempts at any time is limited to \fIN-K\fR\&, where \fIK\fR\& is the number of authenticated connections present at this daemon\&.
+.RE
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Do not enable \fIparallel_logins\fR\& without protecting the server by other means, for example, by the \fImax_sessions\fR\& option or a firewall configuration\&. If set to \fItrue\fR\&, there is no protection against DOS attacks\&.
+
+.TP 2
+.B
+\fIminimal_remote_max_packet_size\fR\&:
+The least maximum packet size that the daemon will accept in channel open requests from the client\&. The default value is 0\&.
+.RE
+.RE
+.nf
+
+\fBcallbacks_daemon_options()\fR\& = 
+.br
+    {failfun,
+.br
+     fun((User :: string(),
+.br
+          PeerAddress :: inet:ip_address(),
+.br
+          Reason :: term()) ->
+.br
+             term())} |
+.br
+    {connectfun,
+.br
+     fun((User :: string(),
+.br
+          PeerAddress :: inet:ip_address(),
+.br
+          Method :: string()) ->
+.br
+             term())}
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+\fIconnectfun\fR\&:
+Provides a fun to implement your own logging when a user authenticates to the server\&.
+.TP 2
+.B
+\fIfailfun\fR\&:
+Provides a fun to implement your own logging when a user fails to authenticate\&.
+.RE
+.RE
+.nf
+
+\fBsend_ext_info_daemon_option()\fR\& = {send_ext_info, boolean()}
+.br
+.fi
+.RS
+.LP
+Make the server (daemon) tell the client that the server accepts extension negotiation, that is, include \fIext-info-s\fR\& in the kexinit message sent\&. See RFC 8308 for details and ssh(6) for a list of currently implemented extensions\&.
+.LP
+Default value is \fItrue\fR\& which is compatible with other implementations not supporting ext-info\&.
+.RE
+.nf
+
+\fBtcpip_tunnel_in_daemon_option()\fR\& = {tcpip_tunnel_in, boolean()}
+.br
+.fi
+.RS
+.LP
+Enables (\fItrue\fR\&) or disables (\fIfalse\fR\&) the possibility to tunnel a TCP/IP connection in to a server\&. Disabled per default\&.
+.RE
+.nf
+
+\fBtcpip_tunnel_out_daemon_option()\fR\& = 
+.br
+    {tcpip_tunnel_out, boolean()}
+.br
+.fi
+.RS
+.LP
+Enables (\fItrue\fR\&) or disables (\fIfalse\fR\&) the possibility to tunnel a TCP/IP connection out of a server\&. Disabled per default\&.
+.RE
+.SS Options common to clients and daemons
+.nf
+
+\fBcommon_options()\fR\& = [common_option()]
+.br
+.fi
+.nf
+
+\fBcommon_option()\fR\& = 
+.br
+    ssh_file:user_dir_common_option() |
+.br
+    profile_common_option() |
+.br
+    max_idle_time_common_option() |
+.br
+    key_cb_common_option() |
+.br
+    disconnectfun_common_option() |
+.br
+    unexpectedfun_common_option() |
+.br
+    ssh_msg_debug_fun_common_option() |
+.br
+    rekey_limit_common_option() |
+.br
+    id_string_common_option() |
+.br
+    pref_public_key_algs_common_option() |
+.br
+    preferred_algorithms_common_option() |
+.br
+    modify_algorithms_common_option() |
+.br
+    auth_methods_common_option() |
+.br
+    inet_common_option() |
+.br
+    fd_common_option()
+.br
+.fi
+.RS
+.LP
+The options above can be used both in clients and in daemons (servers)\&. They are further explained below\&.
+.RE
+.nf
+
+\fBprofile_common_option()\fR\& = {profile, atom()}
+.br
+.fi
+.RS
+.LP
+Used together with \fIip-address\fR\& and \fIport\fR\& to uniquely identify a ssh daemon\&. This can be useful in a virtualized environment, where there can be more that one server that has the same \fIip-address\fR\& and \fIport\fR\&\&. If this property is not explicitly set, it is assumed that the the \fIip-address\fR\& and \fIport\fR\& uniquely identifies the SSH daemon\&.
+.RE
+.nf
+
+\fBmax_idle_time_common_option()\fR\& = {idle_time, timeout()}
+.br
+.fi
+.RS
+.LP
+Sets a time-out on a connection when no channels are open\&. Defaults to \fIinfinity\fR\&\&. The unit is milliseconds\&.
+.LP
+The timeout is not active until channels are started, so it does not limit the time from the connection creation to the first channel opening\&.
+.RE
+.nf
+
+\fBrekey_limit_common_option()\fR\& = 
+.br
+    {rekey_limit,
+.br
+     Bytes ::
+.br
+         limit_bytes() |
+.br
+         {Minutes :: limit_time(), Bytes :: limit_bytes()}}
+.br
+.fi
+.nf
+
+\fBlimit_bytes()\fR\& = integer() >= 0 | infinity
+.br
+.fi
+.nf
+
+\fBlimit_time()\fR\& = integer() >= 1 | infinity
+.br
+.fi
+.RS
+.LP
+Sets the limit when rekeying is to be initiated\&. Both the max time and max amount of data could be configured:
+.RS 2
+.TP 2
+*
+\fI{Minutes, Bytes}\fR\& initiate rekeying when any of the limits are reached\&.
+.LP
+.TP 2
+*
+\fIBytes\fR\& initiate rekeying when \fIBytes\fR\& number of bytes are transferred, or at latest after one hour\&.
+.LP
+.RE
+
+.LP
+When a rekeying is done, both the timer and the byte counter are restarted\&. Defaults to one hour and one GByte\&.
+.LP
+If \fIMinutes\fR\& is set to \fIinfinity\fR\&, no rekeying will ever occur due to that max time has passed\&. Setting \fIBytes\fR\& to \fIinfinity\fR\& will inhibit rekeying after a certain amount of data has been transferred\&. If the option value is set to \fI{infinity, infinity}\fR\&, no rekeying will be initiated\&. Note that rekeying initiated by the peer will still be performed\&.
+.RE
+.nf
+
+\fBkey_cb_common_option()\fR\& = 
+.br
+    {key_cb,
+.br
+     Module :: atom() | {Module :: atom(), Opts :: [term()]}}
+.br
+.fi
+.RS
+.LP
+Module implementing the behaviour ssh_client_key_api and/or ssh_server_key_api\&. Can be used to customize the handling of public keys\&. If callback options are provided along with the module name, they are made available to the callback module via the options passed to it under the key \&'key_cb_private\&'\&.
+.LP
+The \fIOpts\fR\& defaults to \fI[]\fR\& when only the \fIModule\fR\& is specified\&.
+.LP
+The default value of this option is \fI{ssh_file, []}\fR\&\&. See also the manpage of ssh_file\&.
+.LP
+A call to the call-back function \fIF\fR\& will be
+.LP
+.nf
+
+	  Module:F(..., [{key_cb_private,Opts}|UserOptions])
+	
+.fi
+.LP
+where \fI\&.\&.\&.\fR\& are arguments to \fIF\fR\& as in ssh_client_key_api and/or ssh_server_key_api\&. The \fIUserOptions\fR\& are the options given to ssh:connect, ssh:shell or ssh:daemon\&.
+.RE
+.nf
+
+\fBpref_public_key_algs_common_option()\fR\& = 
+.br
+    {pref_public_key_algs, [pubkey_alg()]}
+.br
+.fi
+.RS
+.LP
+List of user (client) public key algorithms to try to use\&.
+.LP
+The default value is the \fIpublic_key\fR\& entry in the list returned by ssh:default_algorithms/0\&.
+.LP
+If there is no public key of a specified type available, the corresponding entry is ignored\&. Note that the available set is dependent on the underlying cryptolib and current user\&'s public keys\&.
+.LP
+See also the option \fIuser_dir\fR\& for specifying the path to the user\&'s keys\&.
+.RE
+.nf
+
+\fBdisconnectfun_common_option()\fR\& = 
+.br
+    {disconnectfun, fun((Reason :: term()) -> void | any())}
+.br
+.fi
+.RS
+.LP
+Provides a fun to implement your own logging or other handling at disconnects\&.
+.RE
+.nf
+
+\fBunexpectedfun_common_option()\fR\& = 
+.br
+    {unexpectedfun,
+.br
+     fun((Message :: term(), {Host :: term(), Port :: term()}) ->
+.br
+             report | skip)}
+.br
+.fi
+.RS
+.LP
+Provides a fun to implement your own logging or other action when an unexpected message arrives\&. If the fun returns \fIreport\fR\& the usual info report is issued but if \fIskip\fR\& is returned no report is generated\&.
+.RE
+.nf
+
+\fBssh_msg_debug_fun_common_option()\fR\& = 
+.br
+    {ssh_msg_debug_fun,
+.br
+     fun((ssh:connection_ref(),
+.br
+          AlwaysDisplay :: boolean(),
+.br
+          Msg :: binary(),
+.br
+          LanguageTag :: binary()) ->
+.br
+             any())}
+.br
+.fi
+.RS
+.LP
+Provide a fun to implement your own logging of the SSH message SSH_MSG_DEBUG\&. The last three parameters are from the message, see RFC 4253, section 11\&.3\&. The \fIconnection_ref()\fR\& is the reference to the connection on which the message arrived\&. The return value from the fun is not checked\&.
+.LP
+The default behaviour is ignore the message\&. To get a printout for each message with \fIAlwaysDisplay = true\fR\&, use for example \fI{ssh_msg_debug_fun, fun(_,true,M,_)-> io:format("DEBUG: ~p~n", [M]) end}\fR\&
+.RE
+.nf
+
+\fBid_string_common_option()\fR\& = 
+.br
+    {id_string,
+.br
+     string() |
+.br
+     random |
+.br
+     {random, Nmin :: integer() >= 1, Nmax :: integer() >= 1}}
+.br
+.fi
+.RS
+.LP
+The string the daemon will present to a connecting peer initially\&. The default value is "Erlang/VSN" where VSN is the ssh application version number\&.
+.LP
+The value \fIrandom\fR\& will cause a random string to be created at each connection attempt\&. This is to make it a bit more difficult for a malicious peer to find the ssh software brand and version\&.
+.LP
+The value \fI{random, Nmin, Nmax}\fR\& will make a random string with at least \fINmin\fR\& characters and at most \fINmax\fR\& characters\&.
+.RE
+.nf
+
+\fBpreferred_algorithms_common_option()\fR\& = 
+.br
+    {preferred_algorithms, algs_list()}
+.br
+.fi
+.nf
+
+\fBalgs_list()\fR\& = [alg_entry()]
+.br
+.fi
+.nf
+
+\fBalg_entry()\fR\& = 
+.br
+    {kex, [kex_alg()]} |
+.br
+    {public_key, [pubkey_alg()]} |
+.br
+    {cipher, double_algs(cipher_alg())} |
+.br
+    {mac, double_algs(mac_alg())} |
+.br
+    {compression, double_algs(compression_alg())}
+.br
+.fi
+.nf
+
+\fBkex_alg()\fR\& = 
+.br
+    \&'diffie-hellman-group-exchange-sha1\&' |
+.br
+    \&'diffie-hellman-group-exchange-sha256\&' |
+.br
+    \&'diffie-hellman-group1-sha1\&' | \&'diffie-hellman-group14-sha1\&' |
+.br
+    \&'diffie-hellman-group14-sha256\&' |
+.br
+    \&'diffie-hellman-group16-sha512\&' |
+.br
+    \&'diffie-hellman-group18-sha512\&' | \&'curve25519-sha256\&' |
+.br
+    \&'curve25519-sha256@libssh\&.org\&' | \&'curve448-sha512\&' |
+.br
+    \&'ecdh-sha2-nistp256\&' | \&'ecdh-sha2-nistp384\&' |
+.br
+    \&'ecdh-sha2-nistp521\&'
+.br
+.fi
+.nf
+
+\fBpubkey_alg()\fR\& = 
+.br
+    \&'ecdsa-sha2-nistp256\&' | \&'ecdsa-sha2-nistp384\&' |
+.br
+    \&'ecdsa-sha2-nistp521\&' | \&'ssh-ed25519\&' | \&'ssh-ed448\&' |
+.br
+    \&'rsa-sha2-256\&' | \&'rsa-sha2-512\&' | \&'ssh-dss\&' | \&'ssh-rsa\&'
+.br
+.fi
+.nf
+
+\fBcipher_alg()\fR\& = 
+.br
+    \&'3des-cbc\&' | \&'AEAD_AES_128_GCM\&' | \&'AEAD_AES_256_GCM\&' |
+.br
+    \&'aes128-cbc\&' | \&'aes128-ctr\&' | \&'aes128-gcm@openssh\&.com\&' |
+.br
+    \&'aes192-ctr\&' | \&'aes192-cbc\&' | \&'aes256-cbc\&' | \&'aes256-ctr\&' |
+.br
+    \&'aes256-gcm@openssh\&.com\&' | \&'chacha20-poly1305@openssh\&.com\&'
+.br
+.fi
+.nf
+
+\fBmac_alg()\fR\& = 
+.br
+    \&'AEAD_AES_128_GCM\&' | \&'AEAD_AES_256_GCM\&' | \&'hmac-sha1\&' |
+.br
+    \&'hmac-sha1-etm@openssh\&.com\&' | \&'hmac-sha1-96\&' |
+.br
+    \&'hmac-sha2-256\&' | \&'hmac-sha2-512\&' |
+.br
+    \&'hmac-sha2-256-etm@openssh\&.com\&' |
+.br
+    \&'hmac-sha2-512-etm@openssh\&.com\&'
+.br
+.fi
+.nf
+
+\fBcompression_alg()\fR\& = none | zlib | \&'zlib@openssh\&.com\&'
+.br
+.fi
+.nf
+
+\fBdouble_algs(AlgType)\fR\& = 
+.br
+    [{client2server, [AlgType]} | {server2client, [AlgType]}] |
+.br
+    [AlgType]
+.br
+.fi
+.RS
+.LP
+List of algorithms to use in the algorithm negotiation\&. The default \fIalgs_list()\fR\& can be obtained from default_algorithms/0\&.
+.LP
+If an alg_entry() is missing in the algs_list(), the default value is used for that entry\&.
+.LP
+Here is an example of this option:
+.LP
+.nf
+
+	  {preferred_algorithms, 
+	  [{public_key,['ssh-rsa','ssh-dss']},
+	  {cipher,[{client2server,['aes128-ctr']},
+          {server2client,['aes128-cbc','3des-cbc']}]},
+	  {mac,['hmac-sha2-256','hmac-sha1']},
+	  {compression,[none,zlib]}
+	  ]
+	  }
+	
+.fi
+.LP
+The example specifies different algorithms in the two directions (client2server and server2client), for cipher but specifies the same algorithms for mac and compression in both directions\&. The kex (key exchange) is implicit but public_key is set explicitly\&.
+.LP
+For background and more examples see the User\&'s Guide\&.
+.LP
+If an algorithm name occurs more than once in a list, the behaviour is undefined\&. The tags in the property lists are also assumed to occur at most one time\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+Changing the values can make a connection less secure\&. Do not change unless you know exactly what you are doing\&. If you do not understand the values then you are not supposed to change them\&.
+
+.RE
+.nf
+
+\fBmodify_algorithms_common_option()\fR\& = 
+.br
+    {modify_algorithms, modify_algs_list()}
+.br
+.fi
+.nf
+
+\fBmodify_algs_list()\fR\& = 
+.br
+    [{append, algs_list()} |
+.br
+     {prepend, algs_list()} |
+.br
+     {rm, algs_list()}]
+.br
+.fi
+.RS
+.LP
+Modifies the list of algorithms to use in the algorithm negotiation\&. The modifications are applied after the option \fIpreferred_algorithms\fR\& (if existing) is applied\&.
+.LP
+The algoritm for modifications works like this:
+.RS 2
+.TP 2
+*
+Input is the \fImodify_algs_list()\fR\& and a set of algorithms \fIA\fR\& obtained from the \fIpreferred_algorithms\fR\& option if existing, or else from the ssh:default_algorithms/0\&.
+.LP
+.TP 2
+*
+The head of the \fImodify_algs_list()\fR\& modifies \fIA\fR\& giving the result \fIA\&'\fR\&\&.
+.RS 2
+.LP
+The possible modifications are:
+.RE
+.RS 2
+.TP 2
+*
+Append or prepend supported but not enabled algorithm(s) to the list of algorithms\&. If the wanted algorithms already are in \fIA\fR\& they will first be removed and then appended or prepended,
+.LP
+.TP 2
+*
+Remove (rm) one or more algorithms from \fIA\fR\&\&.
+.LP
+.RE
+
+.LP
+.TP 2
+*
+Repeat the modification step with the tail of \fImodify_algs_list()\fR\& and the resulting \fIA\&'\fR\&\&.
+.LP
+.RE
+
+.LP
+If an unsupported algorithm is in the \fImodify_algs_list()\fR\&, it will be silently ignored
+.LP
+If there are more than one modify_algorithms options, the result is undefined\&.
+.LP
+Here is an example of this option:
+.LP
+.nf
+
+	  {modify_algorithms, 
+	  [{prepend, [{kex, ['diffie-hellman-group1-sha1']}],
+	  {rm,      [{compression, [none]}]}
+	  ]
+	  }
+	
+.fi
+.LP
+The example specifies that:
+.RS 2
+.TP 2
+*
+the old key exchange algorithm \&'diffie-hellman-group1-sha1\&' should be the main alternative\&. It will be the main alternative since it is prepened to the list
+.LP
+.TP 2
+*
+The compression algorithm none (= no compression) is removed so compression is enforced
+.LP
+.RE
+
+.LP
+For background and more examples see the User\&'s Guide\&.
+.RE
+.nf
+
+\fBinet_common_option()\fR\& = {inet, inet | inet6}
+.br
+.fi
+.RS
+.LP
+IP version to use when the host address is specified as \fIany\fR\&\&.
+.RE
+.nf
+
+\fBauth_methods_common_option()\fR\& = {auth_methods, string()}
+.br
+.fi
+.RS
+.LP
+Comma-separated string that determines which authentication methods that the client shall support and in which order they are tried\&. Defaults to \fI"publickey,keyboard-interactive,password"\fR\& 
+.LP
+Note that the client is free to use any order and to exclude methods\&.
+.RE
+.nf
+
+\fBfd_common_option()\fR\& = {fd, gen_tcp:socket()}
+.br
+.fi
+.RS
+.LP
+Allows an existing file-descriptor to be used (passed on to the transport protocol)\&.
+.RE
+.SS Other data types
+.nf
+
+\fBhost()\fR\& = string() | inet:ip_address() | loopback
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fBip_port()\fR\& = {inet:ip_address(), inet:port_number()}
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fBmod_args()\fR\& = {Module :: atom(), Args :: list()}
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fBmod_fun_args()\fR\& = 
+.br
+    {Module :: atom(), Function :: atom(), Args :: list()}
+.br
+.fi
+.RS
+.RE
+.nf
+
+\fBopen_socket()\fR\& = gen_tcp:socket()
+.br
+.fi
+.RS
+.LP
+The socket is supposed to be result of a gen_tcp:connect or a gen_tcp:accept\&. The socket must be in passive mode (that is, opened with the option \fI{active,false})\fR\&\&.
+.RE
+.nf
+
+\fBdaemon_ref()\fR\&
+.br
+.fi
+.RS
+.LP
+Opaque data type representing a daemon\&.
+.LP
+Returned by the functions \fIdaemon/1,2,3\fR\&\&.
+.RE
+.nf
+
+.B
+connection_ref()
+.br
+.fi
+.RS
+.LP
+Opaque data type representing a connection between a client and a server (daemon)\&.
+.LP
+Returned by the functions \fIconnect/2,3,4\fR\& and \fIssh_sftp:start_channel/2,3\fR\&\&.
+.RE
+.nf
+
+\fBchannel_id()\fR\&
+.br
+.fi
+.RS
+.LP
+Opaque data type representing a channel inside a connection\&.
+.LP
+Returned by the functions ssh_connection:session_channel/2,4\&.
+.RE
+.nf
+
+\fBconnection_info_tuple()\fR\& = 
+.br
+    {client_version, version()} |
+.br
+    {server_version, version()} |
+.br
+    {user, string()} |
+.br
+    {peer, {inet:hostname(), ip_port()}} |
+.br
+    {sockname, ip_port()} |
+.br
+    {options, client_options()} |
+.br
+    {algorithms, conn_info_algs()} |
+.br
+    {channels, conn_info_channels()}
+.br
+.fi
+.nf
+
+\fBversion()\fR\& = {protocol_version(), software_version()}
+.br
+.fi
+.nf
+
+\fBprotocol_version()\fR\& = 
+.br
+    {Major :: integer() >= 1, Minor :: integer() >= 0}
+.br
+.fi
+.nf
+
+\fBsoftware_version()\fR\& = string()
+.br
+.fi
+.nf
+
+\fBconn_info_algs()\fR\& = 
+.br
+    [{kex, kex_alg()} |
+.br
+     {hkey, pubkey_alg()} |
+.br
+     {encrypt, cipher_alg()} |
+.br
+     {decrypt, cipher_alg()} |
+.br
+     {send_mac, mac_alg()} |
+.br
+     {recv_mac, mac_alg()} |
+.br
+     {compress, compression_alg()} |
+.br
+     {decompress, compression_alg()} |
+.br
+     {send_ext_info, boolean()} |
+.br
+     {recv_ext_info, boolean()}]
+.br
+.fi
+.nf
+
+\fBconn_info_channels()\fR\& = [proplists:proplist()]
+.br
+.fi
+.RS
+.LP
+Return values from the connection_info/1 and connection_info/2 functions\&.
+.LP
+In the \fIoption\fR\& info tuple are only the options included that differs from the default values\&.
+.RE
+.nf
+
+\fBdaemon_info_tuple()\fR\& = 
+.br
+    {port, inet:port_number()} |
+.br
+    {ip, inet:ip_address()} |
+.br
+    {profile, atom()} |
+.br
+    {options, daemon_options()}
+.br
+.fi
+.RS
+.LP
+Return values from the daemon_info/1 and daemon_info/2 functions\&.
+.LP
+In the \fIoption\fR\& info tuple are only the options included that differs from the default values\&.
+.RE
+.nf
+
+.B
+opaque_client_options()
+.br
+.fi
+.nf
+
+.B
+opaque_daemon_options()
+.br
+.fi
+.nf
+
+.B
+opaque_common_options()
+.br
+.fi
+.RS
+.LP
+Opaque types that define experimental options that are not to be used in products\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+close(ConnectionRef) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnectionRef = connection_ref()
+.br
+.RE
+.RE
+.RS
+.LP
+Closes an SSH connection\&.
+.RE
+.LP
+.B
+connect(Host, Port, Options) -> Result 
+.br
+.B
+connect(Host, Port, Options, NegotiationTimeout) -> Result 
+.br
+.B
+connect(TcpSocket, Options) -> Result
+.br
+.B
+connect(TcpSocket, Options, NegotiationTimeout) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = host()
+.br
+Port = inet:port_number()
+.br
+Options = client_options()
+.br
+TcpSocket = open_socket()
+.br
+NegotiationTimeout = timeout()
+.br
+Result = {ok, connection_ref()} | {error, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Connects to an SSH server at the \fIHost\fR\& on \fIPort\fR\&\&.
+.LP
+As an alternative, an already open TCP socket could be passed to the function in \fITcpSocket\fR\&\&. The SSH initiation and negotiation will be initiated on that one with the SSH that should be at the other end\&.
+.LP
+No channel is started\&. This is done by calling  ssh_connection:session_channel/[2, 4]\&.
+.LP
+The \fINegotiationTimeout\fR\& is in milli-seconds\&. The default value is \fIinfinity\fR\&\&. For connection timeout, use the option \fIconnect_timeout\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+connection_info(ConnectionRef) -> InfoTupleList
+.br
+.fi
+.br
+.nf
+
+.B
+connection_info(ConnectionRef, Key :: ItemList | Item) ->
+.B
+                   InfoTupleList | InfoTuple
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnectionRef = connection_ref()
+.br
+ItemList = [Item]
+.br
+Item = 
+.br
+    client_version | server_version | user | peer | sockname |
+.br
+    options | algorithms | sockname
+.br
+InfoTupleList = [InfoTuple]
+.br
+InfoTuple = connection_info_tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns information about a connection intended for e\&.g debugging or logging\&.
+.LP
+When the \fIKey\fR\& is a single \fIItem\fR\&, the result is a single \fIInfoTuple\fR\& 
+.RE
+.LP
+.nf
+
+.B
+set_sock_opts(ConnectionRef, SocketOptions) ->
+.B
+                 ok | {error, inet:posix()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnectionRef = connection_ref()
+.br
+SocketOptions = [gen_tcp:option()]
+.br
+.RE
+.RE
+.RS
+.LP
+Sets tcp socket options on the tcp-socket below an ssh connection\&.
+.LP
+This function calls the inet:setopts/2, read that documentation and for gen_tcp:option()\&.
+.LP
+All gen_tcp socket options except
+.RS 2
+.TP 2
+*
+\fIactive\fR\&
+.LP
+.TP 2
+*
+\fIdeliver\fR\&
+.LP
+.TP 2
+*
+\fImode\fR\& and
+.LP
+.TP 2
+*
+\fIpacket\fR\&
+.LP
+.RE
+
+.LP
+are allowed\&. The excluded options are reserved by the SSH application\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This is an extremly dangerous function\&. You use it on your own risk\&.
+.LP
+Some options are OS and OS version dependent\&. Do not use it unless you know what effect your option values will have on an TCP stream\&.
+.LP
+Some values may destroy the functionality of the SSH protocol\&.
+
+.RE
+.LP
+.nf
+
+.B
+get_sock_opts(ConnectionRef, SocketGetOptions) ->
+.B
+                 ok | {error, inet:posix()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnectionRef = connection_ref()
+.br
+SocketGetOptions = [gen_tcp:option_name()]
+.br
+.RE
+.RE
+.RS
+.LP
+Get tcp socket option values of the tcp-socket below an ssh connection\&.
+.LP
+This function calls the inet:getopts/2, read that documentation\&.
+.RE
+.LP
+.B
+daemon(Port | TcpSocket) -> Result
+.br
+.B
+daemon(Port | TcpSocket, Options) -> Result
+.br
+.B
+daemon(HostAddress, Port, Options) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Port = integer()
+.br
+TcpSocket = open_socket()
+.br
+Options = daemon_options()
+.br
+HostAddress = host() | any
+.br
+Result = {ok, daemon_ref()} | {error, atom()}
+.br
+.RE
+.RE
+.RS
+.LP
+Starts a server listening for SSH connections on the given port\&. If the \fIPort\fR\& is 0, a random free port is selected\&. See daemon_info/1 about how to find the selected port number\&.
+.LP
+As an alternative, an already open TCP socket could be passed to the function in \fITcpSocket\fR\&\&. The SSH initiation and negotiation will be initiated on that one when an SSH starts at the other end of the TCP socket\&.
+.LP
+For a description of the options, see Daemon Options\&.
+.LP
+Please note that by historical reasons both the \fIHostAddress\fR\& argument and the gen_tcp connect_option() \fI{ip,Address}\fR\& set the listening address\&. This is a source of possible inconsistent settings\&.
+.LP
+The rules for handling the two address passing options are:
+.RS 2
+.TP 2
+*
+if \fIHostAddress\fR\& is an IP-address, that IP-address is the listening address\&. An \&'ip\&'-option will be discarded if present\&.
+.LP
+.TP 2
+*
+if \fIHostAddress\fR\& is the atom \fIloopback\fR\&, the listening address is \fIloopback\fR\& and an loopback address will be choosen by the underlying layers\&. An \&'ip\&'-option will be discarded if present\&.
+.LP
+.TP 2
+*
+if \fIHostAddress\fR\& is the atom \fIany\fR\& and no \&'ip\&'-option is present, the listening address is \fIany\fR\& and the socket will listen to all addresses
+.LP
+.TP 2
+*
+if \fIHostAddress\fR\& is \fIany\fR\& and an \&'ip\&'-option is present, the listening address is set to the value of the \&'ip\&'-option
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+daemon_info(DaemonRef) ->
+.B
+               {ok, InfoTupleList} | {error, bad_daemon_ref}
+.br
+.fi
+.br
+.nf
+
+.B
+daemon_info(DaemonRef, Key :: ItemList | Item) ->
+.B
+               InfoTupleList | InfoTuple | {error, bad_daemon_ref}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+DaemonRef = daemon_ref()
+.br
+ItemList = [Item]
+.br
+Item = ip | port | profile | options
+.br
+InfoTupleList = [InfoTuple]
+.br
+InfoTuple = daemon_info_tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns information about a daemon intended for e\&.g debugging or logging\&.
+.LP
+When the \fIKey\fR\& is a single \fIItem\fR\&, the result is a single \fIInfoTuple\fR\& 
+.LP
+Note that \fIdaemon_info/1\fR\& and \fIdaemon_info/2\fR\& returns different types due to compatibility reasons\&.
+.RE
+.LP
+.nf
+
+.B
+default_algorithms() -> algs_list()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a key-value list, where the keys are the different types of algorithms and the values are the algorithms themselves\&.
+.LP
+See the User\&'s Guide for an example\&.
+.RE
+.LP
+.B
+shell(Host | TcpSocket) -> Result 
+.br
+.B
+shell(Host | TcpSocket, Options) -> Result 
+.br
+.B
+shell(Host, Port, Options) -> Result 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = host()
+.br
+TcpSocket = open_socket()
+.br
+Port = inet:port_number()
+.br
+Options = client_options()
+.br
+Result = ok | {error, Reason::term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Connects to an SSH server at \fIHost\fR\& and \fIPort\fR\& (defaults to 22) and starts an interactive shell on that remote host\&.
+.LP
+As an alternative, an already open TCP socket could be passed to the function in \fITcpSocket\fR\&\&. The SSH initiation and negotiation will be initiated on that one and finaly a shell will be started on the host at the other end of the TCP socket\&.
+.LP
+For a description of the options, see Client Options\&.
+.LP
+The function waits for user input, and does not return until the remote shell is ended (that is, exit from the shell)\&.
+.RE
+.LP
+.nf
+
+.B
+start() -> ok | {error, term()}
+.br
+.fi
+.br
+.nf
+
+.B
+start(Type) -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = permanent | transient | temporary
+.br
+.RE
+.RE
+.RS
+.LP
+Utility function that starts the applications \fIcrypto\fR\&, \fIpublic_key\fR\&, and \fIssh\fR\&\&. Default type is \fItemporary\fR\&\&. For more information, see the application(3) manual page in Kernel\&.
+.RE
+.LP
+.nf
+
+.B
+stop() -> ok | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Stops the \fIssh\fR\& application\&. For more information, see the application(3) manual page in Kernel\&.
+.RE
+.LP
+.nf
+
+.B
+stop_daemon(DaemonRef :: daemon_ref()) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+stop_daemon(Address :: inet:ip_address(),
+.B
+            Port :: inet:port_number()) ->
+.B
+               ok
+.br
+.fi
+.br
+.nf
+
+.B
+stop_daemon(Address :: any | inet:ip_address(),
+.B
+            Port :: inet:port_number(),
+.B
+            Profile :: atom()) ->
+.B
+               ok
+.br
+.fi
+.br
+.RS
+.LP
+Stops the listener and all connections started by the listener\&.
+.RE
+.LP
+.nf
+
+.B
+stop_listener(SysSup :: daemon_ref()) -> ok
+.br
+.fi
+.br
+.nf
+
+.B
+stop_listener(Address :: inet:ip_address(),
+.B
+              Port :: inet:port_number()) ->
+.B
+                 ok
+.br
+.fi
+.br
+.nf
+
+.B
+stop_listener(Address :: any | inet:ip_address(),
+.B
+              Port :: inet:port_number(),
+.B
+              Profile :: term()) ->
+.B
+                 ok
+.br
+.fi
+.br
+.RS
+.LP
+Stops the listener, but leaves existing connections started by the listener operational\&.
+.RE
+.LP
+.nf
+
+.B
+tcpip_tunnel_from_server(ConnectionRef, ListenHost, ListenPort,
+.B
+                         ConnectToHost, ConnectToPort) ->
+.B
+                            {ok, TrueListenPort} | {error, term()}
+.br
+.fi
+.br
+.nf
+
+.B
+tcpip_tunnel_from_server(ConnectionRef, ListenHost, ListenPort,
+.B
+                         ConnectToHost, ConnectToPort, Timeout) ->
+.B
+                            {ok, TrueListenPort} | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnectionRef = connection_ref()
+.br
+ListenHost = host()
+.br
+ListenPort = inet:port_number()
+.br
+ConnectToHost = host()
+.br
+ConnectToPort = inet:port_number()
+.br
+Timeout = timeout()
+.br
+TrueListenPort = inet:port_number()
+.br
+.RE
+.RE
+.RS
+.LP
+Asks the remote server of \fIConnectionRef\fR\& to listen to \fIListenHost:ListenPort\fR\&\&. When someone connects that address, the connection is forwarded in an encrypted channel from the server to the client\&. The client (that is, at the node that calls this function) then connects to \fIConnectToHost:ConnectToPort\fR\&\&.
+.LP
+The returned \fITrueListenPort\fR\& is the port that is listened to\&. It is the same as \fIListenPort\fR\&, except when \fIListenPort = 0\fR\&\&. In that case a free port is selected by the underlying OS\&.
+.LP
+Note that in case of an Erlang/OTP SSH server (daemon) as peer, that server must have been started with the option tcpip_tunnel_out to allow the connection\&.
+.RE
+.LP
+.nf
+
+.B
+tcpip_tunnel_to_server(ConnectionRef, ListenHost, ListenPort,
+.B
+                       ConnectToHost, ConnectToPort) ->
+.B
+                          {ok, TrueListenPort} | {error, term()}
+.br
+.fi
+.br
+.nf
+
+.B
+tcpip_tunnel_to_server(ConnectionRef, ListenHost, ListenPort,
+.B
+                       ConnectToHost, ConnectToPort, Timeout) ->
+.B
+                          {ok, TrueListenPort} | {error, term()}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnectionRef = connection_ref()
+.br
+ListenHost = host()
+.br
+ListenPort = inet:port_number()
+.br
+ConnectToHost = host()
+.br
+ConnectToPort = inet:port_number()
+.br
+Timeout = timeout()
+.br
+TrueListenPort = inet:port_number()
+.br
+.RE
+.RE
+.RS
+.LP
+Tells the local client to listen to \fIListenHost:ListenPort\fR\&\&. When someone connects to that address, the connection is forwarded in an encrypted channel to the peer server of \fIConnectionRef\fR\&\&. That server then connects to \fIConnectToHost:ConnectToPort\fR\&\&.
+.LP
+The returned \fITrueListenPort\fR\& is the port that is listened to\&. It is the same as \fIListenPort\fR\&, except when \fIListenPort = 0\fR\&\&. In that case a free port is selected by the underlying OS\&.
+.LP
+Note that in case of an Erlang/OTP SSH server (daemon) as peer, that server must have been started with the option tcpip_tunnel_in to allow the connection\&.
+.RE

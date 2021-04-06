@@ -1,0 +1,105 @@
+.TH unix_telnet 3 "common_test 1.14" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+unix_telnet \- Callback module for ct_telnet, for connecting to a Telnet
+    server on a UNIX host.
+.SH DESCRIPTION
+.LP
+Callback module for \fB\fIct_telnet\fR\&\fR\&, for connecting to a Telnet server on a UNIX host\&.
+.LP
+It requires the following entry in the configuration file:
+.LP
+.nf
+
+ {unix,[{telnet,HostNameOrIpAddress},
+        {port,PortNum},                 % optional
+        {username,UserName},
+        {password,Password},
+        {keep_alive,Bool}]}.            % optional
+.fi
+.LP
+To communicate through Telnet to the host specified by \fIHostNameOrIpAddress\fR\&, use the interface functions in \fB\fIct_telnet\fR\&\fR\&, for example, \fIopen(Name)\fR\& and \fIcmd(Name,Cmd)\fR\&\&.
+.LP
+\fIName\fR\& is the name you allocated to the Unix host in your \fIrequire\fR\& statement, for example:
+.LP
+.nf
+
+ suite() -> [{require,Name,{unix,[telnet]}}].
+.fi
+.LP
+or
+.LP
+.nf
+
+ ct:require(Name,{unix,[telnet]}).
+.fi
+.LP
+The "keep alive" activity (that is, that \fICommon Test\fR\& sends NOP to the server every 10 seconds if the connection is idle) can be enabled or disabled for one particular connection as described here\&. It can be disabled for all connections using \fItelnet_settings\fR\& (see \fB\fIct_telnet\fR\&\fR\&)\&.
+.LP
+The \fI{port,PortNum}\fR\& tuple is optional and if omitted, default Telnet port 23 is used\&. Also the \fIkeep_alive\fR\& tuple is optional, and the value defauls to \fItrue\fR\& (enabled)\&.
+.SH EXPORTS
+.LP
+.B
+connect(ConnName, Ip, Port, Timeout, KeepAlive, TCPNoDelay, Extra) -> {ok, Handle} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ConnName = target_name()
+.br
+Ip = string() | {integer(), integer(), integer(), integer()}
+.br
+Port = integer()
+.br
+Timeout = integer()
+.br
+KeepAlive = bool()
+.br
+TCPNoDelay = bool()
+.br
+Extra = target_name() | {Username, Password}
+.br
+Username = string()
+.br
+Password = string()
+.br
+Handle = handle()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Callback for \fIct_telnet\&.erl\fR\&\&.
+.LP
+Setup Telnet connection to a Unix host\&.
+.LP
+For \fItarget_name()\fR\&, see \fB\fIct\fR\&\fR\&\&. For \fIhandle()\fR\&, see \fB\fIct_telnet\fR\&\fR\&\&.
+.RE
+.LP
+.B
+get_prompt_regexp() -> PromptRegexp
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+PromptRegexp = prompt_regexp()
+.br
+.RE
+.RE
+.RS
+.LP
+Callback for \fIct_telnet\&.erl\fR\&\&.
+.LP
+Returns a suitable \fIregexp\fR\& string matching common prompts for users on Unix hosts\&.
+.LP
+For \fIprompt_regexp()\fR\&, see \fB\fIct_telnet\fR\&\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIct\fR\&\fR\&, \fB\fIct_telnet\fR\&\fR\&

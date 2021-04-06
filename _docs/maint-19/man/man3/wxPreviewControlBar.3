@@ -1,0 +1,154 @@
+.TH wxPreviewControlBar 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxPreviewControlBar \- See external documentation: wxPreviewControlBar.
+.SH DESCRIPTION
+.LP
+See external documentation: wxPreviewControlBar\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxPanel\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxPreviewControlBar():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new(Preview, Buttons, Parent) -> \fBwxPreviewControlBar()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Preview = \fBwxPrintPreview:wxPrintPreview()\fR\&
+.br
+Buttons = integer()
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Preview, Buttons, Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Preview, Buttons, Parent, Options::[Option]) -> \fBwxPreviewControlBar()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Preview = \fBwxPrintPreview:wxPrintPreview()\fR\&
+.br
+Buttons = integer()
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createButtons(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPreviewControlBar()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPrintPreview(This) -> \fBwxPrintPreview:wxPrintPreview()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPreviewControlBar()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getZoomControl(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPreviewControlBar()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setZoomControl(This, Zoom) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxPreviewControlBar()\fR\&
+.br
+Zoom = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxPreviewControlBar()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

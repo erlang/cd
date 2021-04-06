@@ -1,0 +1,2625 @@
+.TH ets 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ets \- Built-in term storage.
+.SH DESCRIPTION
+.LP
+This module is an interface to the Erlang built-in term storage BIFs\&. These provide the ability to store very large quantities of data in an Erlang runtime system, and to have constant access time to the data\&. (In the case of \fIordered_set\fR\&, see below, access time is proportional to the logarithm of the number of stored objects\&.)
+.LP
+Data is organized as a set of dynamic tables, which can store tuples\&. Each table is created by a process\&. When the process terminates, the table is automatically destroyed\&. Every table has access rights set at creation\&.
+.LP
+Tables are divided into four different types, \fIset\fR\&, \fIordered_set\fR\&, \fIbag\fR\&, and \fIduplicate_bag\fR\&\&. A \fIset\fR\& or \fIordered_set\fR\& table can only have one object associated with each key\&. A \fIbag\fR\& or \fIduplicate_bag\fR\& table can have many objects associated with each key\&.
+.LP
+The number of tables stored at one Erlang node is limited\&. The current default limit is about 1400 tables\&. The upper limit can be increased by setting environment variable \fIERL_MAX_ETS_TABLES\fR\& before starting the Erlang runtime system (that is, with option \fI-env\fR\& to \fIerl\fR\&/\fIwerl\fR\&)\&. The actual limit can be slightly higher than the one specified, but never lower\&.
+.LP
+Notice that there is no automatic garbage collection for tables\&. Even if there are no references to a table from any process, it is not automatically destroyed unless the owner process terminates\&. To destroy a table explicitly, use function \fB\fIdelete/1\fR\&\fR\&\&. The default owner is the process that created the table\&. To transfer table ownership at process termination, use option \fB\fIheir\fR\&\fR\& or call \fB\fIgive_away/3\fR\&\fR\&\&.
+.LP
+Some implementation details:
+.RS 2
+.TP 2
+*
+In the current implementation, every object insert and look-up operation results in a copy of the object\&.
+.LP
+.TP 2
+*
+\fI\&'$end_of_table\&'\fR\& is not to be used as a key, as this atom is used to mark the end of the table when using functions \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\&\&.
+.LP
+.RE
+
+.LP
+Notice the subtle difference between \fImatching\fR\& and \fIcomparing equal\fR\&, which is demonstrated by table types \fIset\fR\& and \fIordered_set\fR\&:
+.RS 2
+.TP 2
+*
+Two Erlang terms \fImatch\fR\& if they are of the same type and have the same value, so that \fI1\fR\& matches \fI1\fR\&, but not \fI1\&.0\fR\& (as \fI1\&.0\fR\& is a \fIfloat()\fR\& and not an \fIinteger()\fR\&)\&.
+.LP
+.TP 2
+*
+Two Erlang terms \fIcompare equal\fR\& if they either are of the same type and value, or if both are numeric types and extend to the same value, so that \fI1\fR\& compares equal to both \fI1\fR\& and \fI1\&.0\fR\&\&.
+.LP
+.TP 2
+*
+The \fIordered_set\fR\& works on the \fIErlang term order\fR\& and no defined order exists between an \fIinteger()\fR\& and a \fIfloat()\fR\& that extends to the same value\&. Hence the key \fI1\fR\& and the key \fI1\&.0\fR\& are regarded as equal in an \fIordered_set\fR\& table\&.
+.LP
+.RE
+
+.SH "FAILURE"
+
+.LP
+The functions in this module exits with reason \fIbadarg\fR\& if any argument has the wrong format, if the table identifier is invalid, or if the operation is denied because of table access rights (\fBprotected\fR\& or \fBprivate\fR\&)\&.
+.SH "CONCURRENCY"
+
+.LP
+This module provides some limited support for concurrent access\&. All updates to single objects are guaranteed to be both \fIatomic\fR\& and \fIisolated\fR\&\&. This means that an updating operation to a single object either succeeds or fails completely without any effect (atomicity) and that no intermediate results of the update can be seen by other processes (isolation)\&. Some functions that update many objects state that they even guarantee atomicity and isolation for the entire operation\&. In database terms the isolation level can be seen as "serializable", as if all isolated operations are carried out serially, one after the other in a strict order\&.
+.LP
+No other support is available within this module that would guarantee consistency between objects\&. However, function \fB\fIsafe_fixtable/2\fR\&\fR\& can be used to guarantee that a sequence of \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\& calls traverse the table without errors and that each existing object in the table is visited exactly once, even if another (or the same) process simultaneously deletes or inserts objects into the table\&. Nothing else is guaranteed; in particular objects that are inserted or deleted during such a traversal can be visited once or not at all\&. Functions that internally traverse over a table, like \fB\fIselect\fR\&\fR\& and \fB\fImatch\fR\&\fR\&, give the same guarantee as \fB\fIsafe_fixtable\fR\&\fR\&\&.
+.SH "MATCH SPECIFICATIONS"
+
+.LP
+Some of the functions use a \fImatch specification\fR\&, \fImatch_spec\fR\&\&. For a brief explanation, see \fB\fIselect/2\fR\&\fR\&\&. For a detailed description, see section \fB Match Specifications in Erlang\fR\& in ERTS User\&'s Guide\&.
+.SH DATA TYPES
+.nf
+
+\fBaccess()\fR\& = public | protected | private
+.br
+.fi
+.nf
+
+.B
+continuation()
+.br
+.fi
+.RS
+.LP
+Opaque continuation used by \fB\fIselect/1,3\fR\&\fR\&, \fB\fIselect_reverse/1,3\fR\&\fR\&, \fB\fImatch/1,3\fR\&\fR\&, and \fB\fImatch_object/1,3\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBmatch_spec()\fR\& = [{\fBmatch_pattern()\fR\&, [term()], [term()]}]
+.br
+.fi
+.RS
+.LP
+A match specification, see above\&.
+.RE
+.nf
+
+\fBcomp_match_spec()\fR\&
+.br
+.fi
+.RS
+.LP
+A compiled match specification\&.
+.RE
+.nf
+
+\fBmatch_pattern()\fR\& = atom() | tuple()
+.br
+.fi
+.nf
+
+\fBtab()\fR\& = atom() | \fBtid()\fR\&
+.br
+.fi
+.nf
+
+\fBtid()\fR\&
+.br
+.fi
+.RS
+.LP
+A table identifier, as returned by \fB\fInew/2\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBtype()\fR\& = set | ordered_set | bag | duplicate_bag
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+all() -> [Tab]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all tables at the node\&. Named tables are specified by their names, unnamed tables are specified by their table identifiers\&.
+.LP
+There is no guarantee of consistency in the returned list\&. Tables created or deleted by other processes "during" the \fIets:all()\fR\& call either are or are not included in the list\&. Only tables created/deleted \fIbefore\fR\& \fIets:all()\fR\& is called are guaranteed to be included/excluded\&.
+.RE
+.LP
+.nf
+
+.B
+delete(Tab) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes the entire table \fITab\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete(Tab, Key) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all objects with key \fIKey\fR\& from table \fITab\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete_all_objects(Tab) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Delete all objects in the ETS table \fITab\fR\&\&. The operation is guaranteed to be \fBatomic and isolated\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete_object(Tab, Object) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Object = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Delete the exact object \fIObject\fR\& from the ETS table, leaving objects with the same key but other differences (useful for type \fIbag\fR\&)\&. In a \fIduplicate_bag\fR\& table, all instances of the object are deleted\&.
+.RE
+.LP
+.nf
+
+.B
+file2tab(Filename) -> {ok, Tab} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name()\fR\&
+.br
+Tab = \fBtab()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Reads a file produced by \fB\fItab2file/2\fR\&\fR\& or \fB\fItab2file/3\fR\&\fR\& and creates the corresponding table \fITab\fR\&\&.
+.LP
+Equivalent to \fIfile2tab(Filename, [])\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+file2tab(Filename, Options) -> {ok, Tab} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name()\fR\&
+.br
+Tab = \fBtab()\fR\&
+.br
+Options = [Option]
+.br
+Option = {verify, boolean()}
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Reads a file produced by \fB\fItab2file/2\fR\&\fR\& or \fB\fItab2file/3\fR\&\fR\& and creates the corresponding table \fITab\fR\&\&.
+.LP
+The only supported option is \fI{verify,boolean()}\fR\&\&. If verification is turned on (by specifying \fI{verify,true}\fR\&), the function uses whatever information is present in the file to assert that the information is not damaged\&. How this is done depends on which \fIextended_info\fR\& was written using \fB\fItab2file/3\fR\&\fR\&\&.
+.LP
+If no \fIextended_info\fR\& is present in the file and \fI{verify,true}\fR\& is specified, the number of objects written is compared to the size of the original table when the dump was started\&. This can make verification fail if the table was \fIpublic\fR\& and objects were added or removed while the table was dumped to file\&. To avoid this problem, either do not verify files dumped while updated simultaneously or use option \fI{extended_info, [object_count]}\fR\& to \fB\fItab2file/3\fR\&\fR\&, which extends the information in the file with the number of objects written\&.
+.LP
+If verification is turned on and the file was written with option \fI{extended_info, [md5sum]}\fR\&, reading the file is slower and consumes radically more CPU time than otherwise\&.
+.LP
+\fI{verify,false}\fR\& is the default\&.
+.RE
+.LP
+.nf
+
+.B
+first(Tab) -> Key | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the first key \fIKey\fR\& in table \fITab\fR\&\&. For an \fIordered_set\fR\& table, the first key in Erlang term order is returned\&. For other table types, the first key according to the internal order of the table is returned\&. If the table is empty, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.LP
+To find subsequent keys in the table, use \fB\fInext/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+foldl(Function, Acc0, Tab) -> Acc1
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = fun((Element :: term(), AccIn) -> AccOut)
+.br
+Tab = \fBtab()\fR\&
+.br
+Acc0 = Acc1 = AccIn = AccOut = term()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIAcc0\fR\& is returned if the table is empty\&. This function is similar to \fB\fIlists:foldl/3\fR\&\fR\&\&. The table elements are traversed is unspecified order, except for \fIordered_set\fR\& tables, where they are traversed first to last\&.
+.LP
+If \fIFunction\fR\& inserts objects into the table, or another process inserts objects into the table, those objects \fIcan\fR\& (depending on key ordering) be included in the traversal\&.
+.RE
+.LP
+.nf
+
+.B
+foldr(Function, Acc0, Tab) -> Acc1
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = fun((Element :: term(), AccIn) -> AccOut)
+.br
+Tab = \fBtab()\fR\&
+.br
+Acc0 = Acc1 = AccIn = AccOut = term()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIAcc0\fR\& is returned if the table is empty\&. This function is similar to \fB\fIlists:foldr/3\fR\&\fR\&\&. The table elements are traversed is unspecified order, except for \fIordered_set\fR\& tables, where they are traversed last to first\&.
+.LP
+If \fIFunction\fR\& inserts objects into the table, or another process inserts objects into the table, those objects \fIcan\fR\& (depending on key ordering) be included in the traversal\&.
+.RE
+.LP
+.nf
+
+.B
+from_dets(Tab, DetsTab) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+DetsTab = \fBdets:tab_name()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Fills an already created ETS table with the objects in the already opened Dets table \fIDetsTab\fR\&\&. Existing objects in the ETS table are kept unless overwritten\&.
+.LP
+If any of the tables does not exist or the Dets table is not open, a \fIbadarg\fR\& exception is raised\&.
+.RE
+.LP
+.nf
+
+.B
+fun2ms(LiteralFun) -> MatchSpec
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+LiteralFun = function()
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Pseudo function that by a \fIparse_transform\fR\& translates \fILiteralFun\fR\& typed as parameter in the function call to a \fBmatch specification\fR\&\&. With "literal" is meant that the fun must textually be written as the parameter of the function, it cannot be held in a variable that in turn is passed to the function\&.
+.LP
+The parse transform is provided in the \fIms_transform\fR\& module and the source \fImust\fR\& include file \fIms_transform\&.hrl\fR\& in STDLIB for this pseudo function to work\&. Failing to include the hrl file in the source results in a runtime error, not a compile time error\&. The include file is easiest included by adding line \fI-include_lib("stdlib/include/ms_transform\&.hrl")\&.\fR\& to the source file\&.
+.LP
+The fun is very restricted, it can take only a single parameter (the object to match): a sole variable or a tuple\&. It must use the \fIis_\fR\& guard tests\&. Language constructs that have no representation in a match specification (\fIif\fR\&, \fIcase\fR\&, \fIreceive\fR\&, and so on) are not allowed\&.
+.LP
+The return value is the resulting match specification\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> ets:fun2ms(fun({M,N}) when N > 3 -> M end)\&.
+[{{'$1','$2'},[{'>','$2',3}],['$1']}]
+.fi
+.LP
+Variables from the environment can be imported, so that the following works:
+.LP
+.nf
+
+2> X=3\&.
+3
+3> ets:fun2ms(fun({M,N}) when N > X -> M end)\&.
+[{{'$1','$2'},[{'>','$2',{const,3}}],['$1']}]
+.fi
+.LP
+The imported variables are replaced by match specification \fIconst\fR\& expressions, which is consistent with the static scoping for Erlang funs\&. However, local or global function calls cannot be in the guard or body of the fun\&. Calls to built-in match specification functions is of course allowed:
+.LP
+.nf
+
+4> ets:fun2ms(fun({M,N}) when N > X, is_atomm(M) -> M end)\&.
+Error: fun containing local Erlang function calls
+('is_atomm' called in guard) cannot be translated into match_spec
+{error,transform_error}
+5> ets:fun2ms(fun({M,N}) when N > X, is_atom(M) -> M end)\&.
+[{{'$1','$2'},[{'>','$2',{const,3}},{is_atom,'$1'}],['$1']}]
+.fi
+.LP
+As shown by the example, the function can be called from the shell also\&. The fun must be literally in the call when used from the shell as well\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+If the \fIparse_transform\fR\& is not applied to a module that calls this pseudo function, the call fails in runtime (with a \fIbadarg\fR\&)\&. The \fIets\fR\& module exports a function with this name, but it is never to be called except when using the function in the shell\&. If the \fIparse_transform\fR\& is properly applied by including header file \fIms_transform\&.hrl\fR\&, compiled code never calls the function, but the function call is replaced by a literal match specification\&.
+
+.LP
+For more information, see \fB\fIms_transform(3)\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+give_away(Tab, Pid, GiftData) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Pid = pid()
+.br
+GiftData = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Make process \fIPid\fR\& the new owner of table \fITab\fR\&\&. If successful, message \fI{\&'ETS-TRANSFER\&',Tab,FromPid,GiftData}\fR\& is sent to the new owner\&.
+.LP
+The process \fIPid\fR\& must be alive, local, and not already the owner of the table\&. The calling process must be the table owner\&.
+.LP
+Notice that this function does not affect option \fB\fIheir\fR\&\fR\& of the table\&. A table owner can, for example, set \fIheir\fR\& to itself, give the table away, and then get it back if the receiver terminates\&.
+.RE
+.LP
+.nf
+
+.B
+i() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Displays information about all ETS tables on a terminal\&.
+.RE
+.LP
+.nf
+
+.B
+i(Tab) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Browses table \fITab\fR\& on a terminal\&.
+.RE
+.LP
+.nf
+
+.B
+info(Tab) -> InfoList | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+InfoList = [InfoTuple]
+.br
+InfoTuple = 
+.br
+    {compressed, boolean()} |
+.br
+    {heir, pid() | none} |
+.br
+    {keypos, integer() >= 1} |
+.br
+    {memory, integer() >= 0} |
+.br
+    {name, atom()} |
+.br
+    {named_table, boolean()} |
+.br
+    {node, node()} |
+.br
+    {owner, pid()} |
+.br
+    {protection, \fBaccess()\fR\&} |
+.br
+    {size, integer() >= 0} |
+.br
+    {type, \fBtype()\fR\&} |
+.br
+    {write_concurrency, boolean()} |
+.br
+    {read_concurrency, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns information about table \fITab\fR\& as a list of tuples\&. If \fITab\fR\& has the correct type for a table identifier, but does not refer to an existing ETS table, \fIundefined\fR\& is returned\&. If \fITab\fR\& is not of the correct type, a \fIbadarg\fR\& exception is raised\&.
+.RS 2
+.TP 2
+.B
+\fI{compressed, boolean()}\fR\&:
+Indicates if the table is compressed\&.
+.TP 2
+.B
+\fI{heir, pid() | none}\fR\&:
+The pid of the heir of the table, or \fInone\fR\& if no heir is set\&.
+.TP 2
+.B
+\fI{keypos, integer() >= 1}\fR\&:
+The key position\&.
+.TP 2
+.B
+\fI{memory, integer() >= 0\fR\&:
+The number of words allocated to the table\&.
+.TP 2
+.B
+\fI{name, atom()}\fR\&:
+The table name\&.
+.TP 2
+.B
+\fI{named_table, boolean()}\fR\&:
+Indicates if the table is named\&.
+.TP 2
+.B
+\fI{node, node()}\fR\&:
+The node where the table is stored\&. This field is no longer meaningful, as tables cannot be accessed from other nodes\&.
+.TP 2
+.B
+\fI{owner, pid()}\fR\&:
+The pid of the owner of the table\&.
+.TP 2
+.B
+\fI{protection,\fR\&\fB\fIaccess()\fR\&\fR\&\fI}\fR\&:
+The table access rights\&.
+.TP 2
+.B
+\fI{size, integer() >= 0\fR\&:
+The number of objects inserted in the table\&.
+.TP 2
+.B
+\fI{type,\fR\&\fB\fItype()\fR\&\fR\&\fI}\fR\&:
+The table type\&.
+.TP 2
+.B
+\fI{read_concurrency, boolean()}\fR\&:
+Indicates whether the table uses \fIread_concurrency\fR\& or not\&.
+.TP 2
+.B
+\fI{write_concurrency, boolean()}\fR\&:
+Indicates whether the table uses \fIwrite_concurrency\fR\&\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+info(Tab, Item) -> Value | undefined
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Item = 
+.br
+    compressed |
+.br
+    fixed |
+.br
+    heir |
+.br
+    keypos |
+.br
+    memory |
+.br
+    name |
+.br
+    named_table |
+.br
+    node |
+.br
+    owner |
+.br
+    protection |
+.br
+    safe_fixed |
+.br
+    safe_fixed_monotonic_time |
+.br
+    size |
+.br
+    stats |
+.br
+    type |
+.br
+    write_concurrency |
+.br
+    read_concurrency
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the information associated with \fIItem\fR\& for table \fITab\fR\&, or returns \fIundefined\fR\& if \fITab\fR\& does not refer an existing ETS table\&. If \fITab\fR\& is not of the correct type, or if \fIItem\fR\& is not one of the allowed values, a \fIbadarg\fR\& exception is raised\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+In Erlang/OTP R11B and earlier, this function would not fail but return \fIundefined\fR\& for invalid values for \fIItem\fR\&\&.
+
+.LP
+In addition to the \fI{Item,Value}\fR\& pairs defined for \fB\fIinfo/1\fR\&\fR\&, the following items are allowed:
+.RS 2
+.TP 2
+*
+\fIItem=fixed, Value=boolean()\fR\&
+.RS 2
+.LP
+Indicates if the table is fixed by any process\&.
+.RE
+.LP
+.TP 2
+*
+
+.RS 2
+.LP
+\fIItem=safe_fixed|safe_fixed_monotonic_time, Value={FixationTime,Info}|false\fR\&
+.RE
+.RS 2
+.LP
+If the table has been fixed using \fB\fIsafe_fixtable/2\fR\&\fR\&, the call returns a tuple where \fIFixationTime\fR\& is the time when the table was first fixed by a process, which either is or is not one of the processes it is fixed by now\&.
+.RE
+.RS 2
+.LP
+The format and value of \fIFixationTime\fR\& depends on \fIItem\fR\&:
+.RE
+.RS 2
+.TP 2
+.B
+\fIsafe_fixed\fR\&:
+\fIFixationTime\fR\& corresponds to the result returned by \fB\fIerlang:timestamp/0\fR\&\fR\& at the time of fixation\&. Notice that when the system uses single or multi \fBtime warp modes\fR\& this can produce strange results, as the use of \fIsafe_fixed\fR\& is not \fB time warp safe\fR\&\&. Time warp safe code must use \fIsafe_fixed_monotonic_time\fR\& instead\&.
+.TP 2
+.B
+\fIsafe_fixed_monotonic_time\fR\&:
+\fIFixationTime\fR\& corresponds to the result returned by \fB\fIerlang:monotonic_time/0\fR\&\fR\& at the time of fixation\&. The use of \fIsafe_fixed_monotonic_time\fR\& is \fB time warp safe\fR\&\&.
+.RE
+.RS 2
+.LP
+\fIInfo\fR\& is a possibly empty lists of tuples \fI{Pid,RefCount}\fR\&, one tuple for every process the table is fixed by now\&. \fIRefCount\fR\& is the value of the reference counter and it keeps track of how many times the table has been fixed by the process\&.
+.RE
+.RS 2
+.LP
+If the table never has been fixed, the call returns \fIfalse\fR\&\&.
+.RE
+.LP
+.TP 2
+*
+\fIItem=stats, Value=tuple()\fR\&
+.RS 2
+.LP
+Returns internal statistics about \fIset\fR\&, \fIbag\fR\&, and \fIduplicate_bag\fR\& tables on an internal format used by OTP test suites\&. Not for production use\&.
+.RE
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+init_table(Tab, InitFun) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+InitFun = fun((Arg) -> Res)
+.br
+Arg = read | close
+.br
+Res = end_of_input | {Objects :: [term()], InitFun} | term()
+.br
+.RE
+.RE
+.RS
+.LP
+Replaces the existing objects of table \fITab\fR\& with objects created by calling the input function \fIInitFun\fR\&, see below\&. This function is provided for compatibility with the \fIdets\fR\& module, it is not more efficient than filling a table by using \fB\fIinsert/2\fR\&\fR\&\&.
+.LP
+When called with argument \fIread\fR\&, the function \fIInitFun\fR\& is assumed to return \fIend_of_input\fR\& when there is no more input, or \fI{Objects, Fun}\fR\&, where \fIObjects\fR\& is a list of objects and \fIFun\fR\& is a new input function\&. Any other value \fIValue\fR\& is returned as an error \fI{error, {init_fun, Value}}\fR\&\&. Each input function is called exactly once, and if an error occur, the last function is called with argument \fIclose\fR\&, the reply of which is ignored\&.
+.LP
+If the table type is \fIset\fR\& and more than one object exists with a given key, one of the objects is chosen\&. This is not necessarily the last object with the given key in the sequence of objects returned by the input functions\&. This holds also for duplicated objects stored in tables of type \fIbag\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+insert(Tab, ObjectOrObjects) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+ObjectOrObjects = tuple() | [tuple()]
+.br
+.RE
+.RE
+.RS
+.LP
+Inserts the object or all of the objects in list \fIObjectOrObjects\fR\& into table \fITab\fR\&\&.
+.RS 2
+.TP 2
+*
+If the table type is \fIset\fR\& and the key of the inserted objects \fImatches\fR\& the key of any object in the table, the old object is replaced\&.
+.LP
+.TP 2
+*
+If the table type is \fIordered_set\fR\& and the key of the inserted object \fIcompares equal\fR\& to the key of any object in the table, the old object is replaced\&.
+.LP
+.TP 2
+*
+If the list contains more than one object with \fImatching\fR\& keys and the table type is \fIset\fR\&, one is inserted, which one is not defined\&. The same holds for table type \fIordered_set\fR\& if the keys \fIcompare equal\fR\&\&.
+.LP
+.RE
+
+.LP
+The entire operation is guaranteed to be \fBatomic and isolated\fR\&, even when a list of objects is inserted\&.
+.RE
+.LP
+.nf
+
+.B
+insert_new(Tab, ObjectOrObjects) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+ObjectOrObjects = tuple() | [tuple()]
+.br
+.RE
+.RE
+.RS
+.LP
+Same as \fB\fIinsert/2\fR\&\fR\& except that instead of overwriting objects with the same key (for \fIset\fR\& or \fIordered_set\fR\&) or adding more objects with keys already existing in the table (for \fIbag\fR\& and \fIduplicate_bag\fR\&), \fIfalse\fR\& is returned\&.
+.LP
+If \fIObjectOrObjects\fR\& is a list, the function checks \fIevery\fR\& key before inserting anything\&. Nothing is inserted unless \fIall\fR\& keys present in the list are absent from the table\&. Like \fIinsert/2\fR\&, the entire operation is guaranteed to be \fBatomic and isolated\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_compiled_ms(Term) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Term = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Checks if a term is a valid compiled \fBmatch specification\fR\&\&. The compiled match specification is an opaque datatype that \fIcannot\fR\& be sent between Erlang nodes or be stored on disk\&. Any attempt to create an external representation of a compiled match specification results in an empty binary (\fI<<>>\fR\&)\&.
+.LP
+\fIExamples:\fR\&
+.LP
+The following expression yields \fItrue\fR\&::
+.LP
+.nf
+
+ets:is_compiled_ms(ets:match_spec_compile([{'_',[],[true]}])).
+.fi
+.LP
+The following expressions yield \fIfalse\fR\&, as variable \fIBroken\fR\& contains a compiled match specification that has passed through external representation:
+.LP
+.nf
+
+MS = ets:match_spec_compile([{'_',[],[true]}]),
+Broken = binary_to_term(term_to_binary(MS)),
+ets:is_compiled_ms(Broken).
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The reason for not having an external representation of compiled match specifications is performance\&. It can be subject to change in future releases, while this interface remains for backward compatibility\&.
+
+.RE
+.LP
+.nf
+
+.B
+last(Tab) -> Key | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the last key \fIKey\fR\& according to Erlang term order in table \fITab\fR\& of type \fIordered_set\fR\&\&. For other table types, the function is synonymous to \fB\fIfirst/1\fR\&\fR\&\&. If the table is empty, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.LP
+To find preceding keys in the table, use \fB\fIprev/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+lookup(Tab, Key) -> [Object]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+Object = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all objects with key \fIKey\fR\& in table \fITab\fR\&\&.
+.RS 2
+.TP 2
+*
+For tables of type \fIset\fR\&, \fIbag\fR\&, or \fIduplicate_bag\fR\&, an object is returned only if the specified key \fImatches\fR\& the key of the object in the table\&.
+.LP
+.TP 2
+*
+For tables of type \fIordered_set\fR\&, an object is returned if the specified key \fIcompares equal\fR\& to the key of an object in the table\&.
+.LP
+.RE
+
+.LP
+The difference is the same as between \fI=:=\fR\& and \fI==\fR\&\&.
+.LP
+As an example, one can insert an object with \fIinteger()\fR\& \fI1\fR\& as a key in an \fIordered_set\fR\& and get the object returned as a result of doing a \fIlookup/2\fR\& with \fIfloat()\fR\& \fI1\&.0\fR\& as the key to search for\&.
+.LP
+For tables of type \fIset\fR\& or \fIordered_set\fR\&, the function returns either the empty list or a list with one element, as there cannot be more than one object with the same key\&. For tables of type \fIbag\fR\& or \fIduplicate_bag\fR\&, the function returns a list of arbitrary length\&.
+.LP
+Notice that the time order of object insertions is preserved; the first object inserted with the specified key is the first in the resulting list, and so on\&.
+.LP
+Insert and lookup times in tables of type \fIset\fR\&, \fIbag\fR\&, and \fIduplicate_bag\fR\& are constant, regardless of the table size\&. For the \fIordered_set\fR\& datatype, time is proportional to the (binary) logarithm of the number of objects\&.
+.RE
+.LP
+.nf
+
+.B
+lookup_element(Tab, Key, Pos) -> Elem
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+Pos = integer() >= 1
+.br
+Elem = term() | [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+For a table \fITab\fR\& of type \fIset\fR\& or \fIordered_set\fR\&, the function returns the \fIPos\fR\&:th element of the object with key \fIKey\fR\&\&.
+.LP
+For tables of type \fIbag\fR\& or \fIduplicate_bag\fR\&, the functions returns a list with the \fIPos\fR\&:th element of every object with key \fIKey\fR\&\&.
+.LP
+If no object with key \fIKey\fR\& exists, the function exits with reason \fIbadarg\fR\&\&.
+.LP
+The difference between \fIset\fR\&, \fIbag\fR\&, and \fIduplicate_bag\fR\& on one hand, and \fIordered_set\fR\& on the other, regarding the fact that \fIordered_set\fR\& view keys as equal when they \fIcompare equal\fR\& whereas the other table types regard them equal only when they \fImatch\fR\&, holds for \fIlookup_element/3\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+match(Continuation) -> {[Match], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Match = [term()]
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Continues a match started with \fB\fImatch/3\fR\&\fR\&\&. The next chunk of the size specified in the initial \fImatch/3\fR\& call is returned together with a new \fIContinuation\fR\&, which can be used in subsequent calls to this function\&.
+.LP
+When there are no more objects in the table, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+match(Tab, Pattern) -> [Match]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Pattern = \fBmatch_pattern()\fR\&
+.br
+Match = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Matches the objects in table \fITab\fR\& against pattern \fIPattern\fR\&\&.
+.LP
+A pattern is a term that can contain:
+.RS 2
+.TP 2
+*
+Bound parts (Erlang terms)
+.LP
+.TP 2
+*
+\fI\&'_\&'\fR\& that matches any Erlang term
+.LP
+.TP 2
+*
+Pattern variables \fI\&'$N\&'\fR\&, where \fIN\fR\&=0,1,\&.\&.\&.
+.LP
+.RE
+
+.LP
+The function returns a list with one element for each matching object, where each element is an ordered list of pattern variable bindings, for example:
+.LP
+.nf
+
+6> ets:match(T, \&'$1\&')\&. % Matches every object in table
+[[{rufsen,dog,7}],[{brunte,horse,5}],[{ludde,dog,5}]]
+7> ets:match(T, {\&'_\&',dog,\&'$1\&'})\&.
+[[7],[5]]
+8> ets:match(T, {\&'_\&',cow,\&'$1\&'})\&.
+[]
+.fi
+.LP
+If the key is specified in the pattern, the match is very efficient\&. If the key is not specified, that is, if it is a variable or an underscore, the entire table must be searched\&. The search time can be substantial if the table is very large\&.
+.LP
+For tables of type \fIordered_set\fR\&, the result is in the same order as in a \fIfirst\fR\&/\fInext\fR\& traversal\&.
+.RE
+.LP
+.nf
+
+.B
+match(Tab, Pattern, Limit) ->
+.B
+         {[Match], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Pattern = \fBmatch_pattern()\fR\&
+.br
+Limit = integer() >= 1
+.br
+Match = [term()]
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fImatch/2\fR\&\fR\&, but returns only a limited (\fILimit\fR\&) number of matching objects\&. Term \fIContinuation\fR\& can then be used in subsequent calls to \fB\fImatch/1\fR\&\fR\& to get the next chunk of matching objects\&. This is a space-efficient way to work on objects in a table, which is faster than traversing the table object by object using \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\&\&.
+.LP
+If the table is empty, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+match_delete(Tab, Pattern) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Pattern = \fBmatch_pattern()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes all objects that match pattern \fIPattern\fR\& from table \fITab\fR\&\&. For a description of patterns, see \fB\fImatch/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+match_object(Continuation) ->
+.B
+                {[Object], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Object = tuple()
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Continues a match started with \fB\fImatch_object/3\fR\&\fR\&\&. The next chunk of the size specified in the initial \fImatch_object/3\fR\& call is returned together with a new \fIContinuation\fR\&, which can be used in subsequent calls to this function\&.
+.LP
+When there are no more objects in the table, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+match_object(Tab, Pattern) -> [Object]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Pattern = \fBmatch_pattern()\fR\&
+.br
+Object = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Matches the objects in table \fITab\fR\& against pattern \fIPattern\fR\&\&. For a description of patterns, see \fB\fImatch/2\fR\&\fR\&\&. The function returns a list of all objects that match the pattern\&.
+.LP
+If the key is specified in the pattern, the match is very efficient\&. If the key is not specified, that is, if it is a variable or an underscore, the entire table must be searched\&. The search time can be substantial if the table is very large\&.
+.LP
+For tables of type \fIordered_set\fR\&, the result is in the same order as in a \fIfirst\fR\&/\fInext\fR\& traversal\&.
+.RE
+.LP
+.nf
+
+.B
+match_object(Tab, Pattern, Limit) ->
+.B
+                {[Object], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Pattern = \fBmatch_pattern()\fR\&
+.br
+Limit = integer() >= 1
+.br
+Object = tuple()
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fImatch_object/2\fR\&\fR\&, but only returns a limited (\fILimit\fR\&) number of matching objects\&. Term \fIContinuation\fR\& can then be used in subsequent calls to \fB\fImatch_object/1\fR\&\fR\& to get the next chunk of matching objects\&. This is a space-efficient way to work on objects in a table, which is faster than traversing the table object by object using \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\&\&.
+.LP
+If the table is empty, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+match_spec_compile(MatchSpec) -> CompiledMatchSpec
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+CompiledMatchSpec = \fBcomp_match_spec()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Transforms a \fBmatch specification\fR\& into an internal representation that can be used in subsequent calls to \fB\fImatch_spec_run/2\fR\&\fR\&\&. The internal representation is opaque and cannot be converted to external term format and then back again without losing its properties (that is, it cannot be sent to a process on another node and still remain a valid compiled match specification, nor can it be stored on disk)\&. To check the validity of a compiled match specification, use \fB\fIis_compiled_ms/1\fR\&\fR\&\&.
+.LP
+If term \fIMatchSpec\fR\& cannot be compiled (does not represent a valid match specification), a \fIbadarg\fR\& exception is raised\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This function has limited use in normal code\&. It is used by the \fB\fIdets\fR\&\fR\& module to perform the \fIdets:select()\fR\& operations\&.
+
+.RE
+.LP
+.nf
+
+.B
+match_spec_run(List, CompiledMatchSpec) -> list()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+List = [tuple()]
+.br
+CompiledMatchSpec = \fBcomp_match_spec()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Executes the matching specified in a compiled \fBmatch specification\fR\& on a list of tuples\&. Term \fICompiledMatchSpec\fR\& is to be the result of a call to \fB\fImatch_spec_compile/1\fR\&\fR\& and is hence the internal representation of the match specification one wants to use\&.
+.LP
+The matching is executed on each element in \fIList\fR\& and the function returns a list containing all results\&. If an element in \fIList\fR\& does not match, nothing is returned for that element\&. The length of the result list is therefore equal or less than the length of parameter \fIList\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+The following two calls give the same result (but certainly not the same execution time):
+.LP
+.nf
+
+Table = ets:new...
+MatchSpec = ...
+% The following call...
+ets:match_spec_run(ets:tab2list(Table),
+ets:match_spec_compile(MatchSpec)),
+% ...gives the same result as the more common (and more efficient)
+ets:select(Table, MatchSpec),
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This function has limited use in normal code\&. It is used by the \fB\fIdets\fR\&\fR\& module to perform the \fIdets:select()\fR\& operations and by Mnesia during transactions\&.
+
+.RE
+.LP
+.nf
+
+.B
+member(Tab, Key) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fIlookup/2\fR\&\fR\&, but does not return the objects\&. Returns \fItrue\fR\& if one or more elements in the table has key \fIKey\fR\&, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+new(Name, Options) -> tid() | atom()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = atom()
+.br
+Options = [Option]
+.br
+Option = 
+.br
+    Type |
+.br
+    Access |
+.br
+    named_table |
+.br
+    {keypos, Pos} |
+.br
+    {heir, Pid :: pid(), HeirData} |
+.br
+    {heir, none} |
+.br
+    Tweaks
+.br
+Type = \fBtype()\fR\&
+.br
+Access = \fBaccess()\fR\&
+.br
+Tweaks = 
+.br
+    {write_concurrency, boolean()} |
+.br
+    {read_concurrency, boolean()} |
+.br
+    compressed
+.br
+Pos = integer() >= 1
+.br
+HeirData = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a new table and returns a table identifier that can be used in subsequent operations\&. The table identifier can be sent to other processes so that a table can be shared between different processes within a node\&.
+.LP
+Parameter \fIOptions\fR\& is a list of atoms that specifies table type, access rights, key position, and whether the table is named\&. Default values are used for omitted options\&. This means that not specifying any options (\fI[]\fR\&) is the same as specifying \fI[set, protected, {keypos,1}, {heir,none}, {write_concurrency,false}, {read_concurrency,false}]\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIset\fR\&:
+The table is a \fIset\fR\& table: one key, one object, no order among objects\&. This is the default table type\&.
+.TP 2
+.B
+\fIordered_set\fR\&:
+The table is a \fIordered_set\fR\& table: one key, one object, ordered in Erlang term order, which is the order implied by the < and > operators\&. Tables of this type have a somewhat different behavior in some situations than tables of other types\&. Most notably, the \fIordered_set\fR\& tables regard keys as equal when they \fIcompare equal\fR\&, not only when they match\&. This means that to an \fIordered_set\fR\& table, \fIinteger()\fR\& \fI1\fR\& and \fIfloat()\fR\& \fI1\&.0\fR\& are regarded as equal\&. This also means that the key used to lookup an element not necessarily \fImatches\fR\& the key in the returned elements, if \fIfloat()\fR\&\&'s and \fIinteger()\fR\&\&'s are mixed in keys of a table\&.
+.TP 2
+.B
+\fIbag\fR\&:
+The table is a \fIbag\fR\& table, which can have many objects, but only one instance of each object, per key\&.
+.TP 2
+.B
+\fIduplicate_bag\fR\&:
+The table is a \fIduplicate_bag\fR\& table, which can have many objects, including multiple copies of the same object, per key\&.
+.TP 2
+.B
+\fIpublic\fR\&:
+Any process can read or write to the table\&.
+.TP 2
+.B
+\fIprotected\fR\&:
+The owner process can read and write to the table\&. Other processes can only read the table\&. This is the default setting for the access rights\&.
+.TP 2
+.B
+\fIprivate\fR\&:
+Only the owner process can read or write to the table\&.
+.TP 2
+.B
+\fInamed_table\fR\&:
+If this option is present, name \fIName\fR\& is associated with the table identifier\&. The name can then be used instead of the table identifier in subsequent operations\&.
+.TP 2
+.B
+\fI{keypos,Pos}\fR\&:
+Specifies which element in the stored tuples to use as key\&. By default, it is the first element, that is, \fIPos=1\fR\&\&. However, this is not always appropriate\&. In particular, we do not want the first element to be the key if we want to store Erlang records in a table\&.
+.RS 2
+.LP
+Notice that any tuple stored in the table must have at least \fIPos\fR\& number of elements\&.
+.RE
+.TP 2
+.B
+\fI{heir,Pid,HeirData} | {heir,none}\fR\&:
+Set a process as heir\&. The heir inherits the table if the owner terminates\&. Message \fI{\&'ETS-TRANSFER\&',tid(),FromPid,HeirData}\fR\& is sent to the heir when that occurs\&. The heir must be a local process\&. Default heir is \fInone\fR\&, which destroys the table when the owner terminates\&.
+.TP 2
+.B
+\fI{write_concurrency,boolean()}\fR\&:
+Performance tuning\&. Defaults to \fIfalse\fR\&, in which case an operation that mutates (writes to) the table obtains exclusive access, blocking any concurrent access of the same table until finished\&. If set to \fItrue\fR\&, the table is optimized to concurrent write access\&. Different objects of the same table can be mutated (and read) by concurrent processes\&. This is achieved to some degree at the expense of memory consumption and the performance of sequential access and concurrent reading\&.
+.RS 2
+.LP
+Option \fIwrite_concurrency\fR\& can be combined with option \fB\fIread_concurrency\fR\&\fR\&\&. You typically want to combine these when large concurrent read bursts and large concurrent write bursts are common; for more information, see option \fB\fIread_concurrency\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+Notice that this option does not change any guarantees about \fBatomicity and isolation\fR\&\&. Functions that makes such promises over many objects (like \fB\fIinsert/2\fR\&\fR\&) gain less (or nothing) from this option\&.
+.RE
+.RS 2
+.LP
+Table type \fIordered_set\fR\& is not affected by this option\&. Also, the memory consumption inflicted by both \fIwrite_concurrency\fR\& and \fIread_concurrency\fR\& is a constant overhead per table\&. This overhead can be especially large when both options are combined\&.
+.RE
+.TP 2
+.B
+\fI{read_concurrency,boolean()}\fR\&:
+Performance tuning\&. Defaults to \fIfalse\fR\&\&. When set to \fItrue\fR\&, the table is optimized for concurrent read operations\&. When this option is enabled on a runtime system with SMP support, read operations become much cheaper; especially on systems with multiple physical processors\&. However, switching between read and write operations becomes more expensive\&.
+.RS 2
+.LP
+You typically want to enable this option when concurrent read operations are much more frequent than write operations, or when concurrent reads and writes comes in large read and write bursts (that is, many reads not interrupted by writes, and many writes not interrupted by reads)\&.
+.RE
+.RS 2
+.LP
+You typically do \fInot\fR\& want to enable this option when the common access pattern is a few read operations interleaved with a few write operations repeatedly\&. In this case, you would get a performance degradation by enabling this option\&.
+.RE
+.RS 2
+.LP
+Option \fIread_concurrency\fR\& can be combined with option \fB\fIwrite_concurrency\fR\&\fR\&\&. You typically want to combine these when large concurrent read bursts and large concurrent write bursts are common\&.
+.RE
+.TP 2
+.B
+\fIcompressed\fR\&:
+If this option is present, the table data is stored in a more compact format to consume less memory\&. However, it will make table operations slower\&. Especially operations that need to inspect entire objects, such as \fImatch\fR\& and \fIselect\fR\&, get much slower\&. The key element is not compressed\&.
+.RE
+.RE
+.LP
+.nf
+
+.B
+next(Tab, Key1) -> Key2 | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key1 = Key2 = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the next key \fIKey2\fR\&, following key \fIKey1\fR\& in table \fITab\fR\&\&. For table type \fIordered_set\fR\&, the next key in Erlang term order is returned\&. For other table types, the next key according to the internal order of the table is returned\&. If no next key exists, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.LP
+To find the first key in the table, use \fB\fIfirst/1\fR\&\fR\&\&.
+.LP
+Unless a table of type \fIset\fR\&, \fIbag\fR\&, or \fIduplicate_bag\fR\& is protected using \fB\fIsafe_fixtable/2\fR\&\fR\&, a traversal can fail if concurrent updates are made to the table\&. For table type \fIordered_set\fR\&, the function returns the next key in order, even if the object does no longer exist\&.
+.RE
+.LP
+.nf
+
+.B
+prev(Tab, Key1) -> Key2 | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key1 = Key2 = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the previous key \fIKey2\fR\&, preceding key \fIKey1\fR\& according to Erlang term order in table \fITab\fR\& of type \fIordered_set\fR\&\&. For other table types, the function is synonymous to \fB\fInext/2\fR\&\fR\&\&. If no previous key exists, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.LP
+To find the last key in the table, use \fB\fIlast/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+rename(Tab, Name) -> Name
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Name = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Renames the named table \fITab\fR\& to the new name \fIName\fR\&\&. Afterwards, the old name cannot be used to access the table\&. Renaming an unnamed table has no effect\&.
+.RE
+.LP
+.nf
+
+.B
+repair_continuation(Continuation, MatchSpec) -> Continuation
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = \fBcontinuation()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Restores an opaque continuation returned by \fB\fIselect/3\fR\&\fR\& or \fB\fIselect/1\fR\&\fR\& if the continuation has passed through external term format (been sent between nodes or stored on disk)\&.
+.LP
+The reason for this function is that continuation terms contain compiled match specifications and therefore are invalidated if converted to external term format\&. Given that the original match specification is kept intact, the continuation can be restored, meaning it can once again be used in subsequent \fIselect/1\fR\& calls even though it has been stored on disk or on another node\&.
+.LP
+\fIExamples:\fR\&
+.LP
+The following sequence of calls fails:
+.LP
+.nf
+
+T=ets:new(x,[]),
+...
+{_,C} = ets:select(T,ets:fun2ms(fun({N,_}=A)
+when (N rem 10) =:= 0 ->
+A
+end),10),
+Broken = binary_to_term(term_to_binary(C)),
+ets:select(Broken).
+.fi
+.LP
+The following sequence works, as the call to \fIrepair_continuation/2\fR\& reestablishes the (deliberately) invalidated continuation \fIBroken\fR\&\&.
+.LP
+.nf
+
+T=ets:new(x,[]),
+...
+MS = ets:fun2ms(fun({N,_}=A)
+when (N rem 10) =:= 0 ->
+A
+end),
+{_,C} = ets:select(T,MS,10),
+Broken = binary_to_term(term_to_binary(C)),
+ets:select(ets:repair_continuation(Broken,MS)).
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This function is rarely needed in application code\&. It is used by Mnesia to provide distributed \fIselect/3\fR\& and \fIselect/1\fR\& sequences\&. A normal application would either use Mnesia or keep the continuation from being converted to external format\&.
+.LP
+The reason for not having an external representation of a compiled match specification is performance\&. It can be subject to change in future releases, while this interface remains for backward compatibility\&.
+
+.RE
+.LP
+.nf
+
+.B
+safe_fixtable(Tab, Fix) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Fix = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+Fixes a table of type \fIset\fR\&, \fIbag\fR\&, or \fIduplicate_bag\fR\& for safe traversal\&.
+.LP
+A process fixes a table by calling \fIsafe_fixtable(Tab, true)\fR\&\&. The table remains fixed until the process releases it by calling \fIsafe_fixtable(Tab, false)\fR\&, or until the process terminates\&.
+.LP
+If many processes fix a table, the table remains fixed until all processes have released it (or terminated)\&. A reference counter is kept on a per process basis, and N consecutive fixes requires N releases to release the table\&.
+.LP
+When a table is fixed, a sequence of \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\& calls are guaranteed to succeed, and each object in the table is returned only once, even if objects are removed or inserted during the traversal\&. The keys for new objects inserted during the traversal \fIcan\fR\& be returned by \fInext/2\fR\& (it depends on the internal ordering of the keys)\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+clean_all_with_value(Tab,X) ->
+    safe_fixtable(Tab,true),
+    clean_all_with_value(Tab,X,ets:first(Tab)),
+    safe_fixtable(Tab,false).
+
+clean_all_with_value(Tab,X,'$end_of_table') ->
+    true;
+clean_all_with_value(Tab,X,Key) ->
+    case ets:lookup(Tab,Key) of
+        [{Key,X}] ->
+            ets:delete(Tab,Key);
+        _ ->
+            true
+    end,
+    clean_all_with_value(Tab,X,ets:next(Tab,Key)).
+.fi
+.LP
+Notice that no deleted objects are removed from a fixed table until it has been released\&. If a process fixes a table but never releases it, the memory used by the deleted objects is never freed\&. The performance of operations on the table also degrades significantly\&.
+.LP
+To retrieve information about which processes have fixed which tables, use \fB\fIinfo(Tab, safe_fixed_monotonic_time)\fR\&\fR\&\&. A system with many processes fixing tables can need a monitor that sends alarms when tables have been fixed for too long\&.
+.LP
+Notice that for table type \fIordered_set\fR\&, \fIsafe_fixtable/2\fR\& is not necessary, as calls to \fIfirst/1\fR\& and \fInext/2\fR\& always succeed\&.
+.RE
+.LP
+.nf
+
+.B
+select(Continuation) -> {[Match], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Match = term()
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Continues a match started with \fB\fIselect/3\fR\&\fR\&\&. The next chunk of the size specified in the initial \fIselect/3\fR\& call is returned together with a new \fIContinuation\fR\&, which can be used in subsequent calls to this function\&.
+.LP
+When there are no more objects in the table, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+select(Tab, MatchSpec) -> [Match]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+Match = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Matches the objects in table \fITab\fR\& using a \fBmatch specification\fR\&\&. This is a more general call than \fB\fImatch/2\fR\&\fR\& and \fB\fImatch_object/2\fR\&\fR\& calls\&. In its simplest form, the match specification is as follows:
+.LP
+.nf
+
+MatchSpec = [MatchFunction]
+MatchFunction = {MatchHead, [Guard], [Result]}
+MatchHead = "Pattern as in ets:match"
+Guard = {"Guardtest name", ...}
+Result = "Term construct"
+.fi
+.LP
+This means that the match specification is always a list of one or more tuples (of arity 3)\&. The first element of the tuple is to be a pattern as described in \fB\fImatch/2\fR\&\fR\&\&. The second element of the tuple is to be a list of 0 or more guard tests (described below)\&. The third element of the tuple is to be a list containing a description of the value to return\&. In almost all normal cases, the list contains exactly one term that fully describes the value to return for each object\&.
+.LP
+The return value is constructed using the "match variables" bound in \fIMatchHead\fR\& or using the special match variables \fI\&'$_\&'\fR\& (the whole matching object) and \fI\&'$$\&'\fR\& (all match variables in a list), so that the following \fImatch/2\fR\& expression:
+.LP
+.nf
+
+ets:match(Tab,{'$1','$2','$3'})
+.fi
+.LP
+is exactly equivalent to:
+.LP
+.nf
+
+ets:select(Tab,[{{'$1','$2','$3'},[],['$$']}])
+.fi
+.LP
+And that the following \fImatch_object/2\fR\& call:
+.LP
+.nf
+
+ets:match_object(Tab,{'$1','$2','$1'})
+.fi
+.LP
+is exactly equivalent to
+.LP
+.nf
+
+ets:select(Tab,[{{'$1','$2','$1'},[],['$_']}])
+.fi
+.LP
+Composite terms can be constructed in the \fIResult\fR\& part either by simply writing a list, so that the following code:
+.LP
+.nf
+
+ets:select(Tab,[{{'$1','$2','$3'},[],['$$']}])
+.fi
+.LP
+gives the same output as:
+.LP
+.nf
+
+ets:select(Tab,[{{'$1','$2','$3'},[],[['$1','$2','$3']]}])
+.fi
+.LP
+That is, all the bound variables in the match head as a list\&. If tuples are to be constructed, one has to write a tuple of arity 1 where the single element in the tuple is the tuple one wants to construct (as an ordinary tuple can be mistaken for a \fIGuard\fR\&)\&.
+.LP
+Therefore the following call:
+.LP
+.nf
+
+ets:select(Tab,[{{'$1','$2','$1'},[],['$_']}])
+.fi
+.LP
+gives the same output as:
+.LP
+.nf
+
+ets:select(Tab,[{{'$1','$2','$1'},[],[{{'$1','$2','$3'}}]}])
+.fi
+.LP
+This syntax is equivalent to the syntax used in the trace patterns (see the \fB\fIdbg(3)\fR\&\fR\&) module in Runtime_Tools\&.
+.LP
+The \fIGuard\fR\&s are constructed as tuples, where the first element is the test name and the remaining elements are the test parameters\&. To check for a specific type (say a list) of the element bound to the match variable \fI\&'$1\&'\fR\&, one would write the test as \fI{is_list, \&'$1\&'}\fR\&\&. If the test fails, the object in the table does not match and the next \fIMatchFunction\fR\& (if any) is tried\&. Most guard tests present in Erlang can be used, but only the new versions prefixed \fIis_\fR\& are allowed (\fIis_float\fR\&, \fIis_atom\fR\&, and so on)\&.
+.LP
+The \fIGuard\fR\& section can also contain logic and arithmetic operations, which are written with the same syntax as the guard tests (prefix notation), so that the following guard test written in Erlang:
+.LP
+.nf
+
+is_integer(X), is_integer(Y), X + Y < 4711
+.fi
+.LP
+is expressed as follows (\fIX\fR\& replaced with \fI\&'$1\&'\fR\& and \fIY\fR\& with \fI\&'$2\&'\fR\&):
+.LP
+.nf
+
+[{is_integer, '$1'}, {is_integer, '$2'}, {'<', {'+', '$1', '$2'}, 4711}]
+.fi
+.LP
+For tables of type \fIordered_set\fR\&, objects are visited in the same order as in a \fIfirst\fR\&/\fInext\fR\& traversal\&. This means that the match specification is executed against objects with keys in the \fIfirst\fR\&/\fInext\fR\& order and the corresponding result list is in the order of that execution\&.
+.RE
+.LP
+.nf
+
+.B
+select(Tab, MatchSpec, Limit) ->
+.B
+          {[Match], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+Limit = integer() >= 1
+.br
+Match = term()
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fIselect/2\fR\&\fR\&, but only returns a limited (\fILimit\fR\&) number of matching objects\&. Term \fIContinuation\fR\& can then be used in subsequent calls to \fB\fIselect/1\fR\&\fR\& to get the next chunk of matching objects\&. This is a space-efficient way to work on objects in a table, which is still faster than traversing the table object by object using \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\&\&.
+.LP
+If the table is empty, \fI\&'$end_of_table\&'\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+select_count(Tab, MatchSpec) -> NumMatched
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+NumMatched = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Matches the objects in table \fITab\fR\& using a \fBmatch specification\fR\&\&. If the match specification returns \fItrue\fR\& for an object, that object considered a match and is counted\&. For any other result from the match specification the object is not considered a match and is therefore not counted\&.
+.LP
+This function can be described as a \fB\fImatch_delete/2\fR\&\fR\& function that does not delete any elements, but only counts them\&.
+.LP
+The function returns the number of objects matched\&.
+.RE
+.LP
+.nf
+
+.B
+select_delete(Tab, MatchSpec) -> NumDeleted
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+NumDeleted = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Matches the objects in table \fITab\fR\& using a \fBmatch specification\fR\&\&. If the match specification returns \fItrue\fR\& for an object, that object is removed from the table\&. For any other result from the match specification the object is retained\&. This is a more general call than the \fB\fImatch_delete/2\fR\&\fR\& call\&.
+.LP
+The function returns the number of objects deleted from the table\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The match specification has to return the atom \fItrue\fR\& if the object is to be deleted\&. No other return value gets the object deleted\&. So one cannot use the same match specification for looking up elements as for deleting them\&.
+
+.RE
+.LP
+.nf
+
+.B
+select_reverse(Continuation) ->
+.B
+                  {[Match], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Continuation = \fBcontinuation()\fR\&
+.br
+Match = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Continues a match started with \fB\fIselect_reverse/3\fR\&\fR\&\&. For tables of type \fIordered_set\fR\&, the traversal of the table continues to objects with keys earlier in the Erlang term order\&. The returned list also contains objects with keys in reverse order\&. For all other table types, the behavior is exactly that of \fB\fIselect/1\fR\&\fR\&\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+1> T = ets:new(x,[ordered_set]).
+2> [ ets:insert(T,{N}) || N <- lists:seq(1,10) ].
+...
+3> {R0,C0} = ets:select_reverse(T,[{'_',[],['$_']}],4).
+...
+4> R0.
+[{10},{9},{8},{7}]
+5> {R1,C1} = ets:select_reverse(C0).
+...
+6> R1.
+[{6},{5},{4},{3}]
+7> {R2,C2} = ets:select_reverse(C1).
+...
+8> R2.
+[{2},{1}]
+9> '$end_of_table' = ets:select_reverse(C2).
+...
+.fi
+.RE
+.LP
+.nf
+
+.B
+select_reverse(Tab, MatchSpec) -> [Match]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+Match = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fIselect/2\fR\&\fR\&, but returns the list in reverse order for table type \fIordered_set\fR\&\&. For all other table types, the return value is identical to that of \fIselect/2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+select_reverse(Tab, MatchSpec, Limit) ->
+.B
+                  {[Match], Continuation} | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+Limit = integer() >= 1
+.br
+Match = term()
+.br
+Continuation = \fBcontinuation()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Works like \fB\fIselect/3\fR\&\fR\&, but for table type \fIordered_set\fR\& traversing is done starting at the last object in Erlang term order and moves to the first\&. For all other table types, the return value is identical to that of \fIselect/3\fR\&\&.
+.LP
+Notice that this is \fInot\fR\& equivalent to reversing the result list of a \fIselect/3\fR\& call, as the result list is not only reversed, but also contains the last \fILimit\fR\& matching objects in the table, not the first\&.
+.RE
+.LP
+.nf
+
+.B
+setopts(Tab, Opts) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Opts = Opt | [Opt]
+.br
+Opt = {heir, pid(), HeirData} | {heir, none}
+.br
+HeirData = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Sets table options\&. The only allowed option to be set after the table has been created is \fB\fIheir\fR\&\fR\&\&. The calling process must be the table owner\&.
+.RE
+.LP
+.nf
+
+.B
+slot(Tab, I) -> [Object] | \&'$end_of_table\&'
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+I = integer() >= 0
+.br
+Object = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+This function is mostly for debugging purposes, Normally \fIfirst\fR\&/\fInext\fR\& or \fIlast\fR\&/\fIprev\fR\& are to be used instead\&.
+.LP
+Returns all objects in slot \fII\fR\& of table \fITab\fR\&\&. A table can be traversed by repeatedly calling the function, starting with the first slot \fII=0\fR\& and ending when \fI\&'$end_of_table\&'\fR\& is returned\&. If argument \fII\fR\& is out of range, the function fails with reason \fIbadarg\fR\&\&.
+.LP
+Unless a table of type \fIset\fR\&, \fIbag\fR\&, or \fIduplicate_bag\fR\& is protected using \fB\fIsafe_fixtable/2\fR\&\fR\&, a traversal can fail if concurrent updates are made to the table\&. For table type \fIordered_set\fR\&, the function returns a list containing object \fII\fR\& in Erlang term order\&.
+.RE
+.LP
+.nf
+
+.B
+tab2file(Tab, Filename) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Filename = \fBfile:name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Dumps table \fITab\fR\& to file \fIFilename\fR\&\&.
+.LP
+Equivalent to \fItab2file(Tab, Filename,[])\fR\&
+.RE
+.LP
+.nf
+
+.B
+tab2file(Tab, Filename, Options) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Filename = \fBfile:name()\fR\&
+.br
+Options = [Option]
+.br
+Option = {extended_info, [ExtInfo]} | {sync, boolean()}
+.br
+ExtInfo = md5sum | object_count
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Dumps table \fITab\fR\& to file \fIFilename\fR\&\&.
+.LP
+When dumping the table, some information about the table is dumped to a header at the beginning of the dump\&. This information contains data about the table type, name, protection, size, version, and if it is a named table\&. It also contains notes about what extended information is added to the file, which can be a count of the objects in the file or a MD5 sum of the header and records in the file\&.
+.LP
+The size field in the header might not correspond to the number of records in the file if the table is public and records are added or removed from the table during dumping\&. Public tables updated during dump, and that one wants to verify when reading, needs at least one field of extended information for the read verification process to be reliable later\&.
+.LP
+Option \fIextended_info\fR\& specifies what extra information is written to the table dump:
+.RS 2
+.TP 2
+.B
+\fIobject_count\fR\&:
+The number of objects written to the file is noted in the file footer, so file truncation can be verified even if the file was updated during dump\&.
+.TP 2
+.B
+\fImd5sum\fR\&:
+The header and objects in the file are checksummed using the built-in MD5 functions\&. The MD5 sum of all objects is written in the file footer, so that verification while reading detects the slightest bitflip in the file data\&. Using this costs a fair amount of CPU time\&.
+.RE
+.LP
+Whenever option \fIextended_info\fR\& is used, it results in a file not readable by versions of ETS before that in STDLIB 1\&.15\&.1
+.LP
+If option \fIsync\fR\& is set to \fItrue\fR\&, it ensures that the content of the file is written to the disk before \fItab2file\fR\& returns\&. Defaults to \fI{sync, false}\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+tab2list(Tab) -> [Object]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Object = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all objects in table \fITab\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+tabfile_info(Filename) -> {ok, TableInfo} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filename = \fBfile:name()\fR\&
+.br
+TableInfo = [InfoItem]
+.br
+InfoItem = 
+.br
+    {name, atom()} |
+.br
+    {type, Type} |
+.br
+    {protection, Protection} |
+.br
+    {named_table, boolean()} |
+.br
+    {keypos, integer() >= 0} |
+.br
+    {size, integer() >= 0} |
+.br
+    {extended_info, [ExtInfo]} |
+.br
+    {version,
+.br
+     {Major :: integer() >= 0, Minor :: integer() >= 0}}
+.br
+ExtInfo = md5sum | object_count
+.br
+Type = bag | duplicate_bag | ordered_set | set
+.br
+Protection = private | protected | public
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns information about the table dumped to file by \fB\fItab2file/2\fR\&\fR\& or \fB\fItab2file/3\fR\&\fR\&\&.
+.LP
+The following items are returned:
+.RS 2
+.TP 2
+.B
+\fIname\fR\&:
+The name of the dumped table\&. If the table was a named table, a table with the same name cannot exist when the table is loaded from file with \fB\fIfile2tab/2\fR\&\fR\&\&. If the table is not saved as a named table, this field has no significance when loading the table from file\&.
+.TP 2
+.B
+\fItype\fR\&:
+The ETS type of the dumped table (that is, \fIset\fR\&, \fIbag\fR\&, \fIduplicate_bag\fR\&, or \fIordered_set\fR\&)\&. This type is used when loading the table again\&.
+.TP 2
+.B
+\fIprotection\fR\&:
+The protection of the dumped table (that is, \fIprivate\fR\&, \fIprotected\fR\&, or \fIpublic\fR\&)\&. A table loaded from the file gets the same protection\&.
+.TP 2
+.B
+\fInamed_table\fR\&:
+\fItrue\fR\& if the table was a named table when dumped to file, otherwise \fIfalse\fR\&\&. Notice that when a named table is loaded from a file, there cannot exist a table in the system with the same name\&.
+.TP 2
+.B
+\fIkeypos\fR\&:
+The \fIkeypos\fR\& of the table dumped to file, which is used when loading the table again\&.
+.TP 2
+.B
+\fIsize\fR\&:
+The number of objects in the table when the table dump to file started\&. For a \fIpublic\fR\& table, this number does not need to correspond to the number of objects saved to the file, as objects can have been added or deleted by another process during table dump\&.
+.TP 2
+.B
+\fIextended_info\fR\&:
+The extended information written in the file footer to allow stronger verification during table loading from file, as specified to \fB\fItab2file/3\fR\&\fR\&\&. Notice that this function only tells \fIwhich\fR\& information is present, not the values in the file footer\&. The value is a list containing one or more of the atoms \fIobject_count\fR\& and \fImd5sum\fR\&\&.
+.TP 2
+.B
+\fIversion\fR\&:
+A tuple \fI{Major,Minor}\fR\& containing the major and minor version of the file format for ETS table dumps\&. This version field was added beginning with STDLIB 1\&.5\&.1\&. Files dumped with older versions return \fI{0,0}\fR\& in this field\&.
+.RE
+.LP
+An error is returned if the file is inaccessible, badly damaged, or not produced with \fB\fItab2file/2\fR\&\fR\& or \fB\fItab2file/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+table(Tab) -> QueryHandle
+.br
+.fi
+.br
+.nf
+
+.B
+table(Tab, Options) -> QueryHandle
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+QueryHandle = \fBqlc:query_handle()\fR\&
+.br
+Options = [Option] | Option
+.br
+Option = {n_objects, NObjects} | {traverse, TraverseMethod}
+.br
+NObjects = default | integer() >= 1
+.br
+TraverseMethod = 
+.br
+    first_next |
+.br
+    last_prev |
+.br
+    select |
+.br
+    {select, MatchSpec :: \fBmatch_spec()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a Query List Comprehension (QLC) query handle\&. The \fB\fIqlc\fR\&\fR\& module provides a query language aimed mainly at Mnesia, but ETS tables, Dets tables, and lists are also recognized by QLC as sources of data\&. Calling \fItable/1,2\fR\& is the means to make the ETS table \fITab\fR\& usable to QLC\&.
+.LP
+When there are only simple restrictions on the key position, QLC uses \fB\fIlookup/2\fR\&\fR\& to look up the keys\&. When that is not possible, the whole table is traversed\&. Option \fItraverse\fR\& determines how this is done:
+.RS 2
+.TP 2
+.B
+\fIfirst_next\fR\&:
+The table is traversed one key at a time by calling \fB\fIfirst/1\fR\&\fR\& and \fB\fInext/2\fR\&\fR\&\&.
+.TP 2
+.B
+\fIlast_prev\fR\&:
+The table is traversed one key at a time by calling \fB\fIlast/1\fR\&\fR\& and \fB\fIprev/2\fR\&\fR\&\&.
+.TP 2
+.B
+\fIselect\fR\&:
+The table is traversed by calling \fB\fIselect/3\fR\&\fR\& and \fB\fIselect/1\fR\&\fR\&\&. Option \fIn_objects\fR\& determines the number of objects returned (the third argument of \fIselect/3\fR\&); the default is to return \fI100\fR\& objects at a time\&. The \fBmatch specification\fR\& (the second argument of \fIselect/3\fR\&) is assembled by QLC: simple filters are translated into equivalent match specifications while more complicated filters must be applied to all objects returned by \fIselect/3\fR\& given a match specification that matches all objects\&.
+.TP 2
+.B
+\fI{select, MatchSpec}\fR\&:
+As for \fIselect\fR\&, the table is traversed by calling \fB\fIselect/3\fR\&\fR\& and \fB\fIselect/1\fR\&\fR\&\&. The difference is that the match specification is explicitly specified\&. This is how to state match specifications that cannot easily be expressed within the syntax provided by QLC\&.
+.RE
+.LP
+\fIExamples:\fR\&
+.LP
+An explicit match specification is here used to traverse the table:
+.LP
+.nf
+
+9> true = ets:insert(Tab = ets:new(t, []), [{1,a},{2,b},{3,c},{4,d}]),
+MS = ets:fun2ms(fun({X,Y}) when (X > 1) or (X < 5) -> {Y} end),
+QH1 = ets:table(Tab, [{traverse, {select, MS}}])\&.
+.fi
+.LP
+An example with an implicit match specification:
+.LP
+.nf
+
+10> QH2 = qlc:q([{Y} || {X,Y} <- ets:table(Tab), (X > 1) or (X < 5)])\&.
+.fi
+.LP
+The latter example is equivalent to the former, which can be verified using function \fIqlc:info/1\fR\&:
+.LP
+.nf
+
+11> qlc:info(QH1) =:= qlc:info(QH2)\&.
+true
+.fi
+.LP
+\fIqlc:info/1\fR\& returns information about a query handle, and in this case identical information is returned for the two query handles\&.
+.RE
+.LP
+.nf
+
+.B
+take(Tab, Key) -> [Object]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+Object = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns and removes a list of all objects with key \fIKey\fR\& in table \fITab\fR\&\&.
+.LP
+The specified \fIKey\fR\& is used to identify the object by either \fIcomparing equal\fR\& the key of an object in an \fIordered_set\fR\& table, or \fImatching\fR\& in other types of tables (for details on the difference, see \fB\fIlookup/2\fR\&\fR\& and \fB\fInew/2\fR\&\fR\&)\&.
+.RE
+.LP
+.nf
+
+.B
+test_ms(Tuple, MatchSpec) -> {ok, Result} | {error, Errors}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tuple = tuple()
+.br
+MatchSpec = \fBmatch_spec()\fR\&
+.br
+Result = term()
+.br
+Errors = [{warning | error, string()}]
+.br
+.RE
+.RE
+.RS
+.LP
+This function is a utility to test a \fBmatch specification\fR\& used in calls to \fB\fIselect/2\fR\&\fR\&\&. The function both tests \fIMatchSpec\fR\& for "syntactic" correctness and runs the match specification against object \fITuple\fR\&\&.
+.LP
+If the match specification is syntactically correct, the function either returns \fI{ok,Result}\fR\&, where \fIResult\fR\& is what would have been the result in a real \fIselect/2\fR\& call, or \fIfalse\fR\& if the match specification does not match object \fITuple\fR\&\&.
+.LP
+If the match specification contains errors, tuple \fI{error, Errors}\fR\& is returned, where \fIErrors\fR\& is a list of natural language descriptions of what was wrong with the match specification\&.
+.LP
+This is a useful debugging and test tool, especially when writing complicated \fIselect/2\fR\& calls\&.
+.LP
+See also: \fB erlang:match_spec_test/3\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+to_dets(Tab, DetsTab) -> DetsTab
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+DetsTab = \fBdets:tab_name()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Fills an already created/opened Dets table with the objects in the already opened ETS table named \fITab\fR\&\&. The Dets table is emptied before the objects are inserted\&.
+.RE
+.LP
+.nf
+
+.B
+update_counter(Tab, Key, UpdateOp) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+update_counter(Tab, Key, UpdateOp, Default) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+update_counter(Tab, Key, X3 :: [UpdateOp]) -> [Result]
+.br
+.fi
+.br
+.nf
+
+.B
+update_counter(Tab, Key, X3 :: [UpdateOp], Default) -> [Result]
+.br
+.fi
+.br
+.nf
+
+.B
+update_counter(Tab, Key, Incr) -> Result
+.br
+.fi
+.br
+.nf
+
+.B
+update_counter(Tab, Key, Incr, Default) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+UpdateOp = {Pos, Incr} | {Pos, Incr, Threshold, SetValue}
+.br
+Pos = Incr = Threshold = SetValue = Result = integer()
+.br
+Default = tuple()
+.br
+.RE
+.RE
+.RS
+.LP
+This function provides an efficient way to update one or more counters, without the trouble of having to look up an object, update the object by incrementing an element, and insert the resulting object into the table again\&. (The update is done atomically, that is, no process can access the ETS table in the middle of the operation\&.)
+.LP
+This function destructively update the object with key \fIKey\fR\& in table \fITab\fR\& by adding \fIIncr\fR\& to the element at position \fIPos\fR\&\&. The new counter value is returned\&. If no position is specified, the element directly following key (\fI<keypos>+1\fR\&) is updated\&.
+.LP
+If a \fIThreshold\fR\& is specified, the counter is reset to value \fISetValue\fR\& if the following conditions occur:
+.RS 2
+.TP 2
+*
+\fIIncr\fR\& is not negative (\fI>= 0\fR\&) and the result would be greater than (\fI>\fR\&) \fIThreshold\fR\&\&.
+.LP
+.TP 2
+*
+\fIIncr\fR\& is negative (\fI< 0\fR\&) and the result would be less than (\fI<\fR\&) \fIThreshold\fR\&\&.
+.LP
+.RE
+
+.LP
+A list of \fIUpdateOp\fR\& can be supplied to do many update operations within the object\&. The operations are carried out in the order specified in the list\&. If the same counter position occurs more than once in the list, the corresponding counter is thus updated many times, each time based on the previous result\&. The return value is a list of the new counter values from each update operation in the same order as in the operation list\&. If an empty list is specified, nothing is updated and an empty list is returned\&. If the function fails, no updates is done\&.
+.LP
+The specified \fIKey\fR\& is used to identify the object by either \fImatching\fR\& the key of an object in a \fIset\fR\& table, or \fIcompare equal\fR\& to the key of an object in an \fIordered_set\fR\& table (for details on the difference, see \fB\fIlookup/2\fR\&\fR\& and \fB\fInew/2\fR\&\fR\&)\&.
+.LP
+If a default object \fIDefault\fR\& is specified, it is used as the object to be updated if the key is missing from the table\&. The value in place of the key is ignored and replaced by the proper key value\&. The return value is as if the default object had not been used, that is, a single updated element or a list of them\&.
+.LP
+The function fails with reason \fIbadarg\fR\& in the following situations:
+.RS 2
+.TP 2
+*
+The table type is not \fIset\fR\& or \fIordered_set\fR\&\&.
+.LP
+.TP 2
+*
+No object with the correct key exists and no default object was supplied\&.
+.LP
+.TP 2
+*
+The object has the wrong arity\&.
+.LP
+.TP 2
+*
+The default object arity is smaller than \fI<keypos>\fR\&\&.
+.LP
+.TP 2
+*
+Any field from the default object that is updated is not an integer\&.
+.LP
+.TP 2
+*
+The element to update is not an integer\&.
+.LP
+.TP 2
+*
+The element to update is also the key\&.
+.LP
+.TP 2
+*
+Any of \fIPos\fR\&, \fIIncr\fR\&, \fIThreshold\fR\&, or \fISetValue\fR\& is not an integer\&.
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+update_element(Tab, Key, ElementSpec :: {Pos, Value}) -> boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+update_element(Tab, Key, ElementSpec :: [{Pos, Value}]) ->
+.B
+                  boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tab = \fBtab()\fR\&
+.br
+Key = term()
+.br
+Value = term()
+.br
+Pos = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+This function provides an efficient way to update one or more elements within an object, without the trouble of having to look up, update, and write back the entire object\&.
+.LP
+This function destructively updates the object with key \fIKey\fR\& in table \fITab\fR\&\&. The element at position \fIPos\fR\& is given the value \fIValue\fR\&\&.
+.LP
+A list of \fI{Pos,Value}\fR\& can be supplied to update many elements within the same object\&. If the same position occurs more than once in the list, the last value in the list is written\&. If the list is empty or the function fails, no updates are done\&. The function is also atomic in the sense that other processes can never see any intermediate results\&.
+.LP
+Returns \fItrue\fR\& if an object with key \fIKey\fR\& is found, otherwise \fIfalse\fR\&\&.
+.LP
+The specified \fIKey\fR\& is used to identify the object by either \fImatching\fR\& the key of an object in a \fIset\fR\& table, or \fIcompare equal\fR\& to the key of an object in an \fIordered_set\fR\& table (for details on the difference, see \fB\fIlookup/2\fR\&\fR\& and \fB\fInew/2\fR\&\fR\&)\&.
+.LP
+The function fails with reason \fIbadarg\fR\& in the following situations:
+.RS 2
+.TP 2
+*
+The table type is not \fIset\fR\& or \fIordered_set\fR\&\&.
+.LP
+.TP 2
+*
+\fIPos\fR\& < 1\&.
+.LP
+.TP 2
+*
+\fIPos\fR\& > object arity\&.
+.LP
+.TP 2
+*
+The element to update is also the key\&.
+.LP
+.RE
+
+.RE

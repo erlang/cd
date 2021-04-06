@@ -1,0 +1,282 @@
+.TH wxMDIParentFrame 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxMDIParentFrame \- See external documentation: wxMDIParentFrame.
+.SH DESCRIPTION
+.LP
+See external documentation: wxMDIParentFrame\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxFrame\fR\& 
+.br
+\fBwxTopLevelWindow\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxMDIParentFrame():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxMDIParentFrame()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent, Id, Title) -> \fBwxMDIParentFrame()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Title = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, Id, Title, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Id, Title, Options::[Option]) -> \fBwxMDIParentFrame()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Title = \fBunicode:chardata()\fR\&
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+activateNext(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+activatePrevious(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+arrangeIcons(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+cascade(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Title) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Title = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, Id, Title, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Title, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Title = \fBunicode:chardata()\fR\&
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getActiveChild(This) -> \fBwxMDIChildFrame:wxMDIChildFrame()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getClientWindow(This) -> \fBwxMDIClientWindow:wxMDIClientWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+tile(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBtile(This, [])\fR\&\&.
+.RE
+.LP
+.B
+tile(This, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxMDIParentFrame()\fR\&
+.br
+Option = {orient, \fBwx:wx_enum()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Orient = ?wxHORIZONTAL | ?wxVERTICAL | ?wxBOTH
+.RE
+.LP
+.B
+destroy(This::\fBwxMDIParentFrame()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

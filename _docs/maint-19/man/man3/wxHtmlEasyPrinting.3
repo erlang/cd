@@ -1,0 +1,350 @@
+.TH wxHtmlEasyPrinting 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxHtmlEasyPrinting \- See external documentation: wxHtmlEasyPrinting.
+.SH DESCRIPTION
+.LP
+See external documentation: wxHtmlEasyPrinting\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxHtmlEasyPrinting():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxHtmlEasyPrinting()\fR\&
+.br
+.RS
+.LP
+Equivalent to \fBnew([])\fR\&\&.
+.RE
+.LP
+.B
+new(Options::[Option]) -> \fBwxHtmlEasyPrinting()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Option = {name, \fBunicode:chardata()\fR\&} | {parentWindow, \fBwxWindow:wxWindow()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPrintData(This) -> \fBwxPrintData:wxPrintData()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageSetupData(This) -> \fBwxPageSetupDialogData:wxPageSetupDialogData()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+previewFile(This, Htmlfile) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Htmlfile = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+previewText(This, Htmltext) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Htmltext = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBpreviewText(This, Htmltext, [])\fR\&\&.
+.RE
+.LP
+.B
+previewText(This, Htmltext, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Htmltext = \fBunicode:chardata()\fR\&
+.br
+Option = {basepath, \fBunicode:chardata()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+printFile(This, Htmlfile) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Htmlfile = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+printText(This, Htmltext) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Htmltext = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBprintText(This, Htmltext, [])\fR\&\&.
+.RE
+.LP
+.B
+printText(This, Htmltext, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Htmltext = \fBunicode:chardata()\fR\&
+.br
+Option = {basepath, \fBunicode:chardata()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+pageSetup(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setFonts(This, Normal_face, Fixed_face) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Normal_face = \fBunicode:chardata()\fR\&
+.br
+Fixed_face = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetFonts(This, Normal_face, Fixed_face, [])\fR\&\&.
+.RE
+.LP
+.B
+setFonts(This, Normal_face, Fixed_face, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Normal_face = \fBunicode:chardata()\fR\&
+.br
+Fixed_face = \fBunicode:chardata()\fR\&
+.br
+Option = {sizes, [integer()]}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setHeader(This, Header) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Header = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetHeader(This, Header, [])\fR\&\&.
+.RE
+.LP
+.B
+setHeader(This, Header, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Header = \fBunicode:chardata()\fR\&
+.br
+Option = {pg, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setFooter(This, Footer) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Footer = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetFooter(This, Footer, [])\fR\&\&.
+.RE
+.LP
+.B
+setFooter(This, Footer, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxHtmlEasyPrinting()\fR\&
+.br
+Footer = \fBunicode:chardata()\fR\&
+.br
+Option = {pg, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxHtmlEasyPrinting()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

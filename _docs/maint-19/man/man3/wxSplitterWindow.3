@@ -1,0 +1,540 @@
+.TH wxSplitterWindow 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxSplitterWindow \- See external documentation: wxSplitterWindow.
+.SH DESCRIPTION
+.LP
+See external documentation: wxSplitterWindow\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxSplitterWindow():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxSplitterWindow()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent) -> \fBwxSplitterWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Options::[Option]) -> \fBwxSplitterWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {id, integer()} | {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getMinimumPaneSize(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSashGravity(This) -> number()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSashPosition(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSplitMode(This) -> \fBwx:wx_enum()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&. 
+.br
+Res = ?wxSPLIT_HORIZONTAL | ?wxSPLIT_VERTICAL
+.RE
+.LP
+.B
+getWindow1(This) -> \fBwxWindow:wxWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getWindow2(This) -> \fBwxWindow:wxWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+initialize(This, Window) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Window = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+isSplit(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+replaceWindow(This, WinOld, WinNew) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+WinOld = \fBwxWindow:wxWindow()\fR\&
+.br
+WinNew = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSashGravity(This, Gravity) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Gravity = number()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSashPosition(This, Position) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Position = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetSashPosition(This, Position, [])\fR\&\&.
+.RE
+.LP
+.B
+setSashPosition(This, Position, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Position = integer()
+.br
+Option = {redraw, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSashSize(This, Width) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Width = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setMinimumPaneSize(This, Min) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Min = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSplitMode(This, Mode) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Mode = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+splitHorizontally(This, Window1, Window2) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Window1 = \fBwxWindow:wxWindow()\fR\&
+.br
+Window2 = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsplitHorizontally(This, Window1, Window2, [])\fR\&\&.
+.RE
+.LP
+.B
+splitHorizontally(This, Window1, Window2, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Window1 = \fBwxWindow:wxWindow()\fR\&
+.br
+Window2 = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {sashPosition, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+splitVertically(This, Window1, Window2) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Window1 = \fBwxWindow:wxWindow()\fR\&
+.br
+Window2 = \fBwxWindow:wxWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsplitVertically(This, Window1, Window2, [])\fR\&\&.
+.RE
+.LP
+.B
+splitVertically(This, Window1, Window2, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Window1 = \fBwxWindow:wxWindow()\fR\&
+.br
+Window2 = \fBwxWindow:wxWindow()\fR\&
+.br
+Option = {sashPosition, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+unsplit(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBunsplit(This, [])\fR\&\&.
+.RE
+.LP
+.B
+unsplit(This, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+Option = {toRemove, \fBwxWindow:wxWindow()\fR\&}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+updateSize(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxSplitterWindow()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxSplitterWindow()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

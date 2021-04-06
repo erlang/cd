@@ -1,0 +1,85 @@
+.TH config 5 "kernel 5.2.0.1" "Ericsson AB" "Files"
+.SH NAME
+config \- Configuration file.
+.SH DESCRIPTION
+.LP
+A \fIconfiguration file\fR\& contains values for configuration parameters for the applications in the system\&. The \fIerl\fR\& command-line argument \fI-config Name\fR\& tells the system to use data in the system configuration file \fIName\&.config\fR\&\&.
+.LP
+Configuration parameter values in the configuration file override the values in the application resource files (see \fB\fIapp(4)\fR\&\fR\&\&. The values in the configuration file can be overridden by command-line flags (see \fB\fIerts:erl(1)\fR\&\fR\&\&.
+.LP
+The value of a configuration parameter is retrieved by calling \fIapplication:get_env/1,2\fR\&\&.
+.SH "FILE SYNTAX"
+
+.LP
+The configuration file is to be called \fIName\&.config\fR\&, where \fIName\fR\& is any name\&.
+.LP
+File \fI\&.config\fR\& contains a single Erlang term and has the following syntax:
+.LP
+.nf
+
+[{Application1, [{Par11, Val11}, ...]},
+ ...
+ {ApplicationN, [{ParN1, ValN1}, ...]}].
+.fi
+.RS 2
+.TP 2
+.B
+\fIApplication = atom()\fR\&:
+Application name\&.
+.TP 2
+.B
+\fIPar = atom()\fR\&:
+Name of a configuration parameter\&.
+.TP 2
+.B
+\fIVal = term()\fR\&:
+Value of a configuration parameter\&.
+.RE
+.SH "SYS.CONFIG"
+
+.LP
+When starting Erlang in embedded mode, it is assumed that exactly one system configuration file is used, named \fIsys\&.config\fR\&\&. This file is to be located in \fI$ROOT/releases/Vsn\fR\&, where \fI$ROOT\fR\& is the Erlang/OTP root installation directory and \fIVsn\fR\& is the release version\&.
+.LP
+Release handling relies on this assumption\&. When installing a new release version, the new \fIsys\&.config\fR\& is read and used to update the application configurations\&.
+.LP
+This means that specifying another \fI\&.config\fR\& file, or more \fI\&.config\fR\& files, leads to inconsistent update of application configurations\&. Therefore, in Erlang 5\&.4/OTP R10B, the syntax of \fIsys\&.config\fR\& was extended to allow pointing out other \fI\&.config\fR\& files:
+.LP
+.nf
+
+[{Application, [{Par, Val}]} | File].
+.fi
+.RS 2
+.TP 2
+.B
+\fIFile = string()\fR\&:
+Name of another \fI\&.config\fR\& file\&. Extension \fI\&.config\fR\& can be omitted\&. It is recommended to use absolute paths\&. A relative path is relative the current working directory of the emulator\&.
+.RE
+.LP
+When traversing the contents of \fIsys\&.config\fR\& and a filename is encountered, its contents are read and merged with the result so far\&. When an application configuration tuple \fI{Application, Env}\fR\& is found, it is merged with the result so far\&. Merging means that new parameters are added and existing parameter values overwritten\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+sys.config:
+
+[{myapp,[{par1,val1},{par2,val2}]},
+ "/home/user/myconfig"].
+
+myconfig.config:
+
+[{myapp,[{par2,val3},{par3,val4}]}].
+.fi
+.LP
+This yields the following environment for \fImyapp\fR\&:
+.LP
+.nf
+
+[{par1,val1},{par2,val3},{par3,val4}]
+.fi
+.LP
+The behavior if a file specified in \fIsys\&.config\fR\& does not exist, or is erroneous, is backwards compatible\&. Starting the runtime system will fail\&. Installing a new release version will not fail, but an error message is returned and the erroneous file is ignored\&.
+.SH "SEE ALSO"
+
+.LP
+\fB\fIapp(4)\fR\&\fR\&, \fB\fIerts:erl(1)\fR\&\fR\&, \fBOTP Design Principles\fR\&

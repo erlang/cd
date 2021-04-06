@@ -1,0 +1,370 @@
+.TH ssh_file 3 "ssh 4.9.1.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_file \- Default callback module for the client's and server's database operations in the ssh application
+.SH DESCRIPTION
+.LP
+This module is the default callback handler for the client\&'s and the server\&'s user and host "database" operations\&. All data, for instance key pairs, are stored in files in the normal file system\&. This page documents the files, where they are stored and configuration options for this callback module\&.
+.LP
+The intention is to be compatible with the OpenSSH storage in files\&. Therefore it mimics directories and filenames of OpenSSH\&.
+.LP
+Ssh_file implements the \fBssh_server_key_api\fR\& and the \fBssh_client_key_api\fR\&\&. This enables the user to make an own interface using for example a database handler\&.
+.LP
+Such another callback module could be used by setting the option \fB\fIkey_cb\fR\&\fR\& when starting a client or a server (with for example \fBssh:connect\fR\&, \fBssh:daemon\fR\& of \fBssh:shell\fR\& )\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The functions are \fICallbacks\fR\&  for the SSH app\&. They are not intended to be called from the user\&'s code!
+
+.SH "FILES, DIRECTORIES AND WHO USES THEM"
+
+.SS "Daemons"
+
+.LP
+Daemons uses all files stored in the \fBSYSDIR\fR\& directory\&.
+.LP
+Optionaly, in case of \fIpublickey\fR\& authorization, one or more of the remote user\&'s public keys in the \fBUSERDIR\fR\& directory are used\&. See the files \fB\fIUSERDIR/authorized_keys\fR\&\fR\& and \fB\fIUSERDIR/authorized_keys2\fR\&\fR\&\&.
+.SS "Clients"
+
+.LP
+Clients uses all files stored in the \fBUSERDIR\fR\& directory\&.
+.SS "Directory contents"
+
+.RS 2
+.TP 2
+.B
+LOCALUSER:
+The user name of the OS process running the Erlang virtual machine (emulator)\&.
+.TP 2
+.B
+SYSDIR:
+This is the directory holding the server\&'s files:
+.RS 2
+.TP 2
+*
+\fIssh_host_dsa_key\fR\& - private dss host key (optional)
+.LP
+.TP 2
+*
+\fIssh_host_rsa_key\fR\& - private rsa host key (optional)
+.LP
+.TP 2
+*
+\fIssh_host_ecdsa_key\fR\& - private ecdsa host key (optional)
+.LP
+.TP 2
+*
+\fIssh_host_ed25519_key\fR\& - private eddsa host key for curve 25519 (optional)
+.LP
+.TP 2
+*
+\fIssh_host_ed448_key\fR\& - private eddsa host key for curve 448 (optional)
+.LP
+.RE
+
+.RS 2
+.LP
+At least one host key must be defined\&. The default value of SYSDIR is \fI/etc/ssh\fR\&\&.
+.RE
+.RS 2
+.LP
+For security reasons, this directory is normally accessible only to the root user\&.
+.RE
+.RS 2
+.LP
+To change the SYSDIR, see the \fBsystem_dir\fR\& option\&.
+.RE
+.TP 2
+.B
+USERDIR:
+This is the directory holding the files:
+.RS 2
+.TP 2
+*
+\fIauthorized_keys\fR\& and, as second alternative \fIauthorized_keys2\fR\& - the user\&'s public keys are stored concatenated in one of those files\&. 
+.LP
+.TP 2
+*
+\fIknown_hosts\fR\& - host keys from hosts visited concatenated\&. The file is created and used by the client\&.
+.LP
+.TP 2
+*
+\fIid_dsa\fR\& - private dss user key (optional)
+.LP
+.TP 2
+*
+\fIid_rsa\fR\& - private rsa user key (optional)
+.LP
+.TP 2
+*
+\fIid_ecdsa\fR\& - private ecdsa user key (optional)
+.LP
+.TP 2
+*
+\fIid_ed25519\fR\& - private eddsa user key for curve 25519 (optional)
+.LP
+.TP 2
+*
+\fIid_ed448\fR\& - private eddsa user key for curve 448 (optional)
+.LP
+.RE
+
+.RS 2
+.LP
+The default value of USERDIR is \fI/home/\fR\&\fB\fILOCALUSER\fR\&\fR\&\fI/\&.ssh\fR\&\&.
+.RE
+.RS 2
+.LP
+To change the USERDIR, see the \fBuser_dir\fR\& option
+.RE
+.RE
+.SH DATA TYPES
+.SS Options for the default ssh_file callback module
+.nf
+
+\fBuser_dir_common_option()\fR\& = {user_dir, string()}
+.br
+.fi
+.RS
+.LP
+Sets the \fBuser directory\fR\&\&.
+.RE
+.nf
+
+\fBuser_dir_fun_common_option()\fR\& = {user_dir_fun, \fBuser2dir()\fR\&}
+.br
+.fi
+.nf
+
+\fBuser2dir()\fR\& = 
+.br
+    fun((RemoteUserName :: string()) -> UserDir :: string())
+.br
+.fi
+.RS
+.LP
+Sets the \fBuser directory\fR\& dynamically by evaluating the \fIuser2dir\fR\& function\&.
+.RE
+.nf
+
+\fBsystem_dir_daemon_option()\fR\& = {system_dir, string()}
+.br
+.fi
+.RS
+.LP
+Sets the \fBsystem directory\fR\&\&.
+.RE
+.nf
+
+\fBpubkey_passphrase_client_options()\fR\& = 
+.br
+    {dsa_pass_phrase, string()} |
+.br
+    {rsa_pass_phrase, string()} |
+.br
+    {ecdsa_pass_phrase, string()}
+.br
+.fi
+.RS
+.LP
+If the user\&'s DSA, RSA or ECDSA key is protected by a passphrase, it can be supplied with thoose options\&.
+.LP
+Note that EdDSA passhrases (Curves 25519 and 448) are not implemented\&.
+.RE
+.SH EXPORTS
+.LP
+.B
+host_key(Algorithm, DaemonOptions) -> {ok, Key} | {error, Reason}
+.br
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in \fBssh_server_key_api, Module:host_key/2\fR\&\&.
+.LP
+\fBOptions\fR\& 
+.RS 2
+.TP 2
+*
+\fBsystem_dir\fR\&
+.LP
+.RE
+
+.LP
+\fBFiles\fR\& 
+.RS 2
+.TP 2
+*
+\fB\fISYSDIR/ssh_host_rsa_key\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fISYSDIR/ssh_host_dsa_key\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fISYSDIR/ssh_host_ecdsa_key\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fISYSDIR/ssh_host_ed25519_key\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fISYSDIR/ssh_host_ed448_key\fR\&c>\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.B
+is_auth_key(PublicUserKey, User, DaemonOptions) -> Result
+.br
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in \fBssh_server_key_api: Module:is_auth_key/3\fR\&\&.
+.LP
+\fBOptions\fR\& 
+.RS 2
+.TP 2
+*
+\fBuser_dir_fun\fR\&
+.LP
+.TP 2
+*
+\fBuser_dir\fR\&
+.LP
+.RE
+
+.LP
+\fBFiles\fR\& 
+.RS 2
+.TP 2
+*
+\fB\fIUSERDIR/authorized_keys\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIUSERDIR/authorized_keys2\fR\&\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.B
+add_host_key(HostNames, PublicHostKey, ConnectOptions) -> ok | {error, Reason}
+.br
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in \fBssh_client_key_api, Module:add_host_key/3\fR\&\&.
+.LP
+\fBOption\fR\& 
+.RS 2
+.TP 2
+*
+\fBuser_dir\fR\&
+.LP
+.RE
+
+.LP
+\fBFile\fR\& 
+.RS 2
+.TP 2
+*
+\fB\fIUSERDIR/known_hosts\fR\&\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.B
+is_host_key(Key, Host, Algorithm, ConnectOptions) -> Result
+.br
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in \fBssh_client_key_api, Module:is_host_key/4\fR\&\&.
+.LP
+\fBOption\fR\& 
+.RS 2
+.TP 2
+*
+\fBuser_dir\fR\&
+.LP
+.RE
+
+.LP
+\fBFile\fR\& 
+.RS 2
+.TP 2
+*
+\fB\fIUSERDIR/known_hosts\fR\&\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.B
+user_key(Algorithm, ConnectOptions) -> {ok, PrivateKey} | {error, Reason}
+.br
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in \fBssh_client_key_api, Module:user_key/2\fR\&\&.
+.LP
+\fBOptions\fR\& 
+.RS 2
+.TP 2
+*
+\fBuser_dir\fR\&
+.LP
+.TP 2
+*
+\fBdsa_pass_phrase\fR\&
+.LP
+.TP 2
+*
+\fBrsa_pass_phrase\fR\&
+.LP
+.TP 2
+*
+\fBecdsa_pass_phrase\fR\&
+.LP
+.RE
+
+.LP
+Note that EdDSA passhrases (Curves 25519 and 448) are not implemented\&.
+.LP
+\fBFiles\fR\& 
+.RS 2
+.TP 2
+*
+\fB\fIUSERDIR/id_dsa\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIUSERDIR/id_rsa\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIUSERDIR/id_ecdsa\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIUSERDIR/id_ed25519\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIUSERDIR/id_ed448\fR\&\fR\&
+.LP
+.RE
+
+.RE

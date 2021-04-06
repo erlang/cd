@@ -1,0 +1,201 @@
+.TH random 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+random \- Pseudo-random number generation.
+.SH DESCRIPTION
+.LP
+This module provides a random number generator\&. The method is attributed to B\&.A\&. Wichmann and I\&.D\&. Hill in \&'An efficient and portable pseudo-random number generator\&', Journal of Applied Statistics\&. AS183\&. 1982\&. Also Byte March 1987\&.
+.LP
+The algorithm is a modification of the version attributed to Richard A\&. O\&'Keefe in the standard Prolog library\&.
+.LP
+Every time a random number is requested, a state is used to calculate it, and a new state is produced\&. The state can either be implicit (kept in the process dictionary) or be an explicit argument and return value\&. In this implementation, the state (the type \fIran()\fR\&) consists of a tuple of three integers\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This random number generator is not cryptographically strong\&. If a strong cryptographic random number generator is needed, use one of functions in the \fB\fIcrypto\fR\&\fR\& module, for example, \fB\fIcrypto:strong_rand_bytes/1\fR\&\fR\&\&.
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The improved \fB\fIrand\fR\&\fR\& module is to be used instead of this module\&.
+
+.SH DATA TYPES
+.nf
+
+\fBran()\fR\& = {integer(), integer(), integer()}
+.br
+.fi
+.RS
+.LP
+The state\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+seed() -> ran()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with default (fixed) values in the process dictionary and returns the old state\&.
+.RE
+.LP
+.nf
+
+.B
+seed(SValue) -> undefined | ran()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SValue = {A1, A2, A3} | integer()
+.br
+A1 = A2 = A3 = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIseed({A1, A2, A3})\fR\& is equivalent to \fIseed(A1, A2, A3)\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+seed(A1, A2, A3) -> undefined | ran()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+A1 = A2 = A3 = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Seeds random number generation with integer values in the process dictionary and returns the old state\&.
+.LP
+The following is an easy way of obtaining a unique value to seed with:
+.LP
+.nf
+
+random:seed(erlang:phash2([node()]),
+            erlang:monotonic_time(),
+            erlang:unique_integer())
+.fi
+.LP
+For details, see \fB\fIerlang:phash2/1\fR\&\fR\&, \fB\fIerlang:node/0\fR\&\fR\&, \fB\fIerlang:monotonic_time/0\fR\&\fR\&, and \fB\fIerlang:unique_integer/0\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+seed0() -> ran()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the default state\&.
+.RE
+.LP
+.nf
+
+.B
+uniform() -> float()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a random float uniformly distributed between \fI0\&.0\fR\& and \fI1\&.0\fR\&, updating the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+uniform(N) -> integer() >= 1
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+N = integer() >= 1
+.br
+.RE
+.RE
+.RS
+.LP
+Returns, for a specified integer \fIN >= 1\fR\&, a random integer uniformly distributed between \fI1\fR\& and \fIN\fR\&, updating the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+uniform_s(State0) -> {float(), State1}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+State0 = State1 = \fBran()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns, for a specified state, a random float uniformly distributed between \fI0\&.0\fR\& and \fI1\&.0\fR\&, and a new state\&.
+.RE
+.LP
+.nf
+
+.B
+uniform_s(N, State0) -> {integer(), State1}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+N = integer() >= 1
+.br
+State0 = State1 = \fBran()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns, for a specified integer \fIN >= 1\fR\& and a state, a random integer uniformly distributed between \fI1\fR\& and \fIN\fR\&, and a new state\&.
+.RE
+.SH "NOTE"
+
+.LP
+Some of the functions use the process dictionary variable \fIrandom_seed\fR\& to remember the current seed\&.
+.LP
+If a process calls \fB\fIuniform/0\fR\&\fR\& or \fB\fIuniform/1\fR\&\fR\& without setting a seed first, \fB\fIseed/0\fR\&\fR\& is called automatically\&.
+.LP
+The implementation changed in Erlang/OTP R15\&. Upgrading to R15 breaks applications that expect a specific output for a specified seed\&. The output is still deterministic number series, but different compared to releases older than R15\&. Seed \fI{0,0,0}\fR\& does, for example, no longer produce a flawed series of only zeros\&.

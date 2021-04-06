@@ -1,0 +1,540 @@
+.TH kernel 7 "kernel 6.3.1.2" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+kernel \- The Kernel application.
+.SH DESCRIPTION
+.LP
+The Kernel application has all the code necessary to run the Erlang runtime system: file servers, code servers, and so on\&.
+.LP
+The Kernel application is the first application started\&. It is mandatory in the sense that the minimal system based on Erlang/OTP consists of Kernel and STDLIB\&. Kernel contains the following functional areas:
+.RS 2
+.TP 2
+*
+Start, stop, supervision, configuration, and distribution of applications
+.LP
+.TP 2
+*
+Code loading
+.LP
+.TP 2
+*
+Logging
+.LP
+.TP 2
+*
+Global name service
+.LP
+.TP 2
+*
+Supervision of Erlang/OTP
+.LP
+.TP 2
+*
+Communication with sockets
+.LP
+.TP 2
+*
+Operating system interface
+.LP
+.RE
+
+.SH "LOGGER HANDLERS"
+
+.LP
+Two standard logger handlers are defined in the Kernel application\&. These are described in the \fBKernel User\&'s Guide\fR\&, and in the \fB\fIlogger_std_h(3)\fR\&\fR\& and \fB\fIlogger_disk_log_h(3)\fR\&\fR\& manual pages\&.
+.SH "OS SIGNAL EVENT HANDLER"
+
+.LP
+Asynchronous OS signals may be subscribed to via the Kernel applications event manager (see \fBOTP Design Principles\fR\& and \fB\fIgen_event(3)\fR\&\fR\&) registered as \fIerl_signal_server\fR\&\&. A default signal handler is installed which handles the following signals:
+.RS 2
+.TP 2
+.B
+\fIsigusr1\fR\&:
+The default handler will halt Erlang and produce a crashdump with slogan "Received SIGUSR1"\&. This is equivalent to calling \fIerlang:halt("Received SIGUSR1")\fR\&\&.
+.TP 2
+.B
+\fIsigquit\fR\&:
+The default handler will halt Erlang immediately\&. This is equivalent to calling \fIerlang:halt()\fR\&\&.
+.TP 2
+.B
+\fIsigterm\fR\&:
+The default handler will terminate Erlang normally\&. This is equivalent to calling \fIinit:stop()\fR\&\&.
+.RE
+.SS "Events"
+
+.LP
+Any event handler added to \fIerl_signal_server\fR\& must handle the following events\&.
+.RS 2
+.TP 2
+.B
+\fIsighup\fR\&:
+Hangup detected on controlling terminal or death of controlling process
+.TP 2
+.B
+\fIsigquit\fR\&:
+Quit from keyboard
+.TP 2
+.B
+\fIsigabrt\fR\&:
+Abort signal from abort
+.TP 2
+.B
+\fIsigalrm\fR\&:
+Timer signal from alarm
+.TP 2
+.B
+\fIsigterm\fR\&:
+Termination signal
+.TP 2
+.B
+\fIsigusr1\fR\&:
+User-defined signal 1
+.TP 2
+.B
+\fIsigusr2\fR\&:
+User-defined signal 2
+.TP 2
+.B
+\fIsigchld\fR\&:
+Child process stopped or terminated
+.TP 2
+.B
+\fIsigstop\fR\&:
+Stop process
+.TP 2
+.B
+\fIsigtstp\fR\&:
+Stop typed at terminal
+.RE
+.LP
+Setting OS signals are described in \fB\fIos:set_signal/2\fR\&\fR\&\&.
+.SH "CONFIGURATION"
+
+.LP
+The following configuration parameters are defined for the Kernel application\&. For more information about configuration parameters, see file \fB\fIapp(4)\fR\&\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIdistributed = [Distrib]\fR\&:
+Specifies which applications that are distributed and on which nodes they are allowed to execute\&. In this parameter:
+.RS 2
+.TP 2
+*
+\fIDistrib = {App,Nodes} | {App,Time,Nodes}\fR\&
+.LP
+.TP 2
+*
+\fIApp = atom()\fR\&
+.LP
+.TP 2
+*
+\fITime = integer()>0\fR\&
+.LP
+.TP 2
+*
+\fINodes = [node() | {node(),\&.\&.\&.,node()}]\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+The parameter is described in \fB\fIapplication:load/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIdist_auto_connect = Value\fR\&:
+Specifies when nodes are automatically connected\&. If this parameter is not specified, a node is always automatically connected, for example, when a message is to be sent to that node\&. \fIValue\fR\& is one of:
+.RS 2
+.TP 2
+.B
+\fInever\fR\&:
+Connections are never automatically established, they must be explicitly connected\&. See \fB\fInet_kernel(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fIonce\fR\&:
+Connections are established automatically, but only once per node\&. If a node goes down, it must thereafter be explicitly connected\&. See \fB\fInet_kernel(3)\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIpermissions = [Perm]\fR\&:
+Specifies the default permission for applications when they are started\&. In this parameter:
+.RS 2
+.TP 2
+*
+\fIPerm = {ApplName,Bool}\fR\&
+.LP
+.TP 2
+*
+\fIApplName = atom()\fR\&
+.LP
+.TP 2
+*
+\fIBool = boolean()\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Permissions are described in \fB\fIapplication:permit/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIlogger = [Config]\fR\&:
+Specifies the configuration for \fBLogger\fR\&, except the primary log level, which is specified with \fB\fIlogger_level\fR\&\fR\&, and the compatibility with \fBSASL Error Logging\fR\&, which is specified with \fB\fIlogger_sasl_compatible\fR\&\fR\&\&.
+.RS 2
+.LP
+The \fIlogger \fR\& parameter is described in section \fB Logging\fR\& in the Kernel User\&'s Guide\&.
+.RE
+.TP 2
+.B
+\fIlogger_level = Level\fR\&:
+Specifies the primary log level for Logger\&. Log events with the same, or a more severe level, pass through the primary log level check\&. See section \fBLogging\fR\& in the Kernel User\&'s Guide for more information about Logger and log levels\&.
+.RS 2
+.LP
+\fILevel = emergency | alert | critical | error | warning | notice | info | debug | all | none\fR\&
+.RE
+.RS 2
+.LP
+To change the primary log level at runtime, use \fB\fIlogger:set_primary_config(level, Level)\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+Defaults to \fInotice\fR\&\&.
+.RE
+.TP 2
+.B
+\fIlogger_sasl_compatible = true | false\fR\&:
+Specifies if Logger behaves backwards compatible with the SASL error logging functionality from releases prior to Erlang/OTP 21\&.0\&.
+.RS 2
+.LP
+If this parameter is set to \fItrue\fR\&, the default Logger handler does not log any progress-, crash-, or supervisor reports\&. If the SASL application is then started, it adds a Logger handler named \fIsasl\fR\&, which logs these events according to values of the SASL configuration parameter \fIsasl_error_logger\fR\& and \fIsasl_errlog_type\fR\&\&.
+.RE
+.RS 2
+.LP
+See section \fB Deprecated Error Logger Event Handlers and Configuration\fR\& in the sasl(6) manual page for information about the SASL configuration parameters\&.
+.RE
+.RS 2
+.LP
+See section \fBSASL Error Logging\fR\& in the SASL User\&'s Guide, and section \fBBackwards Compatibility with error_logger\fR\& in the Kernel User\&'s Guide for information about the SASL error logging functionality, and how Logger can be backwards compatible with this\&.
+.RE
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If this parameter is set to \fItrue\fR\&, \fIsasl_errlog_type\fR\& indicates that progress reports shall be logged, and the configured primary log level is \fInotice\fR\& or more severe, then SASL automatically sets the primary log level to \fIinfo\fR\&\&. That is, this setting can potentially overwrite the value of the Kernel configuration parameter \fIlogger_level\fR\&\&. This is to allow progress reports, which have log level \fIinfo\fR\&, to be forwarded to the handlers\&.
+
+.TP 2
+.B
+\fIglobal_groups = [GroupTuple]\fR\&:
+
+.RS 2
+.LP
+Defines global groups, see \fB\fIglobal_group(3)\fR\&\fR\&\&. In this parameter:
+.RE
+.RS 2
+.TP 2
+*
+\fIGroupTuple = {GroupName, [Node]} | {GroupName, PublishType, [Node]}\fR\&
+.LP
+.TP 2
+*
+\fIGroupName = atom()\fR\&
+.LP
+.TP 2
+*
+\fIPublishType = normal | hidden\fR\&
+.LP
+.TP 2
+*
+\fINode = node()\fR\&
+.LP
+.RE
+
+.TP 2
+.B
+\fIinet_default_connect_options = [{Opt, Val}]\fR\&:
+Specifies default options for \fIconnect\fR\& sockets, see \fB\fIinet(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fIinet_default_listen_options = [{Opt, Val}]\fR\&:
+Specifies default options for \fIlisten\fR\& (and \fIaccept\fR\&) sockets, see \fB\fIinet(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI{inet_dist_use_interface, ip_address()}\fR\&:
+If the host of an Erlang node has many network interfaces, this parameter specifies which one to listen on\&. For the type definition of \fIip_address()\fR\&, see \fB\fIinet(3)\fR\&\fR\&\&.
+.TP 2
+.B
+\fI{inet_dist_listen_min, First}\fR\& and \fI{inet_dist_listen_max, Last}\fR\&:
+Defines the \fIFirst\&.\&.Last\fR\& port range for the listener socket of a distributed Erlang node\&.
+.TP 2
+.B
+\fI{inet_dist_listen_options, Opts}\fR\&:
+
+.RS 2
+.LP
+Defines a list of extra socket options to be used when opening the listening socket for a distributed Erlang node\&. See \fB\fIgen_tcp:listen/2\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fI{inet_dist_connect_options, Opts}\fR\&:
+
+.RS 2
+.LP
+Defines a list of extra socket options to be used when connecting to other distributed Erlang nodes\&. See \fB\fIgen_tcp:connect/4\fR\&\fR\&\&.
+.RE
+.TP 2
+.B
+\fIinet_parse_error_log = silent\fR\&:
+If set, no log events are issued when erroneous lines are found and skipped in the various Inet configuration files\&.
+.TP 2
+.B
+\fIinetrc = Filename\fR\&:
+The name (string) of an Inet user configuration file\&. For details, see section \fB\fIInet Configuration\fR\&\fR\& in the ERTS User\&'s Guide\&.
+.TP 2
+.B
+\fInet_setuptime = SetupTime\fR\&:
+
+.RS 2
+.LP
+\fISetupTime\fR\& must be a positive integer or floating point number, and is interpreted as the maximum allowed time for each network operation during connection setup to another Erlang node\&. The maximum allowed value is \fI120\fR\&\&. If higher values are specified, \fI120\fR\& is used\&. Default is 7 seconds if the variable is not specified, or if the value is incorrect (for example, not a number)\&.
+.RE
+.RS 2
+.LP
+Notice that this value does not limit the total connection setup time, but rather each individual network operation during the connection setup and handshake\&.
+.RE
+.TP 2
+.B
+\fInet_ticktime = TickTime\fR\&:
+
+.RS 2
+.LP
+Specifies the \fInet_kernel\fR\& tick time in seconds\&. This is the approximate time a connected node may be unresponsive until it is considered down and thereby disconnected\&.
+.RE
+.RS 2
+.LP
+Once every \fITickTime/4\fR\& seconds, each connected node is ticked if nothing has been sent to it during that last \fITickTime/4\fR\& interval\&. A tick is a small package sent on the connection\&. A connected node is considered to be down if no ticks or payload packages have been received during the last four \fITickTime/4\fR\& intervals\&. This ensures that nodes that are not responding, for reasons such as hardware errors, are considered to be down\&.
+.RE
+.RS 2
+.LP
+As the availability is only checked every \fITickTime/4\fR\& seconds, the actual time \fIT\fR\& a node have been unresponsive when detected may vary between \fIMinT\fR\& and \fIMaxT\fR\&, where:
+.RE
+.LP
+.nf
+
+MinT = TickTime - TickTime / 4
+MaxT = TickTime + TickTime / 4
+.fi
+.RS 2
+.LP
+\fITickTime\fR\& defaults to \fI60\fR\& seconds\&. Thus, \fI45 < T < 75\fR\& seconds\&.
+.RE
+.RS 2
+.LP
+Notice that \fIall\fR\& communicating nodes are to have the \fIsame\fR\& \fITickTime\fR\& value specified, as it determines both the frequency of outgoing ticks and the expected frequency of incominging ticks\&.
+.RE
+.RS 2
+.LP
+Normally, a terminating node is detected immediately by the transport protocol (like TCP/IP)\&.
+.RE
+.TP 2
+.B
+\fIshutdown_timeout = integer() | infinity\fR\&:
+Specifies the time \fIapplication_controller\fR\& waits for an application to terminate during node shutdown\&. If the timer expires, \fIapplication_controller\fR\& brutally kills \fIapplication_master\fR\& of the hanging application\&. If this parameter is undefined, it defaults to \fIinfinity\fR\&\&.
+.TP 2
+.B
+\fIsync_nodes_mandatory = [NodeName]\fR\&:
+Specifies which other nodes that \fImust\fR\& be alive for this node to start properly\&. If some node in the list does not start within the specified time, this node does not start either\&. If this parameter is undefined, it defaults to \fI[]\fR\&\&.
+.TP 2
+.B
+\fIsync_nodes_optional = [NodeName]\fR\&:
+Specifies which other nodes that \fIcan\fR\& be alive for this node to start properly\&. If some node in this list does not start within the specified time, this node starts anyway\&. If this parameter is undefined, it defaults to the empty list\&.
+.TP 2
+.B
+\fIsync_nodes_timeout = integer() | infinity\fR\&:
+Specifies the time (in milliseconds) that this node waits for the mandatory and optional nodes to start\&. If this parameter is undefined, no node synchronization is performed\&. This option ensures that \fIglobal\fR\& is synchronized\&.
+.TP 2
+.B
+\fIstart_dist_ac = true | false\fR\&:
+Starts the \fIdist_ac\fR\& server if the parameter is \fItrue\fR\&\&. This parameter is to be set to \fItrue\fR\& for systems using distributed applications\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&. If this parameter is undefined, the server is started if parameter \fIdistributed\fR\& is set\&.
+.RE
+.TP 2
+.B
+\fIstart_boot_server = true | false\fR\&:
+Starts the \fIboot_server\fR\& if the parameter is \fItrue\fR\& (see \fB\fIerl_boot_server(3)\fR\&\fR\&)\&. This parameter is to be set to \fItrue\fR\& in an embedded system using this service\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIboot_server_slaves = [SlaveIP]\fR\&:
+If configuration parameter \fIstart_boot_server\fR\& is \fItrue\fR\&, this parameter can be used to initialize \fIboot_server\fR\& with a list of slave IP addresses:
+.RS 2
+.LP
+\fISlaveIP = string() | atom | {integer(),integer(),integer(),integer()}\fR\&,
+.RE
+.RS 2
+.LP
+where \fI0 <= integer() <=255\fR\&\&.
+.RE
+.RS 2
+.LP
+Examples of \fISlaveIP\fR\& in atom, string, and tuple form:
+.RE
+.RS 2
+.LP
+\fI\&'150\&.236\&.16\&.70\&', "150,236,16,70", {150,236,16,70}\fR\&\&.
+.RE
+.RS 2
+.LP
+Defaults to \fI[]\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstart_disk_log = true | false\fR\&:
+Starts the \fIdisk_log_server\fR\& if the parameter is \fItrue\fR\& (see \fB\fIdisk_log(3)\fR\&\fR\&)\&. This parameter is to be set to \fItrue\fR\& in an embedded system using this service\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstart_pg2 = true | false\fR\&:
+
+.RS 2
+.LP
+Starts the \fIpg2\fR\& server (see \fB\fIpg2(3)\fR\&\fR\&) if the parameter is \fItrue\fR\&\&. This parameter is to be set to \fItrue\fR\& in an embedded system that uses this service\&.
+.RE
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIstart_timer = true | false\fR\&:
+Starts the \fItimer_server\fR\& if the parameter is \fItrue\fR\& (see \fB\fItimer(3)\fR\&\fR\&)\&. This parameter is to be set to \fItrue\fR\& in an embedded system using this service\&.
+.RS 2
+.LP
+Defaults to \fIfalse\fR\&\&.
+.RE
+.TP 2
+.B
+\fIshell_history = enabled | disabled \fR\&:
+Specifies whether shell history should be logged to disk between usages of \fIerl\fR\&\&.
+.TP 2
+.B
+\fIshell_history_drop = [string()]\fR\&:
+Specific log lines that should not be persisted\&. For example \fI["q()\&.", "init:stop()\&."]\fR\& will allow to ignore commands that shut the node down\&. Defaults to \fI[]\fR\&\&.
+.TP 2
+.B
+\fIshell_history_file_bytes = integer()\fR\&:
+how many bytes the shell should remember\&. By default, the value is set to 512kb, and the minimal value is 50kb\&.
+.TP 2
+.B
+\fIshell_history_path = string()\fR\&:
+Specifies where the shell history files will be stored\&. defaults to the user\&'s cache directory as returned by \fIfilename:basedir(user_cache, "erlang-history")\fR\&\&.
+.TP 2
+.B
+\fIshutdown_func = {Mod, Func}\fR\&:
+Where:
+.RS 2
+.TP 2
+*
+\fIMod = atom()\fR\&
+.LP
+.TP 2
+*
+\fIFunc = atom()\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Sets a function that \fIapplication_controller\fR\& calls when it starts to terminate\&. The function is called as \fIMod:Func(Reason)\fR\&, where \fIReason\fR\& is the terminate reason for \fIapplication_controller\fR\&, and it must return as soon as possible for \fIapplication_controller\fR\& to terminate properly\&.
+.RE
+.TP 2
+.B
+\fIsource_search_rules = [DirRule] | [SuffixRule] \fR\&:
+
+.RS 2
+.LP
+Where:
+.RE
+.RS 2
+.TP 2
+*
+\fIDirRule = {ObjDirSuffix,SrcDirSuffix}\fR\&
+.LP
+.TP 2
+*
+\fISuffixRule = {ObjSuffix,SrcSuffix,[DirRule]}\fR\&
+.LP
+.TP 2
+*
+\fIObjDirSuffix = string()\fR\&
+.LP
+.TP 2
+*
+\fISrcDirSuffix = string()\fR\&
+.LP
+.TP 2
+*
+\fIObjSuffix = string()\fR\&
+.LP
+.TP 2
+*
+\fISrcSuffix = string()\fR\&
+.LP
+.RE
+
+.RS 2
+.LP
+Specifies a list of rules for use by \fB\fIfilelib:find_file/2\fR\&\fR\& \fB\fIfilelib:find_source/2\fR\&\fR\& If this is set to some other value than the empty list, it replaces the default rules\&. Rules can be simple pairs of directory suffixes, such as \fI{"ebin", "src"}\fR\&, which are used by \fIfilelib:find_file/2\fR\&, or triples specifying separate directory suffix rules depending on file name extensions, for example \fI[{"\&.beam", "\&.erl", [{"ebin", "src"}]}\fR\&, which are used by \fIfilelib:find_source/2\fR\&\&. Both kinds of rules can be mixed in the list\&.
+.RE
+.RS 2
+.LP
+The interpretation of \fIObjDirSuffix\fR\& and \fISrcDirSuffix\fR\& is as follows: if the end of the directory name where an object is located matches \fIObjDirSuffix\fR\&, then the name created by replacing \fIObjDirSuffix\fR\& with \fISrcDirSuffix\fR\& is expanded by calling \fB\fIfilelib:wildcard/1\fR\&\fR\&, and the first regular file found among the matches is the source file\&.
+.RE
+.RE
+.SH "DEPRECATED CONFIGURATION PARAMETERS"
+
+.LP
+In Erlang/OTP 21\&.0, a new API for logging was added\&. The old \fIerror_logger\fR\& event manager, and event handlers running on this manager, still work, but they are no longer used by default\&.
+.LP
+The following application configuration parameters can still be set, but they are only used if the corresponding configuration parameters for Logger are not set\&.
+.RS 2
+.TP 2
+.B
+\fIerror_logger\fR\&:
+Replaced by setting the \fB\fItype\fR\&\fR\&, and possibly \fB\fIfile\fR\&\fR\& and \fB\fImodes\fR\&\fR\& parameters of the default \fIlogger_std_h\fR\& handler\&. Example: 
+.LP
+.nf
+
+erl -kernel logger '[{handler,default,logger_std_h,#{config=>#{file=>"/tmp/erlang.log"}}}]'
+      
+.fi
+.TP 2
+.B
+\fIerror_logger_format_depth\fR\&:
+Replaced by setting the \fB\fIdepth\fR\&\fR\& parameter of the default handlers formatter\&. Example: 
+.LP
+.nf
+
+erl -kernel logger '[{handler,default,logger_std_h,#{formatter=>{logger_formatter,#{legacy_header=>true,template=>[{logger_formatter,header},"\\n",msg,"\\n"],depth=>10}}}]'
+      
+.fi
+.RE
+.LP
+See \fBBackwards compatibility with error_logger\fR\& for more information\&.
+.SH "SEE ALSO"
+
+.LP
+\fB\fIapp(4)\fR\&\fR\&, \fB\fIapplication(3)\fR\&\fR\&, \fB\fIcode(3)\fR\&\fR\&, \fB\fIdisk_log(3)\fR\&\fR\&, \fB\fIerl_boot_server(3)\fR\&\fR\&, \fB\fIerl_ddll(3)\fR\&\fR\&, \fB\fIfile(3)\fR\&\fR\&, \fB\fIglobal(3)\fR\&\fR\&, \fB\fIglobal_group(3)\fR\&\fR\&, \fB\fIheart(3)\fR\&\fR\&, \fB\fIinet(3)\fR\&\fR\&, \fB\fIlogger(3)\fR\&\fR\&, \fB\fInet_kernel(3)\fR\&\fR\&, \fB\fIos(3)\fR\&\fR\&, \fB\fIpg2(3)\fR\&\fR\&, \fB\fIrpc(3)\fR\&\fR\&, \fB\fIseq_trace(3)\fR\&\fR\&, \fB\fIuser(3)\fR\&\fR\&, \fB\fItimer(3)\fR\&\fR\&

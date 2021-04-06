@@ -1,0 +1,851 @@
+.TH gb_sets 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+gb_sets \- General balanced trees.
+.SH DESCRIPTION
+.LP
+This module provides ordered sets using Prof\&. Arne Andersson\&'s General Balanced Trees\&. Ordered sets can be much more efficient than using ordered lists, for larger sets, but depends on the application\&.
+.LP
+This module considers two elements as different if and only if they do not compare equal (\fI==\fR\&)\&.
+.SH "COMPLEXITY NOTE"
+
+.LP
+The complexity on set operations is bounded by either \fIO(|S|)\fR\& or \fIO(|T| * log(|S|))\fR\&, where S is the largest given set, depending on which is fastest for any particular function call\&. For operating on sets of almost equal size, this implementation is about 3 times slower than using ordered-list sets directly\&. For sets of very different sizes, however, this solution can be arbitrarily much faster; in practical cases, often 10-100 times\&. This implementation is particularly suited for accumulating elements a few at a time, building up a large set (> 100-200 elements), and repeatedly testing for membership in the current set\&.
+.LP
+As with normal tree structures, lookup (membership testing), insertion, and deletion have logarithmic complexity\&.
+.SH "COMPATIBILITY"
+
+.LP
+The following functions in this module also exist and provides the same functionality in the \fB\fIsets(3)\fR\&\fR\& and \fB\fIordsets(3)\fR\&\fR\& modules\&. That is, by only changing the module name for each call, you can try out different set representations\&.
+.RS 2
+.TP 2
+*
+\fB\fIadd_element/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIdel_element/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIfilter/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIfold/3\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIfrom_list/1\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIintersection/1\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIintersection/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIis_element/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIis_set/1\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIis_subset/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fInew/0\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIsize/1\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIsubtract/2\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIto_list/1\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIunion/1\fR\&\fR\&
+.LP
+.TP 2
+*
+\fB\fIunion/2\fR\&\fR\&
+.LP
+.RE
+
+.SH DATA TYPES
+.nf
+
+\fBset(Element)\fR\&
+.br
+.fi
+.RS
+.LP
+A general balanced set\&.
+.RE
+.nf
+
+\fBset()\fR\& = \fBset\fR\&(term())
+.br
+.fi
+.nf
+
+\fBiter(Element)\fR\&
+.br
+.fi
+.RS
+.LP
+A general balanced set iterator\&.
+.RE
+.nf
+
+\fBiter()\fR\& = \fBiter\fR\&(term())
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+add(Element, Set1) -> Set2
+.br
+.fi
+.br
+.nf
+
+.B
+add_element(Element, Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new set formed from \fISet1\fR\& with \fIElement\fR\& inserted\&. If \fIElement\fR\& is already an element in \fISet1\fR\&, nothing is changed\&.
+.RE
+.LP
+.nf
+
+.B
+balance(Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Rebalances the tree representation of \fISet1\fR\&\&. Notice that this is rarely necessary, but can be motivated when a large number of elements have been deleted from the tree without further insertions\&. Rebalancing can then be forced to minimise lookup times, as deletion does not rebalance the tree\&.
+.RE
+.LP
+.nf
+
+.B
+del_element(Element, Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new set formed from \fISet1\fR\& with \fIElement\fR\& removed\&. If \fIElement\fR\& is not an element in \fISet1\fR\&, nothing is changed\&.
+.RE
+.LP
+.nf
+
+.B
+delete(Element, Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new set formed from \fISet1\fR\& with \fIElement\fR\& removed\&. Assumes that \fIElement\fR\& is present in \fISet1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+delete_any(Element, Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new set formed from \fISet1\fR\& with \fIElement\fR\& removed\&. If \fIElement\fR\& is not an element in \fISet1\fR\&, nothing is changed\&.
+.RE
+.LP
+.nf
+
+.B
+difference(Set1, Set2) -> Set3
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = Set3 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns only the elements of \fISet1\fR\& that are not also elements of \fISet2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+empty() -> Set
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new empty set\&.
+.RE
+.LP
+.nf
+
+.B
+filter(Pred, Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Pred = fun((Element) -> boolean())
+.br
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Filters elements in \fISet1\fR\& using predicate function \fIPred\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+fold(Function, Acc0, Set) -> Acc1
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = fun((Element, AccIn) -> AccOut)
+.br
+Acc0 = Acc1 = AccIn = AccOut = Acc
+.br
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Folds \fIFunction\fR\& over every element in \fISet\fR\& returning the final value of the accumulator\&.
+.RE
+.LP
+.nf
+
+.B
+from_list(List) -> Set
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+List = [Element]
+.br
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a set of the elements in \fIList\fR\&, where \fIList\fR\& can be unordered and contain duplicates\&.
+.RE
+.LP
+.nf
+
+.B
+from_ordset(List) -> Set
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+List = [Element]
+.br
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Turns an ordered-set list \fIList\fR\& into a set\&. The list must not contain duplicates\&.
+.RE
+.LP
+.nf
+
+.B
+insert(Element, Set1) -> Set2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new set formed from \fISet1\fR\& with \fIElement\fR\& inserted\&. Assumes that \fIElement\fR\& is not present in \fISet1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+intersection(SetList) -> Set
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SetList = [\fBset\fR\&(Element), \&.\&.\&.]
+.br
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the intersection of the non-empty list of sets\&.
+.RE
+.LP
+.nf
+
+.B
+intersection(Set1, Set2) -> Set3
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = Set3 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the intersection of \fISet1\fR\& and \fISet2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_disjoint(Set1, Set2) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fISet1\fR\& and \fISet2\fR\& are disjoint (have no elements in common), otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_element(Element, Set) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fIElement\fR\& is an element of \fISet\fR\&, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_empty(Set) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fISet\fR\& is an empty set, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_member(Element, Set) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fIElement\fR\& is an element of \fISet\fR\&, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_set(Term) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Term = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& if \fITerm\fR\& appears to be a set, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_subset(Set1, Set2) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fItrue\fR\& when every element of \fISet1\fR\& is also a member of \fISet2\fR\&, otherwise \fIfalse\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+iterator(Set) -> Iter
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+Iter = \fBiter\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns an iterator that can be used for traversing the entries of \fISet\fR\&; see \fB\fInext/1\fR\&\fR\&\&. The implementation of this is very efficient; traversing the whole set using \fInext/1\fR\& is only slightly slower than getting the list of all elements using \fB\fIto_list/1\fR\&\fR\& and traversing that\&. The main advantage of the iterator approach is that it does not require the complete list of all elements to be built in memory at one time\&.
+.RE
+.LP
+.nf
+
+.B
+iterator_from(Element, Set) -> Iter
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+Iter = \fBiter\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns an iterator that can be used for traversing the entries of \fISet\fR\&; see \fB\fInext/1\fR\&\fR\&\&. The difference as compared to the iterator returned by \fB\fIiterator/1\fR\&\fR\& is that the first element greater than or equal to \fIElement\fR\& is returned\&.
+.RE
+.LP
+.nf
+
+.B
+largest(Set) -> Element
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the largest element in \fISet\fR\&\&. Assumes that \fISet\fR\& is not empty\&.
+.RE
+.LP
+.nf
+
+.B
+new() -> Set
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a new empty set\&.
+.RE
+.LP
+.nf
+
+.B
+next(Iter1) -> {Element, Iter2} | none
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Iter1 = Iter2 = \fBiter\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fI{Element, Iter2}\fR\&, where \fIElement\fR\& is the smallest element referred to by iterator \fIIter1\fR\&, and \fIIter2\fR\& is the new iterator to be used for traversing the remaining elements, or the atom \fInone\fR\& if no elements remain\&.
+.RE
+.LP
+.nf
+
+.B
+singleton(Element) -> set(Element)
+.br
+.fi
+.br
+.RS
+.LP
+Returns a set containing only element \fIElement\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+size(Set) -> integer() >= 0
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the number of elements in \fISet\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+smallest(Set) -> Element
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the smallest element in \fISet\fR\&\&. Assumes that \fISet\fR\& is not empty\&.
+.RE
+.LP
+.nf
+
+.B
+subtract(Set1, Set2) -> Set3
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = Set3 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns only the elements of \fISet1\fR\& that are not also elements of \fISet2\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+take_largest(Set1) -> {Element, Set2}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fI{Element, Set2}\fR\&, where \fIElement\fR\& is the largest element in \fISet1\fR\&, and \fISet2\fR\& is this set with \fIElement\fR\& deleted\&. Assumes that \fISet1\fR\& is not empty\&.
+.RE
+.LP
+.nf
+
+.B
+take_smallest(Set1) -> {Element, Set2}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns \fI{Element, Set2}\fR\&, where \fIElement\fR\& is the smallest element in \fISet1\fR\&, and \fISet2\fR\& is this set with \fIElement\fR\& deleted\&. Assumes that \fISet1\fR\& is not empty\&.
+.RE
+.LP
+.nf
+
+.B
+to_list(Set) -> List
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set = \fBset\fR\&(Element)
+.br
+List = [Element]
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the elements of \fISet\fR\& as a list\&.
+.RE
+.LP
+.nf
+
+.B
+union(SetList) -> Set
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SetList = [\fBset\fR\&(Element), \&.\&.\&.]
+.br
+Set = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the merged (union) set of the list of sets\&.
+.RE
+.LP
+.nf
+
+.B
+union(Set1, Set2) -> Set3
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Set1 = Set2 = Set3 = \fBset\fR\&(Element)
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the merged (union) set of \fISet1\fR\& and \fISet2\fR\&\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIgb_trees(3)\fR\&\fR\&, \fB\fIordsets(3)\fR\&\fR\&, \fB\fIsets(3)\fR\&\fR\&

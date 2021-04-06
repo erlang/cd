@@ -1,0 +1,1089 @@
+.TH erl_ddll 3 "kernel 5.4.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+erl_ddll \- Dynamic driver loader and linker.
+.SH DESCRIPTION
+.LP
+This module provides an interface for loading and unloading \fIErlang linked-in drivers\fR\& in runtime\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This is a large reference document\&. For casual use of this module, and for most real world applications, the descriptions of functions \fB\fIload/2\fR\&\fR\& and \fB\fIunload/1\fR\&\fR\& are enough to getting started\&.
+
+.LP
+The driver is to be provided as a dynamically linked library in an object code format specific for the platform in use, that is, \fI\&.so\fR\& files on most Unix systems and \fI\&.ddl\fR\& files on Windows\&. An Erlang linked-in driver must provide specific interfaces to the emulator, so this module is not designed for loading arbitrary dynamic libraries\&. For more information about Erlang drivers, see \fB\fIerts:erl_driver\fR\&\fR\& \&.
+.LP
+When describing a set of functions (that is, a module, a part of a module, or an application), executing in a process and wanting to use a ddll-driver, we use the term \fIuser\fR\&\&. A process can have many users (different modules needing the same driver) and many processes running the same code, making up many \fIusers\fR\& of a driver\&.
+.LP
+In the basic scenario, each user loads the driver before starting to use it and unloads the driver when done\&. The reference counting keeps track of processes and the number of loads by each process\&. This way the driver is only unloaded when no one wants it (it has no user)\&. The driver also keeps track of ports that are opened to it\&. This enables delay of unloading until all ports are closed, or killing of all ports that use the driver when it is unloaded\&.
+.LP
+The interface supports two basic scenarios of loading and unloading\&. Each scenario can also have the option of either killing ports when the driver is unloading, or waiting for the ports to close themselves\&. The scenarios are as follows:
+.RS 2
+.TP 2
+.B
+\fILoad and Unload on a "When Needed Basis"\fR\&:
+This (most common) scenario simply supports that each \fBuser\fR\& of the driver loads it when needed and unloads it when no longer needed\&. The driver is always reference counted and as long as a process keeping the driver loaded is still alive, the driver is present in the system\&.
+.RS 2
+.LP
+Each \fBuser\fR\& of the driver use \fIliterally\fR\& the same pathname for the driver when demanding load, but the \fBusers\fR\& are not concerned with if the driver is already loaded from the file system or if the object code must be loaded from file system\&.
+.RE
+.RS 2
+.LP
+The following two pairs of functions support this scenario:
+.RE
+.RS 2
+.TP 2
+.B
+\fIload/2 and unload/1\fR\&:
+When using the \fIload/unload\fR\& interfaces, the driver is not unloaded until the \fIlast port\fR\& using the driver is closed\&. Function \fIunload/1\fR\& can return immediately, as the \fBusers\fR\& have no interrest in when the unloading occurs\&. The driver is unloaded when no one needs it any longer\&.
+.RS 2
+.LP
+If a process having the driver loaded dies, it has the same effect as if unloading is done\&.
+.RE
+.RS 2
+.LP
+When loading, function \fIload/2\fR\& returns \fIok\fR\& when any instance of the driver is present\&. Thus, if a driver is waiting to get unloaded (because of open ports), it simply changes state to no longer need unloading\&.
+.RE
+.TP 2
+.B
+\fIload_driver/2 and unload_driver/1\fR\&:
+These interfaces are intended to be used when it is considered an error that ports are open to a driver that no \fBuser\fR\& has loaded\&. The ports that are still open when the last \fBuser\fR\& calls \fIunload_driver/1\fR\& or when the last process having the driver loaded dies, are killed with reason \fIdriver_unloaded\fR\&\&.
+.RS 2
+.LP
+The function names \fIload_driver\fR\& and \fIunload_driver\fR\& are kept for backward compatibility\&.
+.RE
+.RE
+.TP 2
+.B
+\fILoading and Reloading for Code Replacement\fR\&:
+This scenario can occur if the driver code needs replacement during operation of the Erlang emulator\&. Implementing driver code replacement is a little more tedious than Beam code replacement, as one driver cannot be loaded as both "old" and "new" code\&. All \fBusers\fR\& of a driver must have it closed (no open ports) before the old code can be unloaded and the new code can be loaded\&.
+.RS 2
+.LP
+The unloading/loading is done as one atomic operation, blocking all processes in the system from using the driver in question while in progress\&.
+.RE
+.RS 2
+.LP
+The preferred way to do driver code replacement is to let \fIone single process\fR\& keep track of the driver\&. When the process starts, the driver is loaded\&. When replacement is required, the driver is reloaded\&. Unload is probably never done, or done when the process exits\&. If more than one \fBuser\fR\& has a driver loaded when code replacement is demanded, the replacement cannot occur until the last "other" \fBuser\fR\& has unloaded the driver\&.
+.RE
+.RS 2
+.LP
+Demanding reload when a reload is already in progress is always an error\&. Using the high-level functions, it is also an error to demand reloading when more than one \fBuser\fR\& has the driver loaded\&.
+.RE
+.RS 2
+.LP
+To simplify driver replacement, avoid designing your system so that more than one \fBuser\fR\& has the driver loaded\&.
+.RE
+.RS 2
+.LP
+The two functions for reloading drivers are to be used together with corresponding load functions to support the two different behaviors concerning open ports:
+.RE
+.RS 2
+.TP 2
+.B
+\fIload/2 and reload/2\fR\&:
+This pair of functions is used when reloading is to be done after the last open port to the driver is closed\&.
+.RS 2
+.LP
+As \fIreload/2\fR\& waits for the reloading to occur, a misbehaving process keeping open ports to the driver (or keeping the driver loaded) can cause infinite waiting for reload\&. Time-outs must be provided outside of the process demanding the reload or by using the low-level interface \fB\fItry_load/3\fR\&\fR\& in combination with driver monitors\&.
+.RE
+.TP 2
+.B
+\fIload_driver/2 and reload_driver/2\fR\&:
+This pair of functions are used when open ports to the driver are to be killed with reason \fIdriver_unloaded\fR\& to allow for new driver code to get loaded\&.
+.RS 2
+.LP
+However, if another process has the driver loaded, calling \fIreload_driver\fR\& returns error code \fIpending_process\fR\&\&. As stated earlier, the recommended design is to not allow other \fBusers\fR\& than the "driver reloader" to demand loading of the driver in question\&.
+.RE
+.RE
+.RE
+.SH DATA TYPES
+.nf
+
+\fBdriver()\fR\& = iolist() | atom()
+.br
+.fi
+.nf
+
+\fBpath()\fR\& = string() | atom()
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+demonitor(MonitorRef) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+MonitorRef = reference()
+.br
+.RE
+.RE
+.RS
+.LP
+Removes a driver monitor in much the same way as \fB\fIerlang:demonitor/1\fR\&\fR\& in ERTS does with process monitors\&. For details about how to create driver monitors, see \fB\fImonitor/2\fR\&\fR\&, \fB\fItry_load/3\fR\&\fR\&, and \fB\fItry_unload/2\fR\&\fR\&\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameter is not a \fIreference()\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+format_error(ErrorDesc) -> string()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ErrorDesc = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Takes an \fIErrorDesc\fR\& returned by load, unload, or reload functions and returns a string that describes the error or warning\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Because of peculiarities in the dynamic loading interfaces on different platforms, the returned string is only guaranteed to describe the correct error \fIif format_error/1 is called in the same instance of the Erlang virtual machine as the error appeared in\fR\& (meaning the same operating system process)\&.
+
+.RE
+.LP
+.nf
+
+.B
+info() -> AllInfoList
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+AllInfoList = [DriverInfo]
+.br
+DriverInfo = {DriverName, InfoList}
+.br
+DriverName = string()
+.br
+InfoList = [InfoItem]
+.br
+InfoItem = {Tag :: atom(), Value :: term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of tuples \fI{DriverName, InfoList}\fR\&, where \fIInfoList\fR\& is the result of calling \fB\fIinfo/1\fR\&\fR\& for that \fIDriverName\fR\&\&. Only dynamically linked-in drivers are included in the list\&.
+.RE
+.LP
+.nf
+
+.B
+info(Name) -> InfoList
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBdriver()\fR\&
+.br
+InfoList = [InfoItem, \&.\&.\&.]
+.br
+InfoItem = {Tag :: atom(), Value :: term()}
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of tuples \fI{Tag, Value}\fR\&, where \fITag\fR\& is the information item and \fIValue\fR\& is the result of calling \fB\fIinfo/2\fR\&\fR\& with this driver name and this tag\&. The result is a tuple list containing all information available about a driver\&.
+.LP
+The following tags appears in the list:
+.RS 2
+.TP 2
+*
+\fIprocesses\fR\&
+.LP
+.TP 2
+*
+\fIdriver_options\fR\&
+.LP
+.TP 2
+*
+\fIport_count\fR\&
+.LP
+.TP 2
+*
+\fIlinked_in_driver\fR\&
+.LP
+.TP 2
+*
+\fIpermanent\fR\&
+.LP
+.TP 2
+*
+\fIawaiting_load\fR\&
+.LP
+.TP 2
+*
+\fIawaiting_unload\fR\&
+.LP
+.RE
+
+.LP
+For a detailed description of each value, see \fB\fIinfo/2\fR\&\fR\&\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the driver is not present in the system\&.
+.RE
+.LP
+.nf
+
+.B
+info(Name, Tag) -> Value
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBdriver()\fR\&
+.br
+Tag = 
+.br
+    processes |
+.br
+    driver_options |
+.br
+    port_count |
+.br
+    linked_in_driver |
+.br
+    permanent |
+.br
+    awaiting_load |
+.br
+    awaiting_unload
+.br
+Value = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns specific information about one aspect of a driver\&. Parameter \fITag\fR\& specifies which aspect to get information about\&. The return \fIValue\fR\& differs between different tags:
+.RS 2
+.TP 2
+.B
+\fIprocesses\fR\&:
+Returns all processes containing \fBusers\fR\& of the specific drivers as a list of tuples \fI{pid(),integer() >= 0}\fR\&, where \fIinteger()\fR\& denotes the number of users in process \fIpid()\fR\&\&.
+.TP 2
+.B
+\fIdriver_options\fR\&:
+Returns a list of the driver options provided when loading, and any options set by the driver during initialization\&. The only valid option is \fIkill_ports\fR\&\&.
+.TP 2
+.B
+\fIport_count\fR\&:
+Returns the number of ports (an \fIinteger() >= 0\fR\&) using the driver\&.
+.TP 2
+.B
+\fIlinked_in_driver\fR\&:
+Returns a \fIboolean()\fR\&, which is \fItrue\fR\& if the driver is a statically linked-in one, otherwise \fIfalse\fR\&\&.
+.TP 2
+.B
+\fIpermanent\fR\&:
+Returns a \fIboolean()\fR\&, which is \fItrue\fR\& if the driver has made itself permanent (and is \fInot\fR\& a statically linked-in driver), otherwise \fIfalse\fR\&\&.
+.TP 2
+.B
+\fIawaiting_load\fR\&:
+Returns a list of all processes having monitors for \fIloading\fR\& active\&. Each process is returned as \fI{pid(),integer() >= 0}\fR\&, where \fIinteger()\fR\& is the number of monitors held by process \fIpid()\fR\&\&.
+.TP 2
+.B
+\fIawaiting_unload\fR\&:
+Returns a list of all processes having monitors for \fIunloading\fR\& active\&. Each process is returned as \fI{pid(),integer() >= 0}\fR\&, where \fIinteger()\fR\& is the number of monitors held by process \fIpid()\fR\&\&.
+.RE
+.LP
+If option \fIlinked_in_driver\fR\& or \fIpermanent\fR\& returns \fItrue\fR\&, all other options return \fIlinked_in_driver\fR\& or \fIpermanent\fR\&, respectively\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the driver is not present in the system or if the tag is not supported\&.
+.RE
+.LP
+.nf
+
+.B
+load(Path, Name) -> ok | {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBpath()\fR\&
+.br
+Name = \fBdriver()\fR\&
+.br
+ErrorDesc = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Loads and links the dynamic driver \fIName\fR\&\&. \fIPath\fR\& is a file path to the directory containing the driver\&. \fIName\fR\& must be a sharable object/dynamic library\&. Two drivers with different \fIPath\fR\& parameters cannot be loaded under the same name\&. \fIName\fR\& is a string or atom containing at least one character\&.
+.LP
+The \fIName\fR\& specified is to correspond to the filename of the dynamically loadable object file residing in the directory specified as \fIPath\fR\&, but \fIwithout\fR\& the extension (that is, \fI\&.so\fR\&)\&. The driver name provided in the driver initialization routine must correspond with the filename, in much the same way as Erlang module names correspond to the names of the \fI\&.beam\fR\& files\&.
+.LP
+If the driver was previously unloaded, but is still present because of open ports to it, a call to \fIload/2\fR\& stops the unloading and keeps the driver (as long as \fIPath\fR\& is the same), and \fIok\fR\& is returned\&. If you really want the object code to be reloaded, use \fB\fIreload/2\fR\&\fR\& or the low-level interface \fB\fItry_load/3\fR\&\fR\& instead\&. See also the description of \fB\fIdifferent scenarios\fR\&\fR\& for loading/unloading in the introduction\&.
+.LP
+If more than one process tries to load an already loaded driver with the same \fIPath\fR\&, or if the same process tries to load it many times, the function returns \fIok\fR\&\&. The emulator keeps track of the \fIload/2\fR\& calls, so that a corresponding number of \fIunload/2\fR\& calls must be done from the same process before the driver gets unloaded\&. It is therefore safe for an application to load a driver that is shared between processes or applications when needed\&. It can safely be unloaded without causing trouble for other parts of the system\&.
+.LP
+It is not allowed to load multiple drivers with the same name but with different \fIPath\fR\& parameters\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+\fIPath\fR\& is interpreted literally, so that all loaders of the same driver must specify the same \fIliteral\fR\& \fIPath\fR\& string, although different paths can point out the same directory in the file system (because of use of relative paths and links)\&.
+
+.LP
+On success, the function returns \fIok\fR\&\&. On failure, the return value is \fI{error,ErrorDesc}\fR\&, where \fIErrorDesc\fR\& is an opaque term to be translated into human readable form by function \fB\fIformat_error/1\fR\&\fR\&\&.
+.LP
+For more control over the error handling, use the \fB\fItry_load/3\fR\&\fR\& interface instead\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+load_driver(Path, Name) -> ok | {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBpath()\fR\&
+.br
+Name = \fBdriver()\fR\&
+.br
+ErrorDesc = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Works essentially as \fIload/2\fR\&, but loads the driver with other options\&. All ports using the driver are killed with reason \fIdriver_unloaded\fR\& when the driver is to be unloaded\&.
+.LP
+The number of loads and unloads by different \fBusers\fR\& influences the loading and unloading of a driver file\&. The port killing therefore only occurs when the \fIlast\fR\& \fBuser\fR\& unloads the driver, or when the last process having loaded the driver exits\&.
+.LP
+This interface (or at least the name of the functions) is kept for backward compatibility\&. Using \fB\fItry_load/3\fR\&\fR\& with \fI{driver_options,[kill_ports]}\fR\& in the option list gives the same effect regarding the port killing\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+loaded_drivers() -> {ok, Drivers}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Drivers = [Driver]
+.br
+Driver = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all the available drivers, both (statically) linked-in and dynamically loaded ones\&.
+.LP
+The driver names are returned as a list of strings rather than a list of atoms for historical reasons\&.
+.LP
+For more information about drivers, see \fB\fIinfo\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+monitor(Tag, Item) -> MonitorRef
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tag = driver
+.br
+Item = {Name, When}
+.br
+Name = \fBdriver()\fR\&
+.br
+When = loaded | unloaded | unloaded_only
+.br
+MonitorRef = reference()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a driver monitor and works in many ways as \fB\fIerlang:monitor/2\fR\&\fR\& in ERTS, does for processes\&. When a driver changes state, the monitor results in a monitor message that is sent to the calling process\&. \fIMonitorRef\fR\& returned by this function is included in the message sent\&.
+.LP
+As with process monitors, each driver monitor set only generates \fIone single message\fR\&\&. The monitor is "destroyed" after the message is sent, so it is then not needed to call \fB\fIdemonitor/1\fR\&\fR\&\&.
+.LP
+\fIMonitorRef\fR\& can also be used in subsequent calls to \fB\fIdemonitor/1\fR\&\fR\& to remove a monitor\&.
+.LP
+The function accepts the following parameters:
+.RS 2
+.TP 2
+.B
+\fITag\fR\&:
+The monitor tag is always \fIdriver\fR\&, as this function can only be used to create driver monitors\&. In the future, driver monitors will be integrated with process monitors, why this parameter has to be specified for consistence\&.
+.TP 2
+.B
+\fIItem\fR\&:
+Parameter \fIItem\fR\& specifies which driver to monitor (the driver name) and which state change to monitor\&. The parameter is a tuple of arity two whose first element is the driver name and second element is one of the following:
+.RS 2
+.TP 2
+.B
+\fIloaded\fR\&:
+Notifies when the driver is reloaded (or loaded if loading is underway)\&. It only makes sense to monitor drivers that are in the process of being loaded or reloaded\&. A future driver name for loading cannot be monitored\&. That only results in a \fIDOWN\fR\& message sent immediately\&. Monitoring for loading is therefore most useful when triggered by function \fB\fItry_load/3\fR\&\fR\&, where the monitor is created \fIbecause\fR\& the driver is in such a pending state\&.
+.RS 2
+.LP
+Setting a driver monitor for \fIloading\fR\& eventually leads to one of the following messages being sent:
+.RE
+.RS 2
+.TP 2
+.B
+\fI{\&'UP\&', reference(), driver, Name, loaded}\fR\&:
+This message is sent either immediately if the driver is already loaded and no reloading is pending, or when reloading is executed if reloading is pending\&.
+.RS 2
+.LP
+The \fBuser\fR\& is expected to know if reloading is demanded before creating a monitor for loading\&.
+.RE
+.TP 2
+.B
+\fI{\&'UP\&', reference(), driver, Name, permanent}\fR\&:
+This message is sent if reloading was expected, but the (old) driver made itself permanent before reloading\&. It is also sent if the driver was permanent or statically linked-in when trying to create the monitor\&.
+.TP 2
+.B
+\fI{\&'DOWN\&', reference(), driver, Name, load_cancelled}\fR\&:
+This message arrives if reloading was underway, but the requesting \fBuser\fR\& cancelled it by dying or calling \fB\fItry_unload/2\fR\&\fR\& (or \fIunload/1\fR\&/\fIunload_driver/1\fR\&) again before it was reloaded\&.
+.TP 2
+.B
+\fI{\&'DOWN\&', reference(), driver, Name, {load_failure, Failure}}\fR\&:
+This message arrives if reloading was underway but the loading for some reason failed\&. The \fIFailure\fR\& term is one of the errors that can be returned from \fB\fItry_load/3\fR\&\fR\&\&. The error term can be passed to \fB\fIformat_error/1\fR\&\fR\& for translation into human readable form\&. Notice that the translation must be done in the same running Erlang virtual machine as the error was detected in\&.
+.RE
+.TP 2
+.B
+\fIunloaded\fR\&:
+Monitors when a driver gets unloaded\&. If one monitors a driver that is not present in the system, one immediately gets notified that the driver got unloaded\&. There is no guarantee that the driver was ever loaded\&.
+.RS 2
+.LP
+A driver monitor for unload eventually results in one of the following messages being sent:
+.RE
+.RS 2
+.TP 2
+.B
+\fI{\&'DOWN\&', reference(), driver, Name, unloaded}\fR\&:
+The monitored driver instance is now unloaded\&. As the unload can be a result of a \fIreload/2\fR\& request, the driver can once again have been loaded when this message arrives\&.
+.TP 2
+.B
+\fI{\&'UP\&', reference(), driver, Name, unload_cancelled}\fR\&:
+This message is sent if unloading was expected, but while the driver was waiting for all ports to get closed, a new \fBuser\fR\& of the driver appeared, and the unloading was cancelled\&.
+.RS 2
+.LP
+This message appears if \fI{ok, pending_driver}\fR\& was returned from \fB\fItry_unload/2\fR\&\fR\& for the last \fBuser\fR\& of the driver, and then \fI{ok, already_loaded}\fR\& is returned from a call to \fB\fItry_load/3\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+If one \fIreally\fR\& wants to monitor when the driver gets unloaded, this message distorts the picture, because no unloading was done\&. Option \fIunloaded_only\fR\& creates a monitor similar to an \fIunloaded\fR\& monitor, but never results in this message\&.
+.RE
+.TP 2
+.B
+\fI{\&'UP\&', reference(), driver, Name, permanent}\fR\&:
+This message is sent if unloading was expected, but the driver made itself permanent before unloading\&. It is also sent if trying to monitor a permanent or statically linked-in driver\&.
+.RE
+.TP 2
+.B
+\fIunloaded_only\fR\&:
+A monitor created as \fIunloaded_only\fR\& behaves exactly as one created as \fIunloaded\fR\& except that the \fI{\&'UP\&', reference(), driver, Name, unload_cancelled}\fR\& message is never sent, but the monitor instead persists until the driver \fIreally\fR\& gets unloaded\&.
+.RE
+.RE
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+reload(Path, Name) -> ok | {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBpath()\fR\&
+.br
+Name = \fBdriver()\fR\&
+.br
+ErrorDesc = pending_process | OpaqueError
+.br
+OpaqueError = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Reloads the driver named \fIName\fR\& from a possibly different \fIPath\fR\& than previously used\&. This function is used in the code change \fB\fIscenario\fR\&\fR\& described in the introduction\&.
+.LP
+If there are other \fBusers\fR\& of this driver, the function returns \fI{error, pending_process}\fR\&, but if there are no other users, the function call hangs until all open ports are closed\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Avoid mixing multiple \fBusers\fR\& with driver reload requests\&.
+
+.LP
+To avoid hanging on open ports, use function \fB\fItry_load/3\fR\&\fR\& instead\&.
+.LP
+The \fIName\fR\& and \fIPath\fR\& parameters have exactly the same meaning as when calling the plain function \fB\fIload/2\fR\&\fR\&\&.
+.LP
+On success, the function returns \fIok\fR\&\&. On failure, the function returns an opaque error, except the \fIpending_process\fR\& error described earlier\&. The opaque errors are to be translated into human readable form by function \fB\fIformat_error/1\fR\&\fR\&\&.
+.LP
+For more control over the error handling, use the \fB\fItry_load/3\fR\&\fR\& interface instead\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+reload_driver(Path, Name) -> ok | {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBpath()\fR\&
+.br
+Name = \fBdriver()\fR\&
+.br
+ErrorDesc = pending_process | OpaqueError
+.br
+OpaqueError = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Works exactly as \fB\fIreload/2\fR\&\fR\&, but for drivers loaded with the \fB\fIload_driver/2\fR\&\fR\& interface\&.
+.LP
+As this interface implies that ports are killed when the last user disappears, the function does not hang waiting for ports to get closed\&.
+.LP
+For more details, see \fB\fIscenarios\fR\&\fR\& in this module description and the function description for \fB\fIreload/2\fR\&\fR\&\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+try_load(Path, Name, OptionList) ->
+.B
+            {ok, Status} |
+.B
+            {ok, PendingStatus, Ref} |
+.B
+            {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Path = \fBpath()\fR\&
+.br
+Name = \fBdriver()\fR\&
+.br
+OptionList = [Option]
+.br
+Option = 
+.br
+    {driver_options, DriverOptionList} |
+.br
+    {monitor, MonitorOption} |
+.br
+    {reload, ReloadOption}
+.br
+DriverOptionList = [DriverOption]
+.br
+DriverOption = kill_ports
+.br
+MonitorOption = ReloadOption = pending_driver | pending
+.br
+Status = loaded | already_loaded | PendingStatus
+.br
+PendingStatus = pending_driver | pending_process
+.br
+Ref = reference()
+.br
+ErrorDesc = ErrorAtom | OpaqueError
+.br
+ErrorAtom = 
+.br
+    linked_in_driver |
+.br
+    inconsistent |
+.br
+    permanent |
+.br
+    not_loaded_by_this_process |
+.br
+    not_loaded |
+.br
+    pending_reload |
+.br
+    pending_process
+.br
+OpaqueError = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Provides more control than the \fIload/2\fR\&/\fIreload/2\fR\& and \fIload_driver/2\fR\&/\fIreload_driver/2\fR\& interfaces\&. It never waits for completion of other operations related to the driver, but immediately returns the status of the driver as one of the following:
+.RS 2
+.TP 2
+.B
+\fI{ok, loaded}\fR\&:
+The driver was loaded and is immediately usable\&.
+.TP 2
+.B
+\fI{ok, already_loaded}\fR\&:
+The driver was already loaded by another process or is in use by a living port, or both\&. The load by you is registered and a corresponding \fItry_unload\fR\& is expected sometime in the future\&.
+.TP 2
+.B
+\fI{ok, pending_driver}\fR\&or \fI{ok, pending_driver, reference()}\fR\&:
+The load request is registered, but the loading is delayed because an earlier instance of the driver is still waiting to get unloaded (open ports use it)\&. Still, unload is expected when you are done with the driver\&. This return value \fImostly\fR\& occurs when options \fI{reload,pending_driver}\fR\& or \fI{reload,pending}\fR\& are used, but \fIcan\fR\& occur when another \fBuser\fR\& is unloading a driver in parallel and driver option \fIkill_ports\fR\& is set\&. In other words, this return value always needs to be handled\&.
+.TP 2
+.B
+\fI{ok, pending_process}\fR\&or \fI{ok, pending_process, reference()}\fR\&:
+The load request is registered, but the loading is delayed because an earlier instance of the driver is still waiting to get unloaded by another \fBuser\fR\& (not only by a port, in which case \fI{ok,pending_driver}\fR\& would have been returned)\&. Still, unload is expected when you are done with the driver\&. This return value \fIonly\fR\& occurs when option \fI{reload,pending}\fR\& is used\&.
+.RE
+.LP
+When the function returns \fI{ok, pending_driver}\fR\& or \fI{ok, pending_process}\fR\&, one can get information about when the driver is \fIactually\fR\& loaded by using option \fI{monitor, MonitorOption}\fR\&\&.
+.LP
+When monitoring is requested, and a corresponding \fI{ok, pending_driver}\fR\& or \fI{ok, pending_process}\fR\& would be returned, the function instead returns a tuple \fI{ok, PendingStatus, reference()}\fR\& and the process then gets a monitor message later, when the driver gets loaded\&. The monitor message to expect is described in the function description of \fB\fImonitor/2\fR\&\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+In case of loading, monitoring can \fInot\fR\& only get triggered by using option \fI{reload, ReloadOption}\fR\&, but also in special cases where the load error is transient\&. Thus, \fI{monitor, pending_driver}\fR\& is to be used under basically \fIall\fR\& real world circumstances\&.
+
+.LP
+The function accepts the following parameters:
+.RS 2
+.TP 2
+.B
+\fIPath\fR\&:
+The file system path to the directory where the driver object file is located\&. The filename of the object file (minus extension) must correspond to the driver name (used in parameter \fIName\fR\&) and the driver must identify itself with the same name\&. \fIPath\fR\& can be provided as an \fIiolist()\fR\&, meaning it can be a list of other \fIiolist()\fR\&s, characters (8-bit integers), or binaries, all to be flattened into a sequence of characters\&.
+.RS 2
+.LP
+The (possibly flattened) \fIPath\fR\& parameter must be consistent throughout the system\&. A driver is to, by all \fBusers\fR\&, be loaded using the same \fIliteral\fR\& \fIPath\fR\&\&. The exception is when \fIreloading\fR\& is requested, in which case \fIPath\fR\& can be specified differently\&. Notice that all \fBusers\fR\& trying to load the driver later need to use the \fInew\fR\& \fIPath\fR\& if \fIPath\fR\& is changed using a \fIreload\fR\& option\&. This is yet another reason to have \fIonly one loader\fR\& of a driver one wants to upgrade in a running system\&.
+.RE
+.TP 2
+.B
+\fIName\fR\&:
+This parameter is the name of the driver to be used in subsequent calls to function \fB\fIerlang:open_port\fR\&\fR\& in ERTS\&. The name can be specified as an \fIiolist()\fR\& or an \fIatom()\fR\&\&. The name specified when loading is used to find the object file (with the help of \fIPath\fR\& and the system-implied extension suffix, that is, \fI\&.so\fR\&)\&. The name by which the driver identifies itself must also be consistent with this \fIName\fR\& parameter, much as the module name of a Beam file much corresponds to its filename\&.
+.TP 2
+.B
+\fIOptionList\fR\&:
+Some options can be specified to control the loading operation\&. The options are specified as a list of two-tuples\&. The tuples have the following values and meanings:
+.RS 2
+.TP 2
+.B
+\fI{driver_options, DriverOptionList}\fR\&:
+This is to provide options that changes its general behavior and "sticks" to the driver throughout its lifespan\&.
+.RS 2
+.LP
+The driver options for a specified driver name need always to be consistent, \fIeven when the driver is reloaded\fR\&, meaning that they are as much a part of the driver as the name\&.
+.RE
+.RS 2
+.LP
+The only allowed driver option is \fIkill_ports\fR\&, which means that all ports opened to the driver are killed with exit reason \fIdriver_unloaded\fR\& when no process any longer has the driver loaded\&. This situation arises either when the last \fBuser\fR\& calls \fB\fItry_unload/2\fR\&\fR\&, or when the last process having loaded the driver exits\&.
+.RE
+.TP 2
+.B
+\fI{monitor, MonitorOption}\fR\&:
+A \fIMonitorOption\fR\& tells \fItry_load/3\fR\& to trigger a driver monitor under certain conditions\&. When the monitor is triggered, the function returns a three-tuple \fI{ok, PendingStatus, reference()}\fR\&, where \fIreference()\fR\& is the monitor reference for the driver monitor\&.
+.RS 2
+.LP
+Only one \fIMonitorOption\fR\& can be specified\&. It is one of the following:
+.RE
+.RS 2
+.TP 2
+*
+The atom \fIpending\fR\&, which means that a monitor is to be created whenever a load operation is delayed,
+.LP
+.TP 2
+*
+The atom \fIpending_driver\fR\&, in which a monitor is created whenever the operation is delayed because of open ports to an otherwise unused driver\&.
+.LP
+.RE
+
+.RS 2
+.LP
+Option \fIpending_driver\fR\& is of little use, but is present for completeness, as it is well defined which reload options that can give rise to which delays\&. However, it can be a good idea to use the same \fIMonitorOption\fR\& as the \fIReloadOption\fR\&, if present\&.
+.RE
+.RS 2
+.LP
+If reloading is not requested, it can still be useful to specify option \fImonitor\fR\&, as forced unloads (driver option \fIkill_ports\fR\& or option \fIkill_ports\fR\& to \fB\fItry_unload/2\fR\&\fR\&) trigger a transient state where driver loading cannot be performed until all closing ports are closed\&. Thus, as \fItry_unload\fR\& can, in almost all situations, return \fI{ok, pending_driver}\fR\&, always specify at least \fI{monitor, pending_driver}\fR\& in production code (see the monitor discussion earlier)\&.
+.RE
+.TP 2
+.B
+\fI{reload, ReloadOption}\fR\&:
+This option is used to \fIreload\fR\& a driver from disk, most often in a code upgrade scenario\&. Having a \fIreload\fR\& option also implies that parameter \fIPath\fR\& does \fInot\fR\& need to be consistent with earlier loads of the driver\&.
+.RS 2
+.LP
+To reload a driver, the process must have loaded the driver before, that is, there must be an active \fBuser\fR\& of the driver in the process\&.
+.RE
+.RS 2
+.LP
+The \fIreload\fR\& option can be either of the following:
+.RE
+.RS 2
+.TP 2
+.B
+\fIpending\fR\&:
+With the atom \fIpending\fR\&, reloading is requested for any driver and is effectuated when \fIall\fR\& ports opened to the driver are closed\&. The driver replacement in this case takes place regardless if there are still pending \fBusers\fR\& having the driver loaded\&.
+.RS 2
+.LP
+The option also triggers port-killing (if driver option \fIkill_ports\fR\& is used) although there are pending users, making it usable for forced driver replacement, but laying much responsibility on the driver \fBusers\fR\&\&. The pending option is seldom used as one does not want other \fBusers\fR\& to have loaded the driver when code change is underway\&.
+.RE
+.TP 2
+.B
+\fIpending_driver\fR\&:
+This option is more useful\&. Here, reloading is queued if the driver is \fInot\fR\& loaded by any other \fBusers\fR\&, but the driver has opened ports, in which case \fI{ok, pending_driver}\fR\& is returned (a \fImonitor\fR\& option is recommended)\&.
+.RE
+.RS 2
+.LP
+If the driver is unloaded (not present in the system), error code \fInot_loaded\fR\& is returned\&. Option \fIreload\fR\& is intended for when the user has already loaded the driver in advance\&.
+.RE
+.RE
+.RE
+.LP
+The function can return numerous errors, some can only be returned given a certain combination of options\&.
+.LP
+Some errors are opaque and can only be interpreted by passing them to function \fB\fIformat_error/1\fR\&\fR\&, but some can be interpreted directly:
+.RS 2
+.TP 2
+.B
+\fI{error,linked_in_driver}\fR\&:
+The driver with the specified name is an Erlang statically linked-in driver, which cannot be manipulated with this API\&.
+.TP 2
+.B
+\fI{error,inconsistent}\fR\&:
+The driver is already loaded with other \fIDriverOptionList\fR\& or a different \fIliteral\fR\& \fIPath\fR\& argument\&.
+.RS 2
+.LP
+This can occur even if a \fIreload\fR\& option is specified, if \fIDriverOptionList\fR\& differs from the current\&.
+.RE
+.TP 2
+.B
+\fI{error, permanent}\fR\&:
+The driver has requested itself to be permanent, making it behave like an Erlang linked-in driver and can no longer be manipulated with this API\&.
+.TP 2
+.B
+\fI{error, pending_process}\fR\&:
+The driver is loaded by other \fBusers\fR\& when option \fI{reload, pending_driver}\fR\& was specified\&.
+.TP 2
+.B
+\fI{error, pending_reload}\fR\&:
+Driver reload is already requested by another \fBuser\fR\& when option \fI{reload, ReloadOption}\fR\& was specified\&.
+.TP 2
+.B
+\fI{error, not_loaded_by_this_process}\fR\&:
+Appears when option \fIreload\fR\& is specified\&. The driver \fIName\fR\& is present in the system, but there is no \fBuser\fR\& of it in this process\&.
+.TP 2
+.B
+\fI{error, not_loaded}\fR\&:
+Appears when option \fIreload\fR\& is specified\&. The driver \fIName\fR\& is not in the system\&. Only drivers loaded by this process can be reloaded\&.
+.RE
+.LP
+All other error codes are to be translated by function \fB\fIformat_error/1\fR\&\fR\&\&. Notice that calls to \fIformat_error\fR\& are to be performed from the same running instance of the Erlang virtual machine as the error is detected in, because of system-dependent behavior concerning error values\&.
+.LP
+If the arguments or options are malformed, the function throws a \fIbadarg\fR\& exception\&.
+.RE
+.LP
+.nf
+
+.B
+try_unload(Name, OptionList) ->
+.B
+              {ok, Status} |
+.B
+              {ok, PendingStatus, Ref} |
+.B
+              {error, ErrorAtom}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBdriver()\fR\&
+.br
+OptionList = [Option]
+.br
+Option = {monitor, MonitorOption} | kill_ports
+.br
+MonitorOption = pending_driver | pending
+.br
+Status = unloaded | PendingStatus
+.br
+PendingStatus = pending_driver | pending_process
+.br
+Ref = reference()
+.br
+ErrorAtom = 
+.br
+    linked_in_driver |
+.br
+    not_loaded |
+.br
+    not_loaded_by_this_process |
+.br
+    permanent
+.br
+.RE
+.RE
+.RS
+.LP
+This is the low-level function to unload (or decrement reference counts of) a driver\&. It can be used to force port killing, in much the same way as the driver option \fIkill_ports\fR\& implicitly does\&. Also, it can trigger a monitor either because other \fBusers\fR\& still have the driver loaded or because open ports use the driver\&.
+.LP
+Unloading can be described as the process of telling the emulator that this particular part of the code in this particular process (that is, this \fBuser\fR\&) no longer needs the driver\&. That can, if there are no other users, trigger unloading of the driver, in which case the driver name disappears from the system and (if possible) the memory occupied by the driver executable code is reclaimed\&.
+.LP
+If the driver has option \fIkill_ports\fR\& set, or if \fIkill_ports\fR\& is specified as an option to this function, all pending ports using this driver are killed when unloading is done by the last \fBuser\fR\&\&. If no port-killing is involved and there are open ports, the unloading is delayed until no more open ports use the driver\&. If, in this case, another \fBuser\fR\& (or even this user) loads the driver again before the driver is unloaded, the unloading never takes place\&.
+.LP
+To allow the \fBuser\fR\& to \fIrequest unloading\fR\& to wait for \fIactual unloading\fR\&, \fImonitor\fR\& triggers can be specified in much the same way as when loading\&. However, as \fBusers\fR\& of this function seldom are interested in more than decrementing the reference counts, monitoring is seldom needed\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If option \fIkill_ports\fR\& is used, monitor trigging is crucial, as the ports are not guaranteed to be killed until the driver is unloaded\&. Thus, a monitor must be triggered for at least the \fIpending_driver\fR\& case\&.
+
+.LP
+The possible monitor messages to expect are the same as when using option \fIunloaded\fR\& to function \fB\fImonitor/2\fR\&\fR\&\&.
+.LP
+The function returns one of the following statuses upon success:
+.RS 2
+.TP 2
+.B
+\fI{ok, unloaded}\fR\&:
+The driver was immediately unloaded, meaning that the driver name is now free to use by other drivers and, if the underlying OS permits it, the memory occupied by the driver object code is now reclaimed\&.
+.RS 2
+.LP
+The driver can only be unloaded when there are no open ports using it and no more \fBusers\fR\& require it to be loaded\&.
+.RE
+.TP 2
+.B
+\fI{ok, pending_driver}\fR\&or \fI{ok, pending_driver, reference()}\fR\&:
+Indicates that this call removed the last \fBuser\fR\& from the driver, but there are still open ports using it\&. When all ports are closed and no new \fBusers\fR\& have arrived, the driver is reloaded and the name and memory reclaimed\&.
+.RS 2
+.LP
+This return value is valid even if option \fIkill_ports\fR\& was used, as killing ports can be a process that does not complete immediately\&. However, the condition is in that case transient\&. Monitors are always useful to detect when the driver is really unloaded\&.
+.RE
+.TP 2
+.B
+\fI{ok, pending_process}\fR\&or \fI{ok, pending_process, reference()}\fR\&:
+The unload request is registered, but other \fBusers\fR\& still hold the driver\&. Notice that the term \fIpending_process\fR\& can refer to the running process; there can be more than one \fBuser\fR\& in the same process\&.
+.RS 2
+.LP
+This is a normal, healthy, return value if the call was just placed to inform the emulator that you have no further use of the driver\&. It is the most common return value in the most common \fB\fIscenario\fR\&\fR\& described in the introduction\&.
+.RE
+.RE
+.LP
+The function accepts the following parameters:
+.RS 2
+.TP 2
+.B
+\fIName\fR\&:
+\fIName\fR\& is the name of the driver to be unloaded\&. The name can be specified as an \fIiolist()\fR\& or as an \fIatom()\fR\&\&.
+.TP 2
+.B
+\fIOptionList\fR\&:
+Argument \fIOptionList\fR\& can be used to specify certain behavior regarding ports and triggering monitors under certain conditions:
+.RS 2
+.TP 2
+.B
+\fIkill_ports\fR\&:
+Forces killing of all ports opened using this driver, with exit reason \fIdriver_unloaded\fR\&, if you are the \fIlast\fR\& \fBuser\fR\& of the driver\&.
+.RS 2
+.LP
+If other \fBusers\fR\& have the driver loaded, this option has no effect\&.
+.RE
+.RS 2
+.LP
+To get the consistent behavior of killing ports when the last \fBuser\fR\& unloads, use driver option \fIkill_ports\fR\& when loading the driver instead\&.
+.RE
+.TP 2
+.B
+\fI{monitor, MonitorOption}\fR\&:
+Creates a driver monitor if the condition specified in \fIMonitorOption\fR\& is true\&. The valid options are:
+.RS 2
+.TP 2
+.B
+\fIpending_driver\fR\&:
+Creates a driver monitor if the return value is to be \fI{ok, pending_driver}\fR\&\&.
+.TP 2
+.B
+\fIpending\fR\&:
+Creates a monitor if the return value is \fI{ok, pending_driver}\fR\& or \fI{ok, pending_process}\fR\&\&.
+.RE
+.RS 2
+.LP
+The \fIpending_driver\fR\& \fIMonitorOption\fR\& is by far the most useful\&. It must be used to ensure that the driver really is unloaded and the ports closed whenever option \fIkill_ports\fR\& is used, or the driver can have been loaded with driver option \fIkill_ports\fR\&\&.
+.RE
+.RS 2
+.LP
+Using the monitor triggers in the call to \fItry_unload\fR\& ensures that the monitor is added before the unloading is executed, meaning that the monitor is always properly triggered, which is not the case if \fImonitor/2\fR\& is called separately\&.
+.RE
+.RE
+.RE
+.LP
+The function can return the following error conditions, all well specified (no opaque values):
+.RS 2
+.TP 2
+.B
+\fI{error, linked_in_driver}\fR\&:
+You were trying to unload an Erlang statically linked-in driver, which cannot be manipulated with this interface (and cannot be unloaded at all)\&.
+.TP 2
+.B
+\fI{error, not_loaded}\fR\&:
+The driver \fIName\fR\& is not present in the system\&.
+.TP 2
+.B
+\fI{error, not_loaded_by_this_process}\fR\&:
+The driver \fIName\fR\& is present in the system, but there is no \fBuser\fR\& of it in this process\&.
+.RS 2
+.LP
+As a special case, drivers can be unloaded from processes that have done no corresponding call to \fItry_load/3\fR\& if, and only if, there are \fIno users of the driver at all\fR\&, which can occur if the process containing the last user dies\&.
+.RE
+.TP 2
+.B
+\fI{error, permanent}\fR\&:
+The driver has made itself permanent, in which case it can no longer be manipulated by this interface (much like a statically linked-in driver)\&.
+.RE
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+unload(Name) -> ok | {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBdriver()\fR\&
+.br
+ErrorDesc = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Unloads, or at least dereferences the driver named \fIName\fR\&\&. If the caller is the last \fBuser\fR\& of the driver, and no more open ports use the driver, the driver gets unloaded\&. Otherwise, unloading is delayed until all ports are closed and no \fBusers\fR\& remain\&.
+.LP
+If there are other \fBusers\fR\& of the driver, the reference counts of the driver is merely decreased, so that the caller is no longer considered a \fBuser\fR\& of the driver\&. For use scenarios, see the \fB\fIdescription\fR\&\fR\& in the beginning of this module\&.
+.LP
+The \fIErrorDesc\fR\& returned is an opaque value to be passed further on to function \fB\fIformat_error/1\fR\&\fR\&\&. For more control over the operation, use the \fB\fItry_unload/2\fR\&\fR\& interface\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.LP
+.nf
+
+.B
+unload_driver(Name) -> ok | {error, ErrorDesc}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBdriver()\fR\&
+.br
+ErrorDesc = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Unloads, or at least dereferences the driver named \fIName\fR\&\&. If the caller is the last \fBuser\fR\& of the driver, all remaining open ports using the driver are killed with reason \fIdriver_unloaded\fR\& and the driver eventually gets unloaded\&.
+.LP
+If there are other \fBusers\fR\& of the driver, the reference counts of the driver is merely decreased, so that the caller is no longer considered a \fBuser\fR\&\&. For use scenarios, see the \fB\fIdescription\fR\&\fR\& in the beginning of this module\&.
+.LP
+The \fIErrorDesc\fR\& returned is an opaque value to be passed further on to function \fB\fIformat_error/1\fR\&\fR\&\&. For more control over the operation, use the \fB\fItry_unload/2\fR\&\fR\& interface\&.
+.LP
+The function throws a \fIbadarg\fR\& exception if the parameters are not specified as described here\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIerts:erl_driver(4)\fR\&\fR\&, \fB\fIerts:driver_entry(4)\fR\&\fR\&

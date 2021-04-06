@@ -1,0 +1,516 @@
+.TH os 3 "kernel 5.4.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+os \- Operating system-specific functions.
+.SH DESCRIPTION
+.LP
+The functions in this module are operating system-specific\&. Careless use of these functions results in programs that will only run on a specific platform\&. On the other hand, with careful use, these functions can be of help in enabling a program to run on most platforms\&.
+.SH DATA TYPES
+.nf
+
+\fBos_command()\fR\& = atom() | \fBio_lib:chars()\fR\&
+.br
+.fi
+.nf
+
+\fBos_command_opts()\fR\& = #{max_size => integer() >= 0 | infinity}
+.br
+.fi
+.RS
+.LP
+Options for \fB\fIos:cmd/2\fR\&\fR\&
+.RS 2
+.TP 2
+.B
+\fImax_size\fR\&:
+The maximum size of the data returned by the \fIos:cmd\fR\& call\&. See the \fB\fIos:cmd/2\fR\&\fR\& documentation for more details\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+cmd(Command) -> string()
+.br
+.fi
+.br
+.nf
+
+.B
+cmd(Command, Options) -> string()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Command = \fBos_command()\fR\&
+.br
+Options = \fBos_command_opts()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Executes \fICommand\fR\& in a command shell of the target OS, captures the standard output of the command, and returns this result as a string\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+LsOut = os:cmd("ls"), % on unix platform
+DirOut = os:cmd("dir"), % on Win32 platform
+.fi
+.LP
+Notice that in some cases, standard output of a command when called from another program (for example, \fIos:cmd/1\fR\&) can differ, compared with the standard output of the command when called directly from an OS command shell\&.
+.LP
+\fIos:cmd/2\fR\& was added in kernel-5\&.5 (OTP-20\&.2\&.1)\&. It makes it possible to pass an options map as the second argument in order to control the behaviour of \fIos:cmd\fR\&\&. The possible options are:
+.RS 2
+.TP 2
+.B
+\fImax_size\fR\&:
+The maximum size of the data returned by the \fIos:cmd\fR\& call\&. This option is a safety feature that should be used when the command executed can return a very large, possibly infinite, result\&.
+.LP
+.nf
+
+> os:cmd("cat /dev/zero", #{ max_size => 20 }).
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+.fi
+.RE
+.RE
+.LP
+.nf
+
+.B
+find_executable(Name) -> Filename | false
+.br
+.fi
+.br
+.nf
+
+.B
+find_executable(Name, Path) -> Filename | false
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = Path = Filename = string()
+.br
+.RE
+.RE
+.RS
+.LP
+These two functions look up an executable program, with the specified name and a search path, in the same way as the underlying OS\&. \fIfind_executable/1\fR\& uses the current execution path (that is, the environment variable \fIPATH\fR\& on Unix and Windows)\&.
+.LP
+\fIPath\fR\&, if specified, is to conform to the syntax of execution paths on the OS\&. Returns the absolute filename of the executable program \fIName\fR\&, or \fIfalse\fR\& if the program is not found\&.
+.RE
+.LP
+.nf
+
+.B
+getenv() -> [string()]
+.br
+.fi
+.br
+.RS
+.LP
+Returns a list of all environment variables\&. Each environment variable is expressed as a single string on the format \fI"VarName=Value"\fR\&, where \fIVarName\fR\& is the name of the variable and \fIValue\fR\& its value\&.
+.LP
+If Unicode filename encoding is in effect (see the \fB\fIerl\fR\& manual page\fR\&), the strings can contain characters with codepoints > 255\&.
+.RE
+.LP
+.nf
+
+.B
+getenv(VarName) -> Value | false
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+VarName = Value = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the \fIValue\fR\& of the environment variable \fIVarName\fR\&, or \fIfalse\fR\& if the environment variable is undefined\&.
+.LP
+If Unicode filename encoding is in effect (see the \fB\fIerl\fR\& manual page\fR\&), the strings \fIVarName\fR\& and \fIValue\fR\& can contain characters with codepoints > 255\&.
+.RE
+.LP
+.nf
+
+.B
+getenv(VarName, DefaultValue) -> Value
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+VarName = DefaultValue = Value = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the \fIValue\fR\& of the environment variable \fIVarName\fR\&, or \fIDefaultValue\fR\& if the environment variable is undefined\&.
+.LP
+If Unicode filename encoding is in effect (see the \fB\fIerl\fR\& manual page\fR\&), the strings \fIVarName\fR\& and \fIValue\fR\& can contain characters with codepoints > 255\&.
+.RE
+.LP
+.nf
+
+.B
+getpid() -> Value
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Value = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the process identifier of the current Erlang emulator in the format most commonly used by the OS environment\&. Returns \fIValue\fR\& as a string containing the (usually) numerical identifier for a process\&. On Unix, this is typically the return value of the \fIgetpid()\fR\& system call\&. On Windows, the process id as returned by the \fIGetCurrentProcessId()\fR\& system call is used\&.
+.RE
+.LP
+.nf
+
+.B
+putenv(VarName, Value) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+VarName = Value = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Sets a new \fIValue\fR\& for environment variable \fIVarName\fR\&\&.
+.LP
+If Unicode filename encoding is in effect (see the \fB\fIerl\fR\& manual page\fR\&), the strings \fIVarName\fR\& and \fIValue\fR\& can contain characters with codepoints > 255\&.
+.LP
+On Unix platforms, the environment is set using UTF-8 encoding if Unicode filename translation is in effect\&. On Windows, the environment is set using wide character interfaces\&.
+.RE
+.LP
+.nf
+
+.B
+set_signal(Signal, Option) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Signal = 
+.br
+    sighup |
+.br
+    sigquit |
+.br
+    sigabrt |
+.br
+    sigalrm |
+.br
+    sigterm |
+.br
+    sigusr1 |
+.br
+    sigusr2 |
+.br
+    sigchld |
+.br
+    sigstop |
+.br
+    sigtstp
+.br
+Option = default | handle | ignore
+.br
+.RE
+.RE
+.RS
+.LP
+Enables or disables OS signals\&.
+.LP
+Each signal my be set to one of the following options:
+.RS 2
+.TP 2
+.B
+\fIignore\fR\&:
+ This signal will be ignored\&. 
+.TP 2
+.B
+\fIdefault\fR\&:
+ This signal will use the default signal handler for the operating system\&. 
+.TP 2
+.B
+\fIhandle\fR\&:
+ This signal will notify \fB\fIerl_signal_server\fR\&\fR\& when it is received by the Erlang runtime system\&. 
+.RE
+.RE
+.LP
+.nf
+
+.B
+system_time() -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the current \fBOS system time\fR\& in \fInative\fR\& \fBtime unit\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This time is \fInot\fR\& a monotonically increasing time\&.
+
+.RE
+.LP
+.nf
+
+.B
+system_time(Unit) -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Unit = \fBerlang:time_unit()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the current \fBOS system time\fR\& converted into the \fIUnit\fR\& passed as argument\&.
+.LP
+Calling \fIos:system_time(Unit)\fR\& is equivalent to \fB\fIerlang:convert_time_unit\fR\&\fR\&(\fB\fIos:system_time()\fR\&\fR\&\fI, native, Unit)\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This time is \fInot\fR\& a monotonically increasing time\&.
+
+.RE
+.LP
+.nf
+
+.B
+timestamp() -> Timestamp
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Timestamp = \fBerlang:timestamp()\fR\&
+.br
+.RS 2
+Timestamp = {MegaSecs, Secs, MicroSecs}
+.RE
+.RE
+.RE
+.RS
+.LP
+Returns the current \fBOS system time\fR\& in the same format as \fB\fIerlang:timestamp/0\fR\&\fR\&\&. The tuple can be used together with function \fB\fIcalendar:now_to_universal_time/1\fR\&\fR\& or \fB\fIcalendar:now_to_local_time/1\fR\&\fR\& to get calendar time\&. Using the calendar time, together with the \fIMicroSecs\fR\& part of the return tuple from this function, allows you to log time stamps in high resolution and consistent with the time in the rest of the OS\&.
+.LP
+Example of code formatting a string in format "DD Mon YYYY HH:MM:SS\&.mmmmmm", where DD is the day of month, Mon is the textual month name, YYYY is the year, HH:MM:SS is the time, and mmmmmm is the microseconds in six positions:
+.LP
+.nf
+
+-module(print_time).
+-export([format_utc_timestamp/0]).
+format_utc_timestamp() ->
+    TS = {_,_,Micro} = os:timestamp(),
+    {{Year,Month,Day},{Hour,Minute,Second}} =
+calendar:now_to_universal_time(TS),
+    Mstr = element(Month,{"Jan","Feb","Mar","Apr","May","Jun","Jul",
+    "Aug","Sep","Oct","Nov","Dec"}),
+    io_lib:format("~2w ~s ~4w ~2w:~2..0w:~2..0w.~6..0w",
+    [Day,Mstr,Year,Hour,Minute,Second,Micro]).
+.fi
+.LP
+This module can be used as follows:
+.LP
+.nf
+
+1> io:format("~s~n",[print_time:format_utc_timestamp()])\&.
+29 Apr 2009  9:55:30.051711
+.fi
+.LP
+OS system time can also be retreived by \fB\fIsystem_time/0\fR\&\fR\& and \fB\fIsystem_time/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+perf_counter() -> Counter
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Counter = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the current performance counter value in \fIperf_counter\fR\& \fBtime unit\fR\&\&. This is a highly optimized call that might not be traceable\&.
+.RE
+.LP
+.nf
+
+.B
+perf_counter(Unit) -> integer()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Unit = \fBerlang:time_unit()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a performance counter that can be used as a very fast and high resolution timestamp\&. This counter is read directly from the hardware or operating system with the same guarantees\&. This means that two consecutive calls to the function are not guaranteed to be monotonic, though it most likely will be\&. The performance counter will be converted to the resolution passed as an argument\&.
+.LP
+.nf
+1> T1 = os:perf_counter(1000),receive after 10000 -> ok end,T2 = os:perf_counter(1000)\&.
+176525861
+2> T2 - T1\&.
+10004
+.fi
+.RE
+.LP
+.nf
+
+.B
+type() -> {Osfamily, Osname}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Osfamily = unix | win32
+.br
+Osname = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the \fIOsfamily\fR\& and, in some cases, the \fIOsname\fR\& of the current OS\&.
+.LP
+On Unix, \fIOsname\fR\& has the same value as \fIuname -s\fR\& returns, but in lower case\&. For example, on Solaris 1 and 2, it is \fIsunos\fR\&\&.
+.LP
+On Windows, \fIOsname\fR\& is \fInt\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Think twice before using this function\&. Use module \fB\fIfilename\fR\&\fR\& if you want to inspect or build filenames in a portable way\&. Avoid matching on atom \fIOsname\fR\&\&.
+
+.RE
+.LP
+.nf
+
+.B
+unsetenv(VarName) -> true
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+VarName = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Deletes the environment variable \fIVarName\fR\&\&.
+.LP
+If Unicode filename encoding is in effect (see the \fB\fIerl\fR\& manual page\fR\&), the string \fIVarName\fR\& can contain characters with codepoints > 255\&.
+.RE
+.LP
+.nf
+
+.B
+version() -> VersionString | {Major, Minor, Release}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+VersionString = string()
+.br
+Major = Minor = Release = integer() >= 0
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the OS version\&. On most systems, this function returns a tuple, but a string is returned instead if the system has versions that cannot be expressed as three numbers\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Think twice before using this function\&. If you still need to use it, always \fIcall os:type()\fR\& first\&.
+
+.RE

@@ -1,0 +1,49 @@
+.TH public_key 7 "public_key 1.4" "Ericsson AB" "Erlang Application Definition"
+.SH NAME
+public_key \- Provides functions to handle public-key infrastructure. 
+.SH DESCRIPTION
+.LP
+Provides encode/decode of different file formats (PEM, OpenSSH), digital signature and verification functions, validation of certificate paths and certificate revocation lists (CRLs) and other functions for handling of certificates, keys and CRLs\&.
+.RS 2
+.TP 2
+*
+Supports RFC 5280  - Internet X\&.509 Public-Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile\&. Certificate policies are currently not supported\&. 
+.LP
+.TP 2
+*
+Supports  PKCS-1  - RSA Cryptography Standard 
+.LP
+.TP 2
+*
+Supports  DSS - Digital Signature Standard (DSA - Digital Signature Algorithm)
+.LP
+.TP 2
+*
+Supports  PKCS-3  - Diffie-Hellman Key Agreement Standard 
+.LP
+.TP 2
+*
+Supports  PKCS-5 - Password-Based Cryptography Standard 
+.LP
+.TP 2
+*
+Supports  PKCS-8 - Private-Key Information Syntax Standard
+.LP
+.TP 2
+*
+Supports  PKCS-10 - Certification Request Syntax Standard
+.LP
+.RE
+
+.SH "DEPENDENCIES"
+
+.LP
+The \fIpublic_key\fR\& application uses the Crypto application to perform cryptographic operations and the ASN-1 application to handle PKIX-ASN-1 specifications, hence these applications must be loaded for the \fIpublic_key\fR\& application to work\&. In an embedded environment this means they must be started with \fIapplication:start/[1,2]\fR\& before the \fIpublic_key\fR\& application is started\&.
+.SH "ERROR LOGGER AND EVENT HANDLERS"
+
+.LP
+The \fIpublic_key\fR\& application is a library application and does not use the error logger\&. The functions will either succeed or fail with a runtime error\&.
+.SH "SEE ALSO"
+
+.LP
+\fBapplication(3)\fR\&

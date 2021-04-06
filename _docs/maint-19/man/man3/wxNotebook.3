@@ -1,0 +1,651 @@
+.TH wxNotebook 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxNotebook \- See external documentation: wxNotebook.
+.SH DESCRIPTION
+.LP
+See external documentation: wxNotebook\&.
+.LP
+This class is derived (and can use functions) from: 
+.br
+\fBwxControl\fR\& 
+.br
+\fBwxWindow\fR\& 
+.br
+\fBwxEvtHandler\fR\& 
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxNotebook():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+new() -> \fBwxNotebook()\fR\&
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+new(Parent, Winid) -> \fBwxNotebook()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Winid = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBnew(Parent, Winid, [])\fR\&\&.
+.RE
+.LP
+.B
+new(Parent, Winid, Options::[Option]) -> \fBwxNotebook()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Winid = integer()
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+addPage(This, Page, Text) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Page = \fBwxWindow:wxWindow()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBaddPage(This, Page, Text, [])\fR\&\&.
+.RE
+.LP
+.B
+addPage(This, Page, Text, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Page = \fBwxWindow:wxWindow()\fR\&
+.br
+Text = \fBunicode:chardata()\fR\&
+.br
+Option = {bSelect, boolean()} | {imageId, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+advanceSelection(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBadvanceSelection(This, [])\fR\&\&.
+.RE
+.LP
+.B
+advanceSelection(This, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Option = {forward, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+assignImageList(This, ImageList) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+ImageList = \fBwxImageList:wxImageList()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+create(This, Parent, Id) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBcreate(This, Parent, Id, [])\fR\&\&.
+.RE
+.LP
+.B
+create(This, Parent, Id, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Parent = \fBwxWindow:wxWindow()\fR\&
+.br
+Id = integer()
+.br
+Option = {pos, {X::integer(), Y::integer()}} | {size, {W::integer(), H::integer()}} | {style, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deleteAllPages(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+deletePage(This, NPage) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+removePage(This, NPage) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getCurrentPage(This) -> \fBwxWindow:wxWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getImageList(This) -> \fBwxImageList:wxImageList()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPage(This, N) -> \fBwxWindow:wxWindow()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+N = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageImage(This, NPage) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getPageText(This, NPage) -> \fBunicode:charlist()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getRowCount(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getSelection(This) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getThemeBackgroundColour(This) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hitTest(This, Pt) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Result = {Res::integer(), Flags::integer()}
+.br
+This = \fBwxNotebook()\fR\&
+.br
+Pt = {X::integer(), Y::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+insertPage(This, Position, Win, StrText) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Position = integer()
+.br
+Win = \fBwxWindow:wxWindow()\fR\&
+.br
+StrText = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBinsertPage(This, Position, Win, StrText, [])\fR\&\&.
+.RE
+.LP
+.B
+insertPage(This, Position, Win, StrText, Options::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Position = integer()
+.br
+Win = \fBwxWindow:wxWindow()\fR\&
+.br
+StrText = \fBunicode:chardata()\fR\&
+.br
+Option = {bSelect, boolean()} | {imageId, integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setImageList(This, ImageList) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+ImageList = \fBwxImageList:wxImageList()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPadding(This, Padding) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Padding = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageSize(This, Size) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+Size = {W::integer(), H::integer()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageImage(This, NPage, NImage) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+NImage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setPageText(This, NPage, StrText) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+StrText = \fBunicode:chardata()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setSelection(This, NPage) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+changeSelection(This, NPage) -> integer()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxNotebook()\fR\&
+.br
+NPage = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+destroy(This::\fBwxNotebook()\fR\&) -> ok
+.br
+.RS
+.LP
+Destroys this object, do not use object again
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

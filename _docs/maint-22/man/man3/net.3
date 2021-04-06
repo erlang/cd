@@ -1,0 +1,411 @@
+.TH net 3 "kernel 6.5.2.2" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+net \- Network interface.
+.SH DESCRIPTION
+.LP
+This module provides an API for the network interface\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+There is currently \fIno\fR\& support for Windows\&.
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The content of this file is \fIonly\fR\& valid if the system has been built with \&'socket\&' (esock) support, which is the default\&.
+
+.SH DATA TYPES
+.nf
+
+\fBaddress_info()\fR\& = 
+.br
+    #{family := term(),
+.br
+      socktype := term(),
+.br
+      protocol := term(),
+.br
+      address := term()}
+.br
+.fi
+.nf
+
+\fBifaddrs()\fR\& = 
+.br
+    #{name := string(),
+.br
+      flags := [\fBifaddrs_flag()\fR\&],
+.br
+      addr := \fBsocket:sockaddr()\fR\&,
+.br
+      netmask := \fBsocket:sockaddr()\fR\&,
+.br
+      broadaddr := \fBsocket:sockaddr()\fR\&,
+.br
+      dstaddr := \fBsocket:sockaddr()\fR\&}
+.br
+.fi
+.RS
+.LP
+This type defines all addresses (and flags) associated with the interface\&.
+.LP
+Not all fields of this map has to be present\&. The flags field can be used to test for some of the fields\&. For example \fIbroadaddr\fR\& will only be present if the \fIbroadcast\fR\& flag is present in flags\&.
+.RE
+.nf
+
+\fBifaddrs_flag()\fR\& = 
+.br
+    up | broadcast | debug | loopback | pointopoint | notrailers |
+.br
+    running | noarp | promisc | master | slave | multicast |
+.br
+    portsel | automedia | dynamic
+.br
+.fi
+.nf
+
+\fBifaddrs_filter()\fR\& = 
+.br
+    all | default | inet | inet6 | packet |
+.br
+    \fBifaddrs_filter_map()\fR\& |
+.br
+    \fBifaddrs_filter_fun()\fR\&
+.br
+.fi
+.RS
+.RS 2
+.TP 2
+.B
+all:
+All interfaces
+.TP 2
+.B
+default:
+Interfaces with address family \fIinet\fR\&\fIand\fR\&\fIinet6\fR\&
+.TP 2
+.B
+inet | inet6 | packet:
+Interfaces with \fIonly\fR\& the specified address family
+.RE
+.RE
+.nf
+
+\fBifaddrs_filter_map()\fR\& = 
+.br
+    #{family := default | inet | inet6 | packet | all,
+.br
+      flags := any | [\fBifaddrs_flag()\fR\&]}
+.br
+.fi
+.RS
+.LP
+The \fIfamily\fR\& field can only have the (above) specified values (and not all the values of socket:domain())\&.
+.LP
+The use of the \fIflags\fR\& field is that any flag provided must exist for the interface\&.
+.LP
+For example, if \fIfamily\fR\& is set to \fIinet\fR\& and \fIflags\fR\& to \fI[broadcast, multicast]\fR\& only interfaces with address family \fIinet\fR\& and the flags \fIbroadcast\fR\& and \fImulticast\fR\& will be listed\&.
+.RE
+.nf
+
+\fBifaddrs_filter_fun()\fR\& = fun((\fBifaddrs()\fR\&) -> boolean())
+.br
+.fi
+.RS
+.LP
+For each \fIifaddrs\fR\& entry, return either \fItrue\fR\& to keep the entry or \fIfalse\fR\& to discard the entry\&.
+.LP
+For example, to get an interface list which only contains non-\fIloopback\fR\& \fIinet\fR\& interfaces:
+.LP
+.nf
+
+	net:getifaddrs(fun(#{addr  := #{family := inet},
+	                     flags := Flags}) ->
+			       not lists:member(loopback, Flags);
+			  (_) ->
+			       false
+		       end).
+	
+.fi
+.RE
+.nf
+
+\fBname_info()\fR\& = #{host := string(), service := string()}
+.br
+.fi
+.nf
+
+\fBname_info_flags()\fR\& = [\fBname_info_flag()\fR\& | \fBname_info_flag_ext()\fR\&]
+.br
+.fi
+.nf
+
+\fBname_info_flag()\fR\& = 
+.br
+    namereqd | dgram | nofqdn | numerichost | numericserv
+.br
+.fi
+.nf
+
+\fBname_info_flag_ext()\fR\& = idn
+.br
+.fi
+.nf
+
+\fBnetwork_interface_name()\fR\& = string()
+.br
+.fi
+.nf
+
+\fBnetwork_interface_index()\fR\& = integer() >= 0
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+gethostname() -> {ok, HostName} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HostName = string()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the name of the current host\&.
+.RE
+.LP
+.nf
+
+.B
+getnameinfo(SockAddr) -> {ok, Info} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getnameinfo(SockAddr, Flags) -> {ok, Info} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+SockAddr = term()
+.br
+Flags = \fBname_info_flags()\fR\& | undefined
+.br
+Info = \fBname_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Address-to-name translation in a protocol-independant manner\&.
+.LP
+This function is the inverse of \fB\fIgetaddrinfo\fR\&\fR\&\&. It converts a socket address to a corresponding host and service\&.
+.RE
+.LP
+.nf
+
+.B
+getaddrinfo(Host) -> {ok, Info} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getaddrinfo(Host, Service :: undefined) ->
+.B
+               {ok, Info} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getaddrinfo(Host :: undefined, Service) ->
+.B
+               {ok, Info} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getaddrinfo(Host, Service) -> {ok, Info} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = Service = string()
+.br
+Info = [\fBaddress_info()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Network address and service translation\&.
+.LP
+This function is the inverse of \fB\fIgetnameinfo\fR\&\fR\&\&. It converts host and service to a corresponding socket address\&.
+.LP
+One of the \fIHost\fR\& and \fIService\fR\& may be \fIundefined\fR\& but \fInot\fR\& both\&.
+.RE
+.LP
+.nf
+
+.B
+getifaddrs() -> {ok, IfAddrs} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getifaddrs(Filter) -> {ok, IfAddrs} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getifaddrs(Namespace) -> {ok, IfAddrs} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getifaddrs(Filter, Namespace) -> {ok, IfAddrs} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Filter = \fBifaddrs_filter()\fR\&
+.br
+Namespace = \fBfile:filename_all()\fR\&
+.br
+IfAddrs = [\fBifaddrs()\fR\&]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Get interface addresses\&.
+.LP
+This function is used to get the machines interface addresses, possibly filtered according to \fIFilter\fR\&\&.
+.LP
+By default, a filter with the content: \fI#{family => default, flags => any}\fR\& is used\&. This will return all interfaces with adresses in the \fIinet\fR\& and \fIinet6\fR\& families\&.
+.RE
+.LP
+.nf
+
+.B
+if_name2index(Name) -> {ok, Idx} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Name = \fBnetwork_interface_name()\fR\&
+.br
+Idx = \fBnetwork_interface_index()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Mappings between network interface names and indexes\&.
+.RE
+.LP
+.nf
+
+.B
+if_index2name(Idx) -> {ok, Name} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Idx = \fBnetwork_interface_index()\fR\&
+.br
+Name = \fBnetwork_interface_name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Mappings between network interface index and names\&.
+.RE
+.LP
+.nf
+
+.B
+if_names() -> Names | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Names = [{Idx, If}]
+.br
+Idx = \fBnetwork_interface_index()\fR\&
+.br
+If = \fBnetwork_interface_name()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Get network interface names and indexes\&.
+.RE

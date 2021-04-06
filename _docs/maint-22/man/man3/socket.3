@@ -1,0 +1,2627 @@
+.TH socket 3 "erts 10.7.2.9" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+socket \- Socket interface.
+.SH DESCRIPTION
+.LP
+This module provides an API for network socket\&. Functions are provided to create, delete and manupilate the sockets aswell as sending and reciving data on them\&.
+.LP
+The intent is that it shall be as "close as possible" to the OS level socket interface\&. The only significant addition is that some of the functions, e\&.g\&. \fB\fIrecv/3\fR\&\fR\&, has a timeout argument\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Some functions allow for an \fIasynchronous\fR\&  call\&. This is achieved by setting the \fITimeout\fR\& argument to \fInowait\fR\&\&. For instance, if calling the \fB\fIrecv/3\fR\&\fR\& function with Timeout set to \fInowait\fR\& (\fIrecv(Sock, 0, nowait)\fR\&) when there is actually nothing to read, it will return with \fI{select, \fR\& \fB\fISelectInfo\fR\&\fR\&\fI}\fR\& (\fISelectInfo\fR\& contains the \fBSelectRef\fR\&)\&. When data eventually arrives a \&'select\&' message will be sent to the caller:
+.RS 2
+.TP 2
+.B
+:
+\fI{\&'$socket\&', socket(), select, SelectRef}\fR\&
+.RE
+.LP
+The caller can now make another call to the recv function and now expect data\&.
+.LP
+Note that all other users are \fIlocked out\fR\& until the \&'current user\&' has called the function (recv in this case)\&.
+.LP
+Another message the user must be prepared for (when making asynchronous calls) is the \fIabort\fR\& message:
+.RS 2
+.TP 2
+.B
+:
+\fI{\&'$socket\&', socket(), abort, Info}\fR\&
+.RE
+.LP
+This message indicates that the (asynchronous) operation has been aborted\&. If, for instance, the socket has been closed (by another process), \fIInfo\fR\& will be \fI{SelectRef, closed}\fR\&\&.
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+There is currently \fIno\fR\& support for Windows\&.
+.LP
+Support for IPv6 has been implemented but \fInot\fR\& tested\&.
+.LP
+SCTP has only been partly implemented (and not tested)\&.
+
+.SH DATA TYPES
+.nf
+
+\fBdomain()\fR\& = local | inet | inet6
+.br
+.fi
+.nf
+
+\fBtype()\fR\& = stream | dgram | raw | rdm | seqpacket
+.br
+.fi
+.nf
+
+\fBprotocol()\fR\& = 
+.br
+    ip | tcp | udp | sctp | icmp | igmp | {raw, integer()}
+.br
+.fi
+.nf
+
+.B
+socket()
+.br
+.fi
+.RS
+.LP
+As returned by \fB\fIopen/2,3,4\fR\&\fR\& and \fB\fIaccept/1,2\fR\&\fR\&\&.
+.RE
+.nf
+
+\fBselect_tag()\fR\&
+.br
+.fi
+.RS
+.LP
+A tag that describes the (select) operation\&.
+.RE
+.nf
+
+\fBselect_ref()\fR\&
+.br
+.fi
+.RS
+.LP
+A reference that uniquely identifies the (select) operation\&.
+.RE
+.nf
+
+\fBselect_info()\fR\& = {select_info, \fBselect_tag()\fR\&, \fBselect_ref()\fR\&}
+.br
+.fi
+.nf
+
+\fBsocket_counters()\fR\& = [{\fBsocket_counter()\fR\&, integer() >= 0}]
+.br
+.fi
+.nf
+
+\fBsocket_counter()\fR\& = 
+.br
+    read_byte | read_fails | read_pkg | read_pkg_max |
+.br
+    read_tries | read_waits | write_byte | write_fails |
+.br
+    write_pkg | write_pkg_max | write_tries | write_waits |
+.br
+    acc_success | acc_fails | acc_tries | acc_waits
+.br
+.fi
+.nf
+
+\fBsocket_info()\fR\& = 
+.br
+    #{domain := \fBdomain()\fR\&,
+.br
+      type := \fBtype()\fR\&,
+.br
+      protocol := \fBprotocol()\fR\&,
+.br
+      ctrl := pid(),
+.br
+      counters := \fBsocket_counters()\fR\&,
+.br
+      num_readers := integer() >= 0,
+.br
+      num_writers := integer() >= 0,
+.br
+      num_acceptors := integer() >= 0,
+.br
+      writable := boolean(),
+.br
+      readable := boolean()}
+.br
+.fi
+.nf
+
+\fBip4_address()\fR\& = {0\&.\&.255, 0\&.\&.255, 0\&.\&.255, 0\&.\&.255}
+.br
+.fi
+.nf
+
+\fBip6_address()\fR\& = 
+.br
+    {0\&.\&.65535,
+.br
+     0\&.\&.65535,
+.br
+     0\&.\&.65535,
+.br
+     0\&.\&.65535,
+.br
+     0\&.\&.65535,
+.br
+     0\&.\&.65535,
+.br
+     0\&.\&.65535,
+.br
+     0\&.\&.65535}
+.br
+.fi
+.nf
+
+\fBip_address()\fR\& = \fBip4_address()\fR\& | \fBip6_address()\fR\&
+.br
+.fi
+.nf
+
+\fBsockaddr()\fR\& = 
+.br
+    \fBsockaddr_in4()\fR\& |
+.br
+    \fBsockaddr_in6()\fR\& |
+.br
+    \fBsockaddr_un()\fR\& |
+.br
+    \fBsockaddr_ll()\fR\&
+.br
+.fi
+.nf
+
+\fBsockaddr_in4()\fR\& = 
+.br
+    #{family := inet,
+.br
+      port := \fBport_number()\fR\&,
+.br
+      addr := any | broadcast | loopback | \fBip4_address()\fR\&}
+.br
+.fi
+.nf
+
+\fBsockaddr_in6()\fR\& = 
+.br
+    #{family := inet6,
+.br
+      port := \fBport_number()\fR\&,
+.br
+      addr := any | loopback | \fBip6_address()\fR\&,
+.br
+      flowinfo := \fBin6_flow_info()\fR\&,
+.br
+      scope_id := \fBin6_scope_id()\fR\&}
+.br
+.fi
+.nf
+
+\fBsockaddr_un()\fR\& = #{family := local, path := binary() | string()}
+.br
+.fi
+.nf
+
+\fBsockaddr_ll()\fR\& = 
+.br
+    #{family := packet,
+.br
+      protocol := integer() >= 0,
+.br
+      ifindex := integer(),
+.br
+      pkttype := \fBpacket_type()\fR\&,
+.br
+      hatype := integer() >= 0,
+.br
+      addr := binary()}
+.br
+.fi
+.nf
+
+\fBpacket_type()\fR\& = 
+.br
+    host | broadcast | multicast | otherhost | outgoing |
+.br
+    loopback | user | kernel | fastroute |
+.br
+    integer() >= 0
+.br
+.fi
+.nf
+
+\fBport_number()\fR\& = 0\&.\&.65535
+.br
+.fi
+.nf
+
+\fBin6_flow_info()\fR\& = \fBuint20()\fR\&
+.br
+.fi
+.nf
+
+\fBin6_scope_id()\fR\& = \fBuint32()\fR\&
+.br
+.fi
+.nf
+
+\fBsend_flags()\fR\& = [\fBsend_flag()\fR\&]
+.br
+.fi
+.nf
+
+\fBsend_flag()\fR\& = confirm | dontroute | eor | more | nosignal | oob
+.br
+.fi
+.nf
+
+\fBrecv_flags()\fR\& = [\fBrecv_flag()\fR\&]
+.br
+.fi
+.nf
+
+\fBrecv_flag()\fR\& = cmsg_cloexec | errqueue | oob | peek | trunc
+.br
+.fi
+.nf
+
+\fBshutdown_how()\fR\& = read | write | read_write
+.br
+.fi
+.nf
+
+\fBsockopt_level()\fR\& = 
+.br
+    otp | socket | ip | ipv6 | tcp | udp | sctp |
+.br
+    integer() >= 0
+.br
+.fi
+.nf
+
+\fBotp_socket_option()\fR\& = 
+.br
+    debug | iow | controlling_process | rcvbuf | rcvctrlbuf |
+.br
+    sndctrlbuf | fd
+.br
+.fi
+.nf
+
+\fBsocket_option()\fR\& = 
+.br
+    acceptconn | acceptfilter | bindtodevice | broadcast |
+.br
+    busy_poll | debug | domain | dontroute | error | keepalive |
+.br
+    linger | mark | oobinline | passcred | peek_off | peercred |
+.br
+    priority | protocol | rcvbuf | rcvbufforce | rcvlowat |
+.br
+    rcvtimeo | reuseaddr | reuseport | rxq_ovfl | setfib |
+.br
+    sndbuf | sndbufforce | sndlowat | sndtimeo | timestamp | type
+.br
+.fi
+.nf
+
+\fBip_socket_option()\fR\& = 
+.br
+    add_membership | add_source_membership | block_source |
+.br
+    dontfrag | drop_membership | drop_source_membership |
+.br
+    freebind | hdrincl | minttl | msfilter | mtu | mtu_discover |
+.br
+    multicast_all | multicast_if | multicast_loop |
+.br
+    multicast_ttl | nodefrag | options | pktinfo | recverr |
+.br
+    recvif | recvdstaddr | recvopts | recvorigdstaddr | recvtos |
+.br
+    recvttl | retopts | router_alert | sndsrcaddr | tos |
+.br
+    transparent | ttl | unblock_source
+.br
+.fi
+.nf
+
+\fBipv6_socket_option()\fR\& = 
+.br
+    addrform | add_membership | authhdr | auth_level | checksum |
+.br
+    drop_membership | dstopts | esp_trans_level |
+.br
+    esp_network_level | faith | flowinfo | hopopts |
+.br
+    ipcomp_level | join_group | leave_group | mtu | mtu_discover |
+.br
+    multicast_hops | multicast_if | multicast_loop | portrange |
+.br
+    pktoptions | recverr | recvhoplimit | hoplimit | recvpktinfo |
+.br
+    pktinfo | recvtclass | router_alert | rthdr | tclass |
+.br
+    unicast_hops | use_min_mtu | v6only
+.br
+.fi
+.nf
+
+\fBtcp_socket_option()\fR\& = 
+.br
+    congestion | cork | info | keepcnt | keepidle | keepintvl |
+.br
+    maxseg | md5sig | nodelay | noopt | nopush | syncnt |
+.br
+    user_timeout
+.br
+.fi
+.nf
+
+\fBudp_socket_option()\fR\& = cork
+.br
+.fi
+.nf
+
+\fBsctp_socket_option()\fR\& = 
+.br
+    adaption_layer | associnfo | auth_active_key | auth_asconf |
+.br
+    auth_chunk | auth_key | auth_delete_key | autoclose |
+.br
+    context | default_send_params | delayed_ack_time |
+.br
+    disable_fragments | hmac_ident | events | explicit_eor |
+.br
+    fragment_interleave | get_peer_addr_info | initmsg |
+.br
+    i_want_mapped_v4_addr | local_auth_chunks | maxseg |
+.br
+    maxburst | nodelay | partial_delivery_point |
+.br
+    peer_addr_params | peer_auth_chunks | primary_addr |
+.br
+    reset_streams | rtoinfo | set_peer_primary_addr | status |
+.br
+    use_ext_recvinfo
+.br
+.fi
+.nf
+
+\fBtimeval()\fR\& = #{sec := integer(), usec := integer()}
+.br
+.fi
+.nf
+
+\fBip_tos()\fR\& = 
+.br
+    lowdelay | throughput | reliability | mincost | integer()
+.br
+.fi
+.nf
+
+\fBip_mreq()\fR\& = 
+.br
+    #{multiaddr := \fBip4_address()\fR\&,
+.br
+      interface := any | \fBip4_address()\fR\&}
+.br
+.fi
+.nf
+
+\fBip_mreq_source()\fR\& = 
+.br
+    #{multiaddr := \fBip4_address()\fR\&,
+.br
+      interface := \fBip4_address()\fR\&,
+.br
+      sourceaddr := \fBip4_address()\fR\&}
+.br
+.fi
+.nf
+
+\fBip_pmtudisc()\fR\& = want | dont | do | probe
+.br
+.fi
+.nf
+
+\fBip_msfilter_mode()\fR\& = include | exclude
+.br
+.fi
+.nf
+
+\fBip_msfilter()\fR\& = 
+.br
+    #{multiaddr := \fBip4_address()\fR\&,
+.br
+      interface := \fBip4_address()\fR\&,
+.br
+      mode := \fBip_msfilter_mode()\fR\&,
+.br
+      slist := [\fBip4_address()\fR\&]}
+.br
+.fi
+.nf
+
+\fBip_pktinfo()\fR\& = 
+.br
+    #{ifindex := integer() >= 0,
+.br
+      spec_dst := \fBip4_address()\fR\&,
+.br
+      addr := \fBip4_address()\fR\&}
+.br
+.fi
+.nf
+
+\fBipv6_mreq()\fR\& = 
+.br
+    #{multiaddr := \fBip6_address()\fR\&, interface := integer() >= 0}
+.br
+.fi
+.nf
+
+\fBipv6_pmtudisc()\fR\& = \fBip_pmtudisc()\fR\&
+.br
+.fi
+.nf
+
+\fBipv6_pktinfo()\fR\& = #{addr := \fBip6_address()\fR\&, ifindex := integer()}
+.br
+.fi
+.nf
+
+\fBsctp_assoc_id()\fR\& = \fBint32()\fR\&
+.br
+.fi
+.nf
+
+\fBsctp_sndrcvinfo()\fR\& = 
+.br
+    #{stream := \fBuint16()\fR\&,
+.br
+      ssn := \fBuint16()\fR\&,
+.br
+      flags := \fBuint16()\fR\&,
+.br
+      ppid := \fBuint16()\fR\&,
+.br
+      context := \fBuint16()\fR\&,
+.br
+      timetolive := \fBuint16()\fR\&,
+.br
+      tsn := \fBuint16()\fR\&,
+.br
+      cumtsn := \fBuint16()\fR\&,
+.br
+      assoc_id := \fBsctp_assoc_id()\fR\&}
+.br
+.fi
+.nf
+
+\fBsctp_event_subscribe()\fR\& = 
+.br
+    #{data_in := boolean(),
+.br
+      association := boolean(),
+.br
+      address := boolean(),
+.br
+      send_failure := boolean(),
+.br
+      peer_error := boolean(),
+.br
+      shutdown := boolean(),
+.br
+      partial_delivery := boolean(),
+.br
+      adaptation_layer := boolean(),
+.br
+      authentication := boolean(),
+.br
+      sender_dry := boolean()}
+.br
+.fi
+.nf
+
+\fBsctp_assocparams()\fR\& = 
+.br
+    #{assoc_id := \fBsctp_assoc_id()\fR\&,
+.br
+      max_rxt := \fBuint16()\fR\&,
+.br
+      num_peer_dests := \fBuint16()\fR\&,
+.br
+      peer_rwnd := \fBuint32()\fR\&,
+.br
+      local_rwnd := \fBuint32()\fR\&,
+.br
+      cookie_life := \fBuint32()\fR\&}
+.br
+.fi
+.nf
+
+\fBsctp_initmsg()\fR\& = 
+.br
+    #{num_outstreams := \fBuint16()\fR\&,
+.br
+      max_instreams := \fBuint16()\fR\&,
+.br
+      max_attempts := \fBuint16()\fR\&,
+.br
+      max_init_timeo := \fBuint16()\fR\&}
+.br
+.fi
+.nf
+
+\fBsctp_rtoinfo()\fR\& = 
+.br
+    #{assoc_id := \fBsctp_assoc_id()\fR\&,
+.br
+      initial := \fBuint32()\fR\&,
+.br
+      max := \fBuint32()\fR\&,
+.br
+      min := \fBuint32()\fR\&}
+.br
+.fi
+.nf
+
+\fBmsghdr_flag()\fR\& = ctrunc | eor | errqueue | oob | trunc
+.br
+.fi
+.nf
+
+\fBmsghdr_flags()\fR\& = [\fBmsghdr_flag()\fR\&]
+.br
+.fi
+.nf
+
+\fBmsghdr()\fR\& = 
+.br
+    #{addr := \fBsockaddr()\fR\&,
+.br
+      iov := [binary()],
+.br
+      ctrl := [\fBcmsghdr_recv()\fR\&] | [\fBcmsghdr_send()\fR\&],
+.br
+      flags := \fBmsghdr_flags()\fR\&}
+.br
+.fi
+.nf
+
+\fBcmsghdr_level()\fR\& = socket | ip | ipv6 | integer()
+.br
+.fi
+.nf
+
+\fBcmsghdr_type()\fR\& = 
+.br
+    credentials | hoplevel | origdstaddr | pktinfo | recvtos |
+.br
+    rights | timestamp | tos | ttl |
+.br
+    integer()
+.br
+.fi
+.nf
+
+\fBcmsghdr_recv()\fR\& = 
+.br
+    #{level := socket, type := timestamp, data := \fBtimeval()\fR\&} |
+.br
+    #{level := socket, type := rights, data := binary()} |
+.br
+    #{level := socket, type := credentials, data := binary()} |
+.br
+    #{level := socket, type := integer(), data := binary()} |
+.br
+    #{level := ip, type := tos, data := \fBip_tos()\fR\&} |
+.br
+    #{level := ip, type := recvtos, data := \fBip_tos()\fR\&} |
+.br
+    #{level := ip, type := ttl, data := integer()} |
+.br
+    #{level := ip, type := recvttl, data := integer()} |
+.br
+    #{level := ip, type := pktinfo, data := \fBip_pktinfo()\fR\&} |
+.br
+    #{level := ip, type := origdstaddr, data := \fBsockaddr_in4()\fR\&} |
+.br
+    #{level := ip,
+.br
+      type := recverr,
+.br
+      data := \fBextended_err()\fR\& | binary()} |
+.br
+    #{level := ip, type := integer(), data := binary()} |
+.br
+    #{level := ipv6, type := hoplevel, data := integer()} |
+.br
+    #{level := ipv6, type := pktinfo, data := \fBipv6_pktinfo()\fR\&} |
+.br
+    #{level := ipv6,
+.br
+      type := recverr,
+.br
+      data := \fBextended_err()\fR\& | binary()} |
+.br
+    #{level := ipv6, type := tclass, data := integer()} |
+.br
+    #{level := ipv6, type := integer(), data := binary()} |
+.br
+    #{level := integer(), type := integer(), data := binary()}
+.br
+.fi
+.nf
+
+\fBcmsghdr_send()\fR\& = 
+.br
+    #{level := socket, type := timestamp, data := binary()} |
+.br
+    #{level := socket, type := rights, data := binary()} |
+.br
+    #{level := socket, type := credentials, data := binary()} |
+.br
+    #{level := socket, type := integer(), data := binary()} |
+.br
+    #{level := ip, type := tos, data := \fBip_tos()\fR\& | binary()} |
+.br
+    #{level := ip, type := ttl, data := integer() | binary()} |
+.br
+    #{level := ip, type := integer(), data := binary()} |
+.br
+    #{level := ipv6, type := tclass, data := integer()} |
+.br
+    #{level := ipv6, type := integer(), data := binary()} |
+.br
+    #{level := udp, type := integer(), data := binary()} |
+.br
+    #{level := integer(), type := integer(), data := binary()}
+.br
+.fi
+.nf
+
+\fBicmp_dest_unreach()\fR\& = 
+.br
+    net_unreach | host_unreach | port_unreach | frag_needed |
+.br
+    net_unknown | host_unknown |
+.br
+    \fBuint8()\fR\&
+.br
+.fi
+.nf
+
+\fBicmpv6_dest_unreach()\fR\& = 
+.br
+    noroute | adm_prohibited | not_neighbour | addr_unreach |
+.br
+    port_unreach | policy_fail | reject_route |
+.br
+    \fBuint8()\fR\&
+.br
+.fi
+.nf
+
+\fBee_origin()\fR\& = none | local | icmp | icmp6 | \fBuint8()\fR\&
+.br
+.fi
+.nf
+
+\fBextended_err()\fR\& = 
+.br
+    #{error := term(),
+.br
+      origin := icmp,
+.br
+      type := dest_unreach,
+.br
+      code := \fBicmp_dest_unreach()\fR\&,
+.br
+      info := \fBuint32()\fR\&,
+.br
+      data := \fBuint32()\fR\&,
+.br
+      offender := undefined | \fBsockaddr()\fR\&} |
+.br
+    #{error := term(),
+.br
+      origin := icmp,
+.br
+      type := time_exceeded | \fBuint8()\fR\&,
+.br
+      code := \fBuint8()\fR\&,
+.br
+      info := \fBuint32()\fR\&,
+.br
+      data := \fBuint32()\fR\&,
+.br
+      offender := undefined | \fBsockaddr()\fR\&} |
+.br
+    #{error := term(),
+.br
+      origin := icmp6,
+.br
+      type := dest_unreach,
+.br
+      code := \fBicmpv6_dest_unreach()\fR\&,
+.br
+      info := \fBuint32()\fR\&,
+.br
+      data := \fBuint32()\fR\&,
+.br
+      offender := undefined | \fBsockaddr()\fR\&} |
+.br
+    #{error := term(),
+.br
+      origin := icmp6,
+.br
+      type := pkt_toobig | time_exceeded | \fBuint8()\fR\&,
+.br
+      code := \fBuint8()\fR\&,
+.br
+      info := \fBuint32()\fR\&,
+.br
+      data := \fBuint32()\fR\&,
+.br
+      offender := undefined | \fBsockaddr()\fR\&} |
+.br
+    #{error := term(),
+.br
+      origin := \fBee_origin()\fR\&,
+.br
+      type := \fBuint8()\fR\&,
+.br
+      code := \fBuint8()\fR\&,
+.br
+      info := \fBuint32()\fR\&,
+.br
+      data := \fBuint32()\fR\&,
+.br
+      offender := undefined | \fBsockaddr()\fR\&}
+.br
+.fi
+.nf
+
+\fBuint8()\fR\& = 0\&.\&.255
+.br
+.fi
+.nf
+
+\fBuint16()\fR\& = 0\&.\&.65535
+.br
+.fi
+.nf
+
+\fBuint20()\fR\& = 0\&.\&.1048575
+.br
+.fi
+.nf
+
+\fBuint32()\fR\& = 0\&.\&.4294967295
+.br
+.fi
+.nf
+
+\fBint32()\fR\& = -2147483648\&.\&.2147483647
+.br
+.fi
+.nf
+
+\fBsupports_options_socket()\fR\& = [{\fBsocket_option()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_options_ip()\fR\& = [{\fBip_socket_option()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_options_ipv6()\fR\& = [{\fBipv6_socket_option()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_options_tcp()\fR\& = [{\fBtcp_socket_option()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_options_udp()\fR\& = [{\fBudp_socket_option()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_options_sctp()\fR\& = [{\fBsctp_socket_option()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_options()\fR\& = 
+.br
+    [{socket, \fBsupports_options_socket()\fR\&} |
+.br
+     {ip, \fBsupports_options_ip()\fR\&} |
+.br
+     {ipv6, \fBsupports_options_ipv6()\fR\&} |
+.br
+     {tcp, \fBsupports_options_tcp()\fR\&} |
+.br
+     {udp, \fBsupports_options_udp()\fR\&} |
+.br
+     {sctp, \fBsupports_options_sctp()\fR\&}]
+.br
+.fi
+.nf
+
+\fBsupports_send_flags()\fR\& = [{\fBsend_flag()\fR\&, boolean()}]
+.br
+.fi
+.nf
+
+\fBsupports_recv_flags()\fR\& = [{\fBrecv_flag()\fR\&, boolean()}]
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+accept(LSocket) -> {ok, Socket} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+accept(LSocket, Timeout) -> {ok, Socket} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+LSocket = \fBsocket()\fR\&
+.br
+Timeout = timeout()
+.br
+Socket = \fBsocket()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Accept a connection on a socket\&.
+.LP
+This call is used with connection-based socket types (\fIstream\fR\& or \fIseqpacket\fR\&)\&. It extracs the first pending connection request for the listen socket and returns the (newly) connected socket\&.
+.RE
+.LP
+.nf
+
+.B
+accept(LSocket, Timeout :: nowait) ->
+.B
+          {ok, Socket} | {select, SelectInfo} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+LSocket = Socket = \fBsocket()\fR\&
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Accept a connection on a socket\&.
+.LP
+This call is used with connection-based socket types (\fIstream\fR\& or \fIseqpacket\fR\&)\&. It extracs the first pending connection request for the listen socket and returns the (newly) connected socket\&.
+.LP
+In the case when there is no connections waiting, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when a client connects (a subsequent call to accept will then return the socket)\&.
+.RE
+.LP
+.nf
+
+.B
+bind(Socket, Addr) -> {ok, Port} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Addr = any | broadcast | loopback | \fBsockaddr()\fR\&
+.br
+Port = \fBport_number()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Bind a name to a socket\&.
+.LP
+When a socket is created (with \fB\fIopen\fR\&\fR\&), it has no address assigned to it\&. \fIbind\fR\& assigns the address specified by the \fIAddr\fR\& argument\&.
+.LP
+The rules used for name binding vary between domains\&.
+.RE
+.LP
+.nf
+
+.B
+cancel(Socket, SelectInfo) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Cancel an asynchronous request\&.
+.LP
+Call this function in order to cancel a previous asynchronous call to, e\&.g\&. \fB\fIrecv/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+close(Socket) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Closes the socket\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Note that for e\&.g\&. \fIprotocol\fR\& = \fItcp\fR\&, most implementations doing a close does not guarantee that any data sent is delivered to the recipient before the close is detected at the remote side\&.
+.LP
+One way to handle this is to use the \fB\fIshutdown\fR\&\fR\& function (\fIsocket:shutdown(Socket, write)\fR\&) to signal that no more data is to be sent and then wait for the read side of the socket to be closed\&.
+
+.RE
+.LP
+.nf
+
+.B
+connect(Socket, SockAddr) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+connect(Socket, SockAddr, Timeout) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+SockAddr = \fBsockaddr()\fR\&
+.br
+Timeout = timeout()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This function connects the socket to the address specied by the \fISockAddr\fR\& argument\&.
+.RE
+.LP
+.nf
+
+.B
+connect(Socket, SockAddr, Timeout :: nowait) ->
+.B
+           ok | {select, SelectInfo} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+SockAddr = \fBsockaddr()\fR\&
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This function connects the socket to the address specied by the \fISockAddr\fR\& argument\&.
+.LP
+In the case when its not possible to immediately establish a connection, the function will return with the \fB\fISelectInfo\fR\&\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&, a subsequent call to connect will then establish the connection)\&.
+.RE
+.LP
+.nf
+
+.B
+getopt(Socket, Level :: otp, Key :: otp_socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getopt(Socket, Level :: socket, Key :: socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getopt(Socket, Level :: ip, Key :: ip_socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getopt(Socket, Level :: ipv6, Key :: ipv6_socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getopt(Socket, Level :: tcp, Key :: tcp_socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getopt(Socket, Level :: udp, Key :: udp_socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+getopt(Socket, Level :: sctp, Key :: sctp_socket_option()) ->
+.B
+          {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Value = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Get an option on a socket\&.
+.LP
+What properties are valid depend both on \fILevel\fR\& and on what kind of socket it is (\fIdomain\fR\&, \fItype\fR\& and \fIprotocol\fR\&)\&.
+.LP
+See the \fBsocket options\fR\& chapter of the users guide for more info\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Not all options are valid on all platforms\&. That is, even if "we" support an option, that does not mean that the underlying OS does\&.
+
+.RE
+.LP
+.nf
+
+.B
+getopt(Socket, Level, Key) -> ok | {ok, Value} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Level = integer()
+.br
+Key = {NativeOpt, ValueSize}
+.br
+NativeOpt = integer()
+.br
+ValueSize = int | bool | integer() >= 0
+.br
+Value = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Get an option on a socket\&.
+.LP
+When specifying \fILevel\fR\& as an integer, and therefor using "native mode", it is *currently* up to the caller to know how to interpret the result\&.
+.LP
+For more info, see \fBgetopt\fR\& above\&.
+.RE
+.LP
+.nf
+
+.B
+info(Socket) -> socket_info()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Get miscellaneous info about the socket\&.
+.LP
+The function returns a map with each info item as a key-value binding\&. It reflects the "current" state of the socket\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+In order to ensure data integrity, mutex\&'es are taken when needed\&. So, do not call this function often\&.
+
+.RE
+.LP
+.nf
+
+.B
+listen(Socket) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+listen(Socket, Backlog) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Backlog = integer() >= 1
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Listen for connections on a socket\&.
+.RE
+.LP
+.nf
+
+.B
+number_of() -> integer() >= 0
+.br
+.fi
+.br
+.RS
+.LP
+Returns the number of active sockets\&.
+.RE
+.LP
+.nf
+
+.B
+open(Domain, Type) -> {ok, Socket} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+open(Domain, Type, Protocol) -> {ok, Socket} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+open(Domain, Type, Protocol, Extra) ->
+.B
+        {ok, Socket} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Domain = \fBdomain()\fR\&
+.br
+Type = \fBtype()\fR\&
+.br
+Protocol = default | \fBprotocol()\fR\&
+.br
+Extra = map()
+.br
+Socket = \fBsocket()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an endpoint (socket) for communication\&.
+.LP
+For some \fItypes\fR\& there is a default protocol, indicated by \fIdefault\fR\&, which it \fImay\fR\& be possible to specify\&. And for \fIDomain = local\fR\&, if a protocol \fIis\fR\& pecified, it \fImust\fR\& be \fIdefault\fR\&\&.
+.LP
+The \fIExtra\fR\& argument is intended for "obscure" options\&. Currently the only supported option is \fInetns\fR\&, which is only supported on the linux platform\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+It may not be possible to specify the default protocol (except when \fIDomain = local\fR\&)\&. We need to be able to retreive the resulting protocol, which is \fInot\fR\& possble on all platforms\&.
+
+.RE
+.LP
+.nf
+
+.B
+peername(Socket) -> {ok, SockAddr} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+SockAddr = \fBsockaddr()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the address of the peer connected to the socket\&.
+.RE
+.LP
+.nf
+
+.B
+recv(Socket) -> {ok, Data} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recv(Socket, Length) -> {ok, Data} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recv(Socket, Length, Flags) -> {ok, Data} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recv(Socket, Length, Timeout) -> {ok, Data} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recv(Socket, Length, Flags, Timeout) ->
+.B
+        {ok, Data} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Length = integer() >= 0
+.br
+Flags = \fBrecv_flags()\fR\&
+.br
+Timeout = timeout()
+.br
+Data = binary()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a message from a socket\&.
+.LP
+There is a special case for the argument \fILength\fR\&\&. If it is set to zero (0), it means "give me everything you currently have"\&.
+.RE
+.LP
+.nf
+
+.B
+recv(Socket, Length, Timeout :: nowait) ->
+.B
+        {ok, Data} |
+.B
+        {select, SelectInfo} |
+.B
+        {ok, {Data, SelectInfo}} |
+.B
+        {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recv(Socket, Length, Flags, Timeout :: nowait) ->
+.B
+        {ok, Data} |
+.B
+        {select, SelectInfo} |
+.B
+        {ok, {Data, SelectInfo}} |
+.B
+        {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Length = integer() >= 0
+.br
+Flags = \fBrecv_flags()\fR\&
+.br
+Data = binary()
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a message from a socket\&.
+.LP
+There is a special case for the argument \fILength\fR\&\&. If it is set to zero (0), it means "give me everything you currently have"\&.
+.LP
+In the case when there is no data waiting, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when data has arrived (a subsequent call to recv will then return the data)\&.
+.LP
+Note that if a length (\fI> 0\fR\&) is specified, and only part of that amount of data is available, the function will return with that data \fIand\fR\& the \fISelectInfo\fR\& (if the caller don\&'t want to wait for the remaining data, it must immediately call the \fB\fIcancel/2\fR\&\fR\& function\&.)
+.RE
+.LP
+.nf
+
+.B
+recvfrom(Socket) -> {ok, {Source, Data}} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, BufSz) -> {ok, {Source, Data}} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, Flags, Timeout) ->
+.B
+            {ok, {Source, Data}} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, BufSz, Flags) ->
+.B
+            {ok, {Source, Data}} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, BufSz, Timeout) ->
+.B
+            {ok, {Source, Data}} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, BufSz, Flags, Timeout) ->
+.B
+            {ok, {Source, Data}} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+BufSz = integer() >= 0
+.br
+Flags = \fBrecv_flags()\fR\&
+.br
+Timeout = timeout()
+.br
+Source = \fBsockaddr()\fR\& | undefined
+.br
+Data = binary()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a message from a socket\&.
+.LP
+This function reads "messages", which means that regardless of how much we want to read, it returns when we get a message (if the buffer size is too small, the message will be truncated)\&.
+.LP
+The \fIBufSz\fR\& argument basically defines the size of the receive buffer\&. By setting the value to zero (0), the configured size (setopt with \fILevel\fR\& = \fIotp\fR\& and \fIKey\fR\& = \fIrcvbuf\fR\&) is used\&.
+.LP
+It may be impossible to know what (buffer) size is appropriate "in advance", and in those cases it may be convenient to use the (recv) \&'peek\&' flag\&. When this flag is provided, the message is *not* "consumed" from the underlying buffers, so another recvfrom call is needed, possibly with a then adjusted buffer size\&.
+.RE
+.LP
+.nf
+
+.B
+recvfrom(Socket, Flags, Timeout :: nowait) ->
+.B
+            {ok, {Source, Data}} |
+.B
+            {select, SelectInfo} |
+.B
+            {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, BufSz, Timeout :: nowait) ->
+.B
+            {ok, {Source, Data}} |
+.B
+            {select, SelectInfo} |
+.B
+            {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvfrom(Socket, BufSz, Flags, Timeout :: nowait) ->
+.B
+            {ok, {Source, Data}} |
+.B
+            {select, SelectInfo} |
+.B
+            {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+BufSz = integer() >= 0
+.br
+Flags = \fBrecv_flags()\fR\&
+.br
+Source = \fBsockaddr()\fR\& | undefined
+.br
+Data = binary()
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a message from a socket\&.
+.LP
+This function reads "messages", which means that regardless of how much we want to read, it returns when we get a message (if the buffer size is too small, the message will be truncated)\&.
+.LP
+The \fIBufSz\fR\& argument basically defines the size of the receive buffer\&. By setting the value to zero (0), the configured size (setopt with \fILevel\fR\& = \fIotp\fR\& and \fIKey\fR\& = \fIrcvbuf\fR\&) is used\&.
+.LP
+It may be impossible to know what (buffer) size is appropriate "in advance", and in those cases it may be convenient to use the (recv) \&'peek\&' flag\&. When this flag is provided, the message is *not* "consumed" from the underlying buffers, so another recvfrom call is needed, possibly with a then adjusted buffer size\&.
+.LP
+In the case when there is no data waiting, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when data has arrived (a subsequent call to recvfrom will then return the data)\&.
+.RE
+.LP
+.nf
+
+.B
+recvmsg(Socket) -> {ok, MsgHdr} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, Flags) -> {ok, MsgHdr} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, Timeout) -> {ok, MsgHdr} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, Flags, Timeout) -> {ok, MsgHdr} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, BufSz, CtrlSz) -> {ok, MsgHdr} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, BufSz, CtrlSz, Flags, Timeout) ->
+.B
+           {ok, MsgHdr} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+BufSz = CtrlSz = integer() >= 0
+.br
+Flags = \fBrecv_flags()\fR\&
+.br
+Timeout = timeout()
+.br
+MsgHdr = \fBmsghdr()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a message from a socket\&.
+.LP
+This function reads "messages", which means that regardless of how much we want to read, it returns when we get a message\&.
+.LP
+The message will be delivered in the form of a \fImsghdr()\fR\&, which may contain the source address (if socket not connected), a list of \fIcmsghdr_recv()\fR\& (depends on what socket options have been set and what the protocol and platform supports) and also a set of flags, providing further info about the read\&.
+.LP
+The \fIBufSz\fR\& argument basically defines the size of the receive buffer\&. By setting the value to zero (0), the configured size (setopt with \fILevel\fR\& = \fIotp\fR\& and \fIKey\fR\& = \fIrcvbuf\fR\&) is used\&.
+.LP
+The \fICtrlSz\fR\& argument basically defines the size of the receive buffer for the control messages\&. By setting the value to zero (0), the configured size (setopt with \fILevel\fR\& = \fIotp\fR\&) is used\&.
+.LP
+It may be impossible to know what (buffer) size is appropriate "in advance", and in those cases it may be convenient to use the (recv) \&'peek\&' flag\&. When this flag is provided, the message is *not* "consumed" from the underlying buffers, so another recvmsg call is needed, possibly with a then adjusted buffer size\&.
+.RE
+.LP
+.nf
+
+.B
+recvmsg(Socket, Timeout :: nowait) ->
+.B
+           {ok, MsgHdr} | {select, SelectInfo} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, Flags, Timeout :: nowait) ->
+.B
+           {ok, MsgHdr} | {select, SelectInfo} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+recvmsg(Socket, BufSz, CtrlSz, Flags, Timeout :: nowait) ->
+.B
+           {ok, MsgHdr} | {select, SelectInfo} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+BufSz = CtrlSz = integer() >= 0
+.br
+Flags = \fBrecv_flags()\fR\&
+.br
+MsgHdr = \fBmsghdr()\fR\&
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Receive a message from a socket\&.
+.LP
+This function reads "messages", which means that regardless of how much we want to read, it returns when we get a message\&.
+.LP
+The message will be delivered in the form of a \fImsghdr()\fR\&, which may contain the source address (if socket not connected), a list of \fIcmsghdr_recv()\fR\& (depends on what socket options have been set and what the protocol and platform supports) and also a set of flags, providing further info about the read\&.
+.LP
+The \fIBufSz\fR\& argument basically defines the size of the receive buffer\&. By setting the value to zero (0), the configured size (setopt with \fILevel\fR\& = \fIotp\fR\& and \fIKey\fR\& = \fIrcvbuf\fR\&) is used\&.
+.LP
+The \fICtrlSz\fR\& argument basically defines the size of the receive buffer for the control messages\&. By setting the value to zero (0), the configured size (setopt with \fILevel\fR\& = \fIotp\fR\&) is used\&.
+.LP
+It may be impossible to know what (buffer) size is appropriate "in advance", and in those cases it may be convenient to use the (recv) \&'peek\&' flag\&. When this flag is provided, the message is *not* "consumed" from the underlying buffers, so another recvmsg call is needed, possibly with a then adjusted buffer size\&.
+.LP
+In the case when there is no data waiting, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when data has arrived (a subsequent call to recvmsg will then return the data)\&.
+.RE
+.LP
+.nf
+
+.B
+send(Socket, Data) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+send(Socket, Data, Flags) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+send(Socket, Data, Timeout) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+send(Socket, Data, Flags, Timeout) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Data = iodata()
+.br
+Flags = \fBsend_flags()\fR\&
+.br
+Timeout = timeout()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Send a message on a connected socket\&.
+.RE
+.LP
+.nf
+
+.B
+send(Socket, Data, Timeout :: nowait) ->
+.B
+        ok |
+.B
+        {ok, {binary(), SelectInfo}} |
+.B
+        {select, SelectInfo} |
+.B
+        {ok, {RestData, SelectInfo}} |
+.B
+        {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+send(Socket, Data, Flags, Timeout :: nowait) ->
+.B
+        ok |
+.B
+        {select, SelectInfo} |
+.B
+        {ok, {RestData, SelectInfo}} |
+.B
+        {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Data = iodata()
+.br
+Flags = \fBsend_flags()\fR\&
+.br
+RestData = binary()
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Send a message on a connected socket\&.
+.LP
+In the case when there is no room in the (system-) buffers, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when there is room for more data (a subsequent call to send will then send the data)\&.
+.LP
+Note that if not all the data was sent, the function will return with the remaining data \fIand\fR\& the \fISelectInfo\fR\& (if the caller don\&'t want to wait to be able to send the rest, it should immediately call the \fB\fIcancel/2\fR\&\fR\& function\&.)
+.RE
+.LP
+.nf
+
+.B
+sendmsg(Socket, MsgHdr) -> ok | {ok, Remaining} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendmsg(Socket, MsgHdr, Flags) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendmsg(Socket, MsgHdr, Timeout) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendmsg(Socket, MsgHdr, Flags, Timeout) ->
+.B
+           ok | {ok, Remaining} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+MsgHdr = \fBmsghdr()\fR\&
+.br
+Flags = \fBsend_flags()\fR\&
+.br
+Timeout = timeout()
+.br
+Remaining = \fBerlang:iovec()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Send a message on a socket\&. The destination, if needed (socket \fInot\fR\& connected) is provided in the \fIMsgHdr\fR\&, which also contains the message to send, The \fIMsgHdr\fR\& may also contain an list of optional \fIcmsghdr_send()\fR\& (depends on what the protocol and platform supports)\&.
+.LP
+Unlike the \fB\fIsend\fR\&\fR\& function, this one sends \fIone message\fR\&\&. This means that if, for whatever reason, its not possible to send the message in one go, the function will instead return with the \fIremaining\fR\& data (\fI{ok, Remaining}\fR\&)\&. Thereby leaving it up to the caller to decide what to do (retry with the remaining data of give up)\&.
+.RE
+.LP
+.nf
+
+.B
+sendmsg(Socket, MsgHdr, Timeout :: nowait) ->
+.B
+           ok | {ok, Remaining} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendmsg(Socket, MsgHdr, Flags, Timeout :: nowait) ->
+.B
+           ok | {ok, Remaining} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+MsgHdr = \fBmsghdr()\fR\&
+.br
+Flags = \fBsend_flags()\fR\&
+.br
+Remaining = \fBerlang:iovec()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Send a message on a socket\&. The destination, if needed (socket \fInot\fR\& connected) is provided in the \fIMsgHdr\fR\&, which also contains the message to send, The \fIMsgHdr\fR\& may also contain an list of optional \fIcmsghdr_send()\fR\& (depends on what the protocol and platform supports)\&.
+.LP
+Unlike the \fB\fIsend\fR\&\fR\& function, this one sends \fIone message\fR\&\&. This means that if, for whatever reason, its not possible to send the message in one go, the function will instead return with the \fIremaining\fR\& data (\fI{ok, Remaining}\fR\&)\&. Thereby leaving it up to the caller to decide what to do (retry with the remaining data of give up)\&.
+.LP
+In the case when there is no room in the (system-) buffers, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when there is room for more data (a subsequent call to sendmsg will then send the data)\&.
+.RE
+.LP
+.nf
+
+.B
+sendto(Socket, Data, Dest) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendto(Socket, Data, Dest, Flags) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendto(Socket, Data, Dest, Timeout) -> ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendto(Socket, Data, Dest, Flags, Timeout) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Data = binary()
+.br
+Dest = \fBsockaddr()\fR\&
+.br
+Flags = \fBsend_flags()\fR\&
+.br
+Timeout = timeout()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Send a message on a socket, to the specified destination\&.
+.RE
+.LP
+.nf
+
+.B
+sendto(Socket, Data, Dest, Timeout :: nowait) ->
+.B
+          ok | {select, SelectInfo} | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+sendto(Socket, Data, Dest, Flags, Timeout :: nowait) ->
+.B
+          ok |
+.B
+          {ok, {binary(), SelectInfo}} |
+.B
+          {select, SelectInfo} |
+.B
+          {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Data = binary()
+.br
+Dest = \fBsockaddr()\fR\&
+.br
+Flags = \fBsend_flags()\fR\&
+.br
+SelectInfo = \fBselect_info()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Send a message on a socket, to the specified destination\&.
+.LP
+In the case when there is no room in the (system-) buffers, the function will return with the \fISelectInfo\fR\&\&. The caller can then await a select message, \fI{\&'$socket\&', Socket, select, Info}\fR\& (where \fIInfo\fR\& is the \fB\fIref\fR\&\fR\& field from the \fISelectInfo\fR\&), when there is room for more data (a subsequent call to sendto will then send the data)\&.
+.RE
+.LP
+.nf
+
+.B
+setopt(Socket, Level :: otp, Key :: otp_socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+setopt(Socket, Level :: socket, Key :: socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+setopt(Socket, Level :: ip, Key :: ip_socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+setopt(Socket, Level :: ipv6, Key :: ipv6_socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+setopt(Socket, Level :: tcp, Key :: tcp_socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+setopt(Socket, Level :: udp, Key :: udp_socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.nf
+
+.B
+setopt(Socket, Level :: sctp, Key :: sctp_socket_option(), Value) ->
+.B
+          ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Value = Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Set options on a socket\&.
+.LP
+What properties are valid depend both on \fILevel\fR\& and on what kind of socket it is (\fIdomain\fR\&, \fItype\fR\& and \fIprotocol\fR\&)\&.
+.LP
+See the \fBsocket options\fR\& chapter of the users guide for more info\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Not all options are valid on all platforms\&. That is, even if "we" support an option, that does not mean that the underlying OS does\&.
+
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+Sockets are set \&'non-blocking\&' when created, so this option is *not* available (as it would adversely effect the Erlang VM to set a socket \&'blocking\&')\&.
+
+.RE
+.LP
+.nf
+
+.B
+setopt(Socket, Level, Key, Value) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+Level = Key = integer() >= 0
+.br
+Value = binary()
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Set options on a socket\&.
+.LP
+When specifying \fILevel\fR\& as an integer, and therefor using "native mode", it is *currently* up to the caller to know how to encode the \fIValue\fR\&\&.
+.LP
+For more info, see \fBsetopt\fR\& above\&.
+.RE
+.LP
+.nf
+
+.B
+shutdown(Socket, How) -> ok | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+How = \fBshutdown_how()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Shut down all or part of a full-duplex connection\&.
+.RE
+.LP
+.nf
+
+.B
+sockname(Socket) -> {ok, SockAddr} | {error, Reason}
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Socket = \fBsocket()\fR\&
+.br
+SockAddr = \fBsockaddr()\fR\&
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the current address to which the socket is bound\&.
+.RE
+.LP
+.nf
+
+.B
+supports() ->
+.B
+            [{options, supports_options()} |
+.B
+             {sctp, boolean()} |
+.B
+             {ipv6, boolean()} |
+.B
+             {local, boolean()} |
+.B
+             {send_flags, supports_send_flags()} |
+.B
+             {recv_flags, supports_recv_flags()}]
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options) -> supports_options()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: sctp) -> boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: ipv6) -> boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: local) -> boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: send_flags) -> supports_send_flags()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: recv_flags) -> supports_recv_flags()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1) -> false
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: socket) ->
+.B
+            supports_options_socket()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: ip) -> supports_options_ip()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: ipv6) ->
+.B
+            supports_options_ipv6()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: tcp) -> supports_options_tcp()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: udp) -> supports_options_udp()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: sctp) ->
+.B
+            supports_options_sctp()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: send_flags, SendFlag :: send_flag()) -> boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: recv_flags, RecvFlag :: recv_flag()) -> boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1, Key2) -> false
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: socket, Opt :: socket_option()) ->
+.B
+            boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options, Level :: ip, Opt :: ip_socket_option()) ->
+.B
+            boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options,
+.B
+         Level :: ipv6,
+.B
+         Opt :: ipv6_socket_option()) ->
+.B
+            boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options,
+.B
+         Level :: tcp,
+.B
+         Opt :: tcp_socket_option()) ->
+.B
+            boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options,
+.B
+         Level :: udp,
+.B
+         Opt :: udp_socket_option()) ->
+.B
+            boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1 :: options,
+.B
+         Level :: sctp,
+.B
+         Opt :: sctp_socket_option()) ->
+.B
+            boolean()
+.br
+.fi
+.br
+.nf
+
+.B
+supports(Key1, Key2, Key3) -> false
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key1 = Key2 = Key3 = term()
+.br
+.RE
+.RE
+.RS
+.LP
+This function intends to retreive information about what the platform supports\&. Such as if SCTP is supported\&. Or which socket options are supported\&.
+.RE
+.LP
+.nf
+
+.B
+which_sockets() -> [socket()]
+.br
+.fi
+.br
+.nf
+
+.B
+which_sockets(FilterRule) -> [socket()]
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FilterRule = 
+.br
+    inet | inet6 | stream | dgram | seqpacket | sctp | tcp | udp |
+.br
+    pid() |
+.br
+    fun((\fBsocket_info()\fR\&) -> boolean())
+.br
+.RE
+.RE
+.RS
+.LP
+Returns a list of all sockets, according to the filter rule\&.
+.LP
+There are several pre-made filter rule(s) and one general:
+.RS 2
+.TP 2
+.B
+\fIinet | inet6\fR\&:
+Selection based on the domain of the socket\&. 
+.br
+Only a subset is valid\&.
+.TP 2
+.B
+\fIstream | dgram | seqpacket\fR\&:
+Selection based on the type of the socket\&. 
+.br
+Only a subset is valid\&.
+.TP 2
+.B
+\fIsctp | tcp | udp\fR\&:
+Selection based on the protocol of the socket\&. 
+.br
+Only a subset is valid\&.
+.TP 2
+.B
+\fIpid()\fR\&:
+Selection base on which sockets has this pid as Controlling Process\&.
+.TP 2
+.B
+\fIfun((socket_info()) -> boolean())\fR\&:
+The general filter rule\&. 
+.br
+A fun that takes the socket info and returns a \fIboolean()\fR\& (\fItrue\fR\& if the socket sould be included and \fIfalse\fR\& if should not)\&.
+.RE
+.RE
+.SH "EXAMPLES"
+
+.LP
+.nf
+
+client(Addr, SAddr, SPort) ->
+   {ok, Sock} = socket:open(inet, stream, tcp),
+   {ok, _} = socket:bind(Sock, #{family => inet,
+                                 addr   => Addr}),
+   ok = socket:connect(Sock, #{family => inet,
+                               addr   => SAddr,
+			       port   => SPort}),
+   Msg = list_to_binary("hello"),
+   ok = socket:send(Sock, Msg),
+   ok = socket:shutdown(Sock, write),
+   {ok, Msg} = socket:recv(Sock),
+   ok = socket:close(Sock).
+
+server(Addr, Port) ->  
+   {ok, LSock} = socket:open(inet, stream, tcp),
+   {ok, _} = socket:bind(LSock, #{family => inet,
+                                  port   => Port,
+		 	          addr   => Addr}),
+   ok = socket:listen(LSock),
+   {ok, Sock} = socket:accept(LSock),
+   {ok, Msg} = socket:recv(Sock),
+   ok = socket:send(Sock, Msg),
+   ok = socket:shutdown(Sock, write),
+   ok = socket:close(Sock),
+   ok = socket:close(LSock).
+    
+.fi

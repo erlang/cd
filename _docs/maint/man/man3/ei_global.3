@@ -1,0 +1,177 @@
+.TH ei_global 3 "erl_interface 4.0.1" "Ericsson AB" "C Library Functions"
+.SH NAME
+ei_global \- Access globally registered names.
+.SH DESCRIPTION
+.LP
+This module provides support for registering, looking up, and unregistering names in the \fIglobal\fR\& module\&. For more information, see \fIkernel:global\fR\&\&.
+.LP
+Notice that the functions below perform an RPC using an open file descriptor provided by the caller\&. This file descriptor must not be used for other traffic during the global operation, as the function can then receive unexpected data and fail\&.
+.SH EXPORTS
+.LP
+.B
+char **ei_global_names(ec,fd,count)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+\fIei_cnode\fR\& *ec;
+.br
+int fd;
+.br
+int *count;
+.br
+.RE
+.RE
+.RS
+.LP
+Retrieves a list of all known global names\&.
+.RS 2
+.TP 2
+*
+\fIec\fR\& is the \fIei_cnode\fR\& representing the current cnode\&.
+.LP
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIcount\fR\& is the address of an integer, or \fINULL\fR\&\&. If \fIcount\fR\& is not \fINULL\fR\&, it is set by the function to the number of names found\&.
+.LP
+.RE
+
+.LP
+On success, the function returns an array of strings, each containing a single registered name, and sets \fIcount\fR\& to the number of names found\&. The array is terminated by a single \fINULL\fR\& pointer\&. On failure, the function returns \fINULL\fR\& and \fIcount\fR\& is not modified\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+It is the caller\&'s responsibility to free the array afterwards\&. It has been allocated by the function with a single call to \fImalloc()\fR\&, so a single \fIfree()\fR\& is all that is necessary\&.
+
+.RE
+.LP
+.B
+int ei_global_register(fd,name,pid)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int fd;
+.br
+const char *name;
+.br
+\fIerlang_pid\fR\& *pid;
+.br
+.RE
+.RE
+.RS
+.LP
+Registers a name in \fIglobal\fR\&\&.
+.RS 2
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name to register in \fIglobal\fR\&\&.
+.LP
+.TP 2
+*
+\fIpid\fR\& is the pid that is to be associated with \fIname\fR\&\&. This value is returned by \fIglobal\fR\& when processes request the location of \fIname\fR\&\&. 
+.LP
+.RE
+
+.LP
+Returns \fI0\fR\& on success, otherwise \fI-1\fR\&\&.
+.RE
+.LP
+.B
+int ei_global_unregister(ec,fd,name)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+\fIei_cnode\fR\& *ec;
+.br
+int fd;
+.br
+const char *name;
+.br
+.RE
+.RE
+.RS
+.LP
+Unregisters a name from \fIglobal\fR\&\&.
+.RS 2
+.TP 2
+*
+\fIec\fR\& is the \fIei_cnode\fR\& representing the current cnode\&.
+.LP
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name to unregister from \fIglobal\fR\&\&.
+.LP
+.RE
+
+.LP
+Returns \fI0\fR\& on success, otherwise \fI-1\fR\&\&.
+.RE
+.LP
+.B
+int ei_global_whereis(ec,fd,name,pid,node)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+\fIei_cnode\fR\& *ec;
+.br
+int fd;
+.br
+const char *name;
+.br
+\fIerlang_pid\fR\& *pid;
+.br
+char *node;
+.br
+.RE
+.RE
+.RS
+.LP
+Looks up a name in \fIglobal\fR\&\&.
+.RS 2
+.TP 2
+*
+\fIec\fR\& is the \fIei_cnode\fR\& representing the current cnode\&.
+.LP
+.TP 2
+*
+\fIfd\fR\& is an open descriptor to an Erlang connection\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name that is to be looked up in \fIglobal\fR\&\&.
+.LP
+.RE
+
+.LP
+The \fIpid\fR\& parameter is a pointer to a \fIerlang_pid\fR\& that the function will update with the pid associated with the global name, if successful\&.
+.LP
+If \fInode\fR\& is not \fINULL\fR\&, it is a pointer to a buffer where the function can fill in the name of the node where \fIname\fR\& is found\&. \fInode\fR\& can be passed directly to \fIei_connect()\fR\& if necessary\&.
+.LP
+On success, the function returns 0, updates the \fIerlang_pid\fR\& pointed to by the pid parameter, and the \fInode\fR\& parameter is initialized to the node name where \fIname\fR\& is found\&. On failure, a negative number is returned\&.
+.RE

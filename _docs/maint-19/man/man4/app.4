@@ -1,0 +1,194 @@
+.TH app 5 "kernel 5.2.0.1" "Ericsson AB" "Files"
+.SH NAME
+app \- Application resource file.
+.SH DESCRIPTION
+.LP
+The \fIapplication resource file\fR\& specifies the resources an application uses, and how the application is started\&. There must always be one application resource file called \fIApplication\&.app\fR\& for each application \fIApplication\fR\& in the system\&.
+.LP
+The file is read by the application controller when an application is loaded/started\&. It is also used by the functions in \fIsystools\fR\&, for example when generating start scripts\&.
+.SH "FILE SYNTAX"
+
+.LP
+The application resource file is to be called \fIApplication\&.app\fR\&, where \fIApplication\fR\& is the application name\&. The file is to be located in directory \fIebin\fR\& for the application\&.
+.LP
+The file must contain a single Erlang term, which is called an \fIapplication specification\fR\&:
+.LP
+.nf
+
+{application, Application,
+  [{description,  Description},
+   {id,           Id},
+   {vsn,          Vsn},
+   {modules,      Modules},
+   {maxP,         MaxP},
+   {maxT,         MaxT},
+   {registered,   Names},
+   {included_applications, Apps},
+   {applications, Apps},
+   {env,          Env},
+   {mod,          Start},
+   {start_phases, Phases},
+   {runtime_dependencies, RTDeps}]}.
+
+             Value                Default
+             -----                -------
+Application  atom()               -
+Description  string()             ""
+Id           string()             ""
+Vsn          string()             ""
+Modules      [Module]             []
+MaxP         int()                infinity
+MaxT         int()                infinity
+Names        [Name]               []
+Apps         [App]                []
+Env          [{Par,Val}]          []
+Start        {Module,StartArgs}   []
+Phases       [{Phase,PhaseArgs}]  undefined
+RTDeps       [ApplicationVersion] []
+
+Module = Name = App = Par = Phase = atom()
+Val = StartArgs = PhaseArgs = term()
+ApplicationVersion = string()
+.fi
+.RS 2
+.TP 2
+.B
+\fIApplication\fR\&:
+Application name\&.
+.RE
+.LP
+For the application controller, all keys are optional\&. The respective default values are used for any omitted keys\&.
+.LP
+The functions in \fIsystools\fR\& require more information\&. If they are used, the following keys are mandatory:
+.RS 2
+.TP 2
+*
+\fIdescription\fR\&
+.LP
+.TP 2
+*
+\fIvsn\fR\&
+.LP
+.TP 2
+*
+\fImodules\fR\&
+.LP
+.TP 2
+*
+\fIregistered\fR\&
+.LP
+.TP 2
+*
+\fIapplications\fR\&
+.LP
+.RE
+
+.LP
+The other keys are ignored by \fIsystools\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIdescription\fR\&:
+A one-line description of the application\&.
+.TP 2
+.B
+\fIid\fR\&:
+Product identification, or similar\&.
+.TP 2
+.B
+\fIvsn\fR\&:
+Version of the application\&.
+.TP 2
+.B
+\fImodules\fR\&:
+All modules introduced by this application\&. \fIsystools\fR\& uses this list when generating start scripts and tar files\&. A module can only be defined in one application\&.
+.TP 2
+.B
+\fImaxP\fR\&:
+\fIDeprecated - is ignored\fR\&
+.RS 2
+.LP
+Maximum number of processes allowed in the application\&.
+.RE
+.TP 2
+.B
+\fImaxT\fR\&:
+Maximum time, in milliseconds, that the application is allowed to run\&. After the specified time, the application terminates automatically\&.
+.TP 2
+.B
+\fIregistered\fR\&:
+All names of registered processes started in this application\&. \fIsystools\fR\& uses this list to detect name clashes between different applications\&.
+.TP 2
+.B
+\fIincluded_applications\fR\&:
+All applications included by this application\&. When this application is started, all included applications are loaded automatically, but not started, by the application controller\&. It is assumed that the top-most supervisor of the included application is started by a supervisor of this application\&.
+.TP 2
+.B
+\fIapplications\fR\&:
+All applications that must be started before this application is allowed to be started\&. \fIsystools\fR\& uses this list to generate correct start scripts\&. Defaults to the empty list, but notice that all applications have dependencies to (at least) Kernel and STDLIB\&.
+.TP 2
+.B
+\fIenv\fR\&:
+Configuration parameters used by the application\&. The value of a configuration parameter is retrieved by calling \fIapplication:get_env/1,2\fR\&\&. The values in the application resource file can be overridden by values in a configuration file (see \fB\fIconfig(4)\fR\&\fR\&) or by command-line flags (see \fB\fIerts:erl(1)\fR\&\fR\&)\&.
+.TP 2
+.B
+\fImod\fR\&:
+Specifies the application callback module and a start argument, see \fB\fIapplication(3)\fR\&\fR\&\&.
+.RS 2
+.LP
+Key \fImod\fR\& is necessary for an application implemented as a supervision tree, otherwise the application controller does not know how to start it\&. \fImod\fR\& can be omitted for applications without processes, typically code libraries, for example, STDLIB\&.
+.RE
+.TP 2
+.B
+\fIstart_phases\fR\&:
+A list of start phases and corresponding start arguments for the application\&. If this key is present, the application master, in addition to the usual call to \fIModule:start/2\fR\&, also calls \fIModule:start_phase(Phase,Type,PhaseArgs)\fR\& for each start phase defined by key \fIstart_phases\fR\&\&. Only after this extended start procedure, \fIapplication:start(Application)\fR\& returns\&.
+.RS 2
+.LP
+Start phases can be used to synchronize startup of an application and its included applications\&. In this case, key \fImod\fR\& must be specified as follows:
+.RE
+.LP
+.nf
+
+{mod, {application_starter,[Module,StartArgs]}}
+.fi
+.RS 2
+.LP
+The application master then calls \fIModule:start/2\fR\& for the primary application, followed by calls to \fIModule:start_phase/3\fR\& for each start phase (as defined for the primary application), both for the primary application and for each of its included applications, for which the start phase is defined\&.
+.RE
+.RS 2
+.LP
+This implies that for an included application, the set of start phases must be a subset of the set of phases defined for the primary application\&. For more information, see \fBOTP Design Principles\fR\&\&.
+.RE
+.TP 2
+.B
+\fIruntime_dependencies\fR\&:
+A list of application versions that the application depends on\&. An example of such an application version is \fI"kernel-3\&.0"\fR\&\&. Application versions specified as runtime dependencies are minimum requirements\&. That is, a larger application version than the one specified in the dependency satisfies the requirement\&. For information about how to compare application versions, see section \fBVersions\fR\& in the System Principles User\&'s Guide\&.
+.RS 2
+.LP
+Notice that the application version specifies a source code version\&. One more, indirect, requirement is that the installed binary application of the specified version is built so that it is compatible with the rest of the system\&.
+.RE
+.RS 2
+.LP
+Some dependencies can only be required in specific runtime scenarios\&. When such optional dependencies exist, these are specified and documented in the corresponding "App" documentation of the specific application\&.
+.RE
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+The \fIruntime_dependencies\fR\& key was introduced in OTP 17\&.0\&. The type of its value might be subject to changes during the OTP 17 release\&.
+
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+All runtime dependencies specified in OTP applications during the OTP 17 release may not be completely correct\&. This is actively being worked on\&. Declared runtime dependencies in OTP applications are expected to be correct in OTP 18\&.
+
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIapplication(3)\fR\&\fR\&, \fB\fIsystools(3)\fR\&\fR\&

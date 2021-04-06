@@ -1,0 +1,212 @@
+.TH edoc_extract 3 "edoc 0.12" "" "Erlang Module Definition"
+.SH NAME
+edoc_extract \- EDoc documentation extraction.
+.SH DESCRIPTION
+.LP
+EDoc documentation extraction\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+edoc_env() = edoc_lib:edoc_env():
+
+.TP 2
+.B
+filename() = file:filename():
+
+.TP 2
+.B
+proplist() = proplists:property():
+
+.TP 2
+.B
+syntaxTree() = erl_syntax:syntaxTree():
+
+.RE
+.SH EXPORTS
+.LP
+.B
+file(File::filename(), Context, Env::edoc_env(), Options::proplist()) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = overview
+.br
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Reads a text file and returns the list of tags in the file\&. Any lines of text before the first tag are ignored\&. \fIEnv\fR\& is an environment created by edoc_lib:get_doc_env/3\&. Upon error, \fIReason\fR\& is an atom returned from the call to file:read_file/1 or the atom \&'invalid_unicode\&'\&.
+.LP
+See text/4 for options\&.
+.RE
+.LP
+.B
+header(File::filename(), Env::edoc_env(), Options::proplist()) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Similar to header/5, but reads the syntax tree and the comments from the specified file\&.
+.LP
+\fISee also:\fR\& header/4, edoc:read_comments/2, edoc:read_source/2\&.
+.RE
+.LP
+.B
+header(Forms, File::filename(), Env::edoc_env(), Options::proplist()) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = syntaxTree() | [syntaxTree()]
+.br
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts EDoc documentation from commented header file syntax trees\&. Similar to source/5, but ignores any documentation that occurs before a module declaration or a function definition\&. (Warning messages are printed if content may be ignored\&.) \fIEnv\fR\& is assumed to already be set up with a suitable module context\&.
+.LP
+\fISee also:\fR\& erl_recomment(3), header/5\&.
+.RE
+.LP
+.B
+header(Forms, Comments::[edoc:comment()], File::filename(), Env::edoc_env(), Options::proplist()) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = syntaxTree() | [syntaxTree()]
+.br
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Similar to header/4, but first inserts the given comments in the syntax trees\&. The syntax trees must contain valid position information\&. (Cf\&. edoc:read_comments/2\&.)
+.LP
+\fISee also:\fR\& erl_recomment(3), header/3, header/4\&.
+.RE
+.LP
+.B
+source(File::filename(), Env::edoc_env(), Options::proplist()) -> {ModuleName, edoc:edoc_module()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ModuleName = atom()
+.br
+proplist() = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Like source/5, but reads the syntax tree and the comments from the specified file\&.
+.LP
+\fISee also:\fR\& source/4, edoc:read_comments/2, edoc:read_source/2\&.
+.RE
+.LP
+.B
+source(Forms, File::filename(), Env::edoc_env(), Options::proplist()) -> {ModuleName, edoc:edoc_module()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = syntaxTree() | [syntaxTree()]
+.br
+ModuleName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts EDoc documentation from commented source code syntax trees\&. The given \fIForms\fR\& must be a single syntax tree of type \fIform_list\fR\&, or a list of syntax trees representing "program forms" (cf\&. edoc:read_source/2\&. \fIEnv\fR\& is an environment created by edoc_lib:get_doc_env/3\&. The \fIFile\fR\& argument is used for error reporting and output file name generation only\&.
+.LP
+See edoc:get_doc/2 for descriptions of the \fIdef\fR\&, \fIhidden\fR\&, \fIprivate\fR\&, and \fItodo\fR\& options\&.
+.LP
+\fISee also:\fR\& erl_recomment(3), source/5, edoc:read_comments/2, edoc:read_source/2\&.
+.RE
+.LP
+.B
+source(Forms, Comments::[edoc:comment()], File::filename(), Env::edoc_env(), Options::proplist()) -> {ModuleName, edoc:edoc_module()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = syntaxTree() | [syntaxTree()]
+.br
+ModuleName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Like source/4, but first inserts the given comments in the syntax trees\&. The syntax trees must contain valid position information\&. (Cf\&. edoc:read_comments/2\&.)
+.LP
+\fISee also:\fR\& erl_recomment(3), source/3, source/4, edoc:read_comments/2, edoc:read_source/2\&.
+.RE
+.LP
+.B
+text(Text::string(), Context, Env::edoc_env(), Options::proplist()) -> Tags
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = overview
+.br
+Tags = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the list of tags in the text\&. Any lines of text before the first tag are ignored\&. \fIEnv\fR\& is an environment created by edoc_lib:get_doc_env/3\&.
+.LP
+See source/4 for a description of the \fIdef\fR\& option\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+edoc
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

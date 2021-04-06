@@ -1,0 +1,58 @@
+.TH debugger 3 "debugger 4.2.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+debugger \- Erlang Debugger.
+.SH DESCRIPTION
+.LP
+Erlang Debugger for debugging and testing of Erlang programs\&.
+.SH EXPORTS
+.LP
+.B
+start()
+.br
+.B
+start(File)
+.br
+.B
+start(Mode)
+.br
+.B
+start(Mode, File)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Mode = local | global
+.br
+File = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Starts Debugger\&.
+.LP
+If a filename is specified as argument, Debugger tries to load its settings from this file\&. For details about settings, see the User\&'s Guide\&.
+.LP
+If \fIlocal\fR\& is specified as argument, Debugger interprets code only at the current node\&. If \fIglobal\fR\& is specified as argument, Debugger interprets code at all known nodes, this is the default\&.
+.RE
+.LP
+.B
+quick(Module, Name, Args)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Module = Name = atom()
+.br
+Args = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Debugs a single process\&. The module \fIModule\fR\& is interpreted and \fIapply(Module,Name,Args)\fR\& is called\&. This opens an Attach Process window\&. For details, see the User\&'s Guide\&.
+.RE

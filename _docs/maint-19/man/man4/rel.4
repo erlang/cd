@@ -1,0 +1,81 @@
+.TH rel 5 "sasl 3.0.3" "Ericsson AB" "Files"
+.SH NAME
+rel \- Release resource file
+.SH DESCRIPTION
+.LP
+The \fIrelease resource file\fR\& specifies which applications are included in a release (system) based on Erlang/OTP\&.
+.LP
+This file is used by the functions in \fB\fIsystools\fR\&\fR\& when generating start scripts (\fI\&.script\fR\&, \fI\&.boot\fR\&) and release upgrade files (\fIrelup\fR\&)\&.
+.SH "FILE SYNTAX"
+
+.LP
+The release resource file is to be called \fIName\&.rel\fR\&\&.
+.LP
+The \fI\&.rel\fR\& file contains one single Erlang term, which is called a \fIrelease specification\fR\&\&. The file has the following syntax:
+.LP
+.nf
+
+{release, {RelName,Vsn}, {erts, EVsn},
+  [{Application, AppVsn} |
+   {Application, AppVsn, Type} |
+   {Application, AppVsn, IncApps} |
+   {Application, AppVsn, Type, IncApps}]}.
+.fi
+.RS 2
+.TP 2
+.B
+\fIRelName = string()\fR\&:
+Release name\&.
+.TP 2
+.B
+\fIVsn = string()\fR\&:
+Release version\&.
+.TP 2
+.B
+\fIEVsn = string()\fR\&:
+ERTS version the release is intended for\&.
+.TP 2
+.B
+\fIApplication = atom()\fR\&:
+Name of an application included in the release\&.
+.TP 2
+.B
+\fIAppVsn = string()\fR\&:
+Version of an application included in the release\&.
+.TP 2
+.B
+\fIType = permanent | transient | temporary | load | none\fR\&:
+Start type of an application included in the release\&.
+.RS 2
+.LP
+If \fIType = permanent | transient | temporary\fR\&, the application is loaded and started in the corresponding way, see \fB\fIapplication(3)\fR\&\fR\&\&.
+.RE
+.RS 2
+.LP
+If \fIType = load\fR\&, the application is only loaded\&.
+.RE
+.RS 2
+.LP
+If \fIType = none\fR\&, the application is not loaded and not started, although the code for its modules is loaded\&.
+.RE
+.RS 2
+.LP
+Defaults to \fIpermanent\fR\&
+.RE
+.TP 2
+.B
+\fIIncApps = [atom()]\fR\&:
+A list of applications that are included by an application included in the release\&. The list must be a subset of the included applications specified in the application resource file (\fIApplication\&.app\fR\&) and overrides this value\&. Defaults to the same value as in the application resource file\&.
+.RE
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The list of applications must contain the Kernel and STDLIB applications\&.
+
+.SH "SEE ALSO"
+
+.LP
+\fB\fIapplication(3)\fR\&\fR\&, \fB\fIrelup(4)\fR\&\fR\&, \fB\fIsystools(3)\fR\&\fR\&

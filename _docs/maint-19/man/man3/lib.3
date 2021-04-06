@@ -1,0 +1,138 @@
+.TH lib 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+lib \- Useful library functions.
+.SH DESCRIPTION
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+This module is retained for backward compatibility\&. It can disappear without warning in a future Erlang/OTP release\&.
+
+.SH EXPORTS
+.LP
+.nf
+
+.B
+error_message(Format, Args) -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Format = \fBio:format()\fR\&
+.br
+Args = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Prints error message \fIArgs\fR\& in accordance with \fIFormat\fR\&\&. Similar to \fB\fIio:format/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+flush_receive() -> ok
+.br
+.fi
+.br
+.RS
+.LP
+Flushes the message buffer of the current process\&.
+.RE
+.LP
+.nf
+
+.B
+nonl(String1) -> String2
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+String1 = String2 = string()
+.br
+.RE
+.RE
+.RS
+.LP
+Removes the last newline character, if any, in \fIString1\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+progname() -> atom()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the name of the script that started the current Erlang session\&.
+.RE
+.LP
+.nf
+
+.B
+send(To, Msg) -> Msg
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+To = pid() | atom() | {atom(), node()}
+.br
+Msg = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Makes it possible to send a message using the \fIapply/3\fR\& BIF\&.
+.RE
+.LP
+.nf
+
+.B
+sendw(To, Msg) -> term()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+To = pid() | atom() | {atom(), node()}
+.br
+Msg = term()
+.br
+.RE
+.RE
+.RS
+.LP
+As \fB\fIsend/2\fR\&\fR\&, but waits for an answer\&. It is implemented as follows:
+.LP
+.nf
+
+sendw(To, Msg) ->
+    To ! {self(),Msg},
+    receive
+        Reply -> Reply
+    end.
+.fi
+.LP
+The returned message is not necessarily a reply to the sent message\&.
+.RE

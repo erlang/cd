@@ -1,0 +1,428 @@
+.TH wxGridCellAttr 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxGridCellAttr \- See external documentation: wxGridCellAttr.
+.SH DESCRIPTION
+.LP
+See external documentation: wxGridCellAttr\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxGridCellAttr():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+setTextColour(This, ColText) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+ColText = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setBackgroundColour(This, ColBack) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+ColBack = \fBwx:wx_colour()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setFont(This, Font) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+Font = \fBwxFont:wxFont()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setAlignment(This, HAlign, VAlign) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+HAlign = integer()
+.br
+VAlign = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setReadOnly(This) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to \fBsetReadOnly(This, [])\fR\&\&.
+.RE
+.LP
+.B
+setReadOnly(This, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+Option = {isReadOnly, boolean()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setRenderer(This, Renderer) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+Renderer = \fBwxGridCellRenderer:wxGridCellRenderer()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setEditor(This, Editor) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+Editor = \fBwxGridCellEditor:wxGridCellEditor()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hasTextColour(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hasBackgroundColour(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hasFont(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hasAlignment(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hasRenderer(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+hasEditor(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getTextColour(This) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getBackgroundColour(This) -> \fBwx:wx_colour4()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getFont(This) -> \fBwxFont:wxFont()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getAlignment(This) -> {HAlign::integer(), VAlign::integer()}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getRenderer(This, Grid, Row, Col) -> \fBwxGridCellRenderer:wxGridCellRenderer()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+Grid = \fBwxGrid:wxGrid()\fR\&
+.br
+Row = integer()
+.br
+Col = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+getEditor(This, Grid, Row, Col) -> \fBwxGridCellEditor:wxGridCellEditor()\fR\&
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+Grid = \fBwxGrid:wxGrid()\fR\&
+.br
+Row = integer()
+.br
+Col = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+isReadOnly(This) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+setDefAttr(This, DefAttr) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = \fBwxGridCellAttr()\fR\&
+.br
+DefAttr = \fBwxGridCellAttr()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

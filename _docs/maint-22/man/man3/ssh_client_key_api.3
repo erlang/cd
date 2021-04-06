@@ -1,0 +1,121 @@
+.TH ssh_client_key_api 3 "ssh 4.9.1.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_client_key_api \- 
+     -behaviour(ssh_client_key_api).
+  
+.SH DESCRIPTION
+.LP
+Behavior describing the API for public key handling of an SSH client\&. By implementing the callbacks defined in this behavior, the public key handling of an SSH client can be customized\&. By default the \fIssh\fR\& application implements this behavior with help of the standard OpenSSH files, see the \fB ssh(6)\fR\& application manual\&.
+.SH DATA TYPES
+.nf
+
+\fBclient_key_cb_options()\fR\& = 
+.br
+    [{key_cb_private, term()} | \fBssh:client_option()\fR\&]
+.br
+.fi
+.RS
+.LP
+Options provided to \fBssh:connect/[3,4]\fR\&\&.
+.LP
+The option list given in the \fB\fIkey_cb\fR\&\fR\& option is available with the key \fIkey_cb_private\fR\&\&.
+.RE
+.SH EXPORTS
+.LP
+.B
+Module:add_host_key(HostNames, PublicHostKey, ConnectOptions) -> ok | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HostNames = string()
+.br
+.RS 2
+Description of the host that owns the \fIPublicHostKey\fR\&\&.
+.RE
+PublicHostKey = \fBpublic_key:public_key()\fR\&
+.br
+.RS 2
+Of ECDSA keys, only the Normally an RSA, DSA or ECDSA public key, but handling of other public keys can be added\&.
+.RE
+ConnectOptions = \fBclient_key_cb_options()\fR\&
+.br
+.RE
+.RE
+.RS
+.LP
+Adds a host key to the set of trusted host keys\&.
+.RE
+.LP
+.B
+Module:is_host_key(Key, Host, Algorithm, ConnectOptions) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = \fBpublic_key:public_key()\fR\&
+.br
+.RS 2
+Normally an RSA, DSA or ECDSA public key, but handling of other public keys can be added\&.
+.RE
+Host = string()
+.br
+.RS 2
+Description of the host\&.
+.RE
+Algorithm = \fBssh:pubkey_alg()\fR\&
+.br
+.RS 2
+Host key algorithm\&.
+.RE
+ConnectOptions = \fBclient_key_cb_options()\fR\&
+.br
+Result = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+Checks if a host key is trusted\&.
+.RE
+.LP
+.B
+Module:user_key(Algorithm, ConnectOptions) -> {ok, PrivateKey} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = \fBssh:pubkey_alg()\fR\&
+.br
+.RS 2
+Host key algorithm\&.
+.RE
+ConnectOptions = \fBclient_key_cb_options()\fR\&
+.br
+PrivateKey = \fBpublic_key:private_key()\fR\&
+.br
+.RS 2
+Private key of the user matching the \fIAlgorithm\fR\&\&.
+.RE
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches the users \fIpublic key\fR\& matching the \fIAlgorithm\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The private key contains the public key\&.
+
+.RE

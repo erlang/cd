@@ -1,0 +1,260 @@
+.TH rand 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+rand \- Pseudo random number generation.
+.SH DESCRIPTION
+.LP
+This module provides a random number generator\&. The module contains a number of algorithms\&. The uniform distribution algorithms use the scrambled Xorshift algorithms by Sebastiano Vigna\&. The normal distribution algorithm uses the Ziggurat Method by Marsaglia and Tsang\&.
+.LP
+The following algorithms are provided:
+.RS 2
+.TP 2
+.B
+\fIexsplus\fR\&:
+Xorshift116+, 58 bits precision and period of 2^116-1
+.TP 2
+.B
+\fIexs64\fR\&:
+Xorshift64*, 64 bits precision and a period of 2^64-1
+.TP 2
+.B
+\fIexs1024\fR\&:
+Xorshift1024*, 64 bits precision and a period of 2^1024-1
+.RE
+.LP
+The default algorithm is \fIexsplus\fR\&\&. If a specific algorithm is required, ensure to always use \fB\fIseed/1\fR\&\fR\& to initialize the state\&.
+.LP
+Every time a random number is requested, a state is used to calculate it and a new state is produced\&. The state can either be implicit or be an explicit argument and return value\&.
+.LP
+The functions with implicit state use the process dictionary variable \fIrand_seed\fR\& to remember the current state\&.
+.LP
+If a process calls \fB\fIuniform/0\fR\&\fR\& or \fB\fIuniform/1\fR\&\fR\& without setting a seed first, \fB\fIseed/1\fR\&\fR\& is called automatically with the default algorithm and creates a non-constant seed\&.
+.LP
+The functions with explicit state never use the process dictionary\&.
+.LP
+\fIExamples:\fR\&
+.LP
+Simple use; creates and seeds the default algorithm with a non-constant seed if not already done:
+.LP
+.nf
+
+R0 = rand:uniform(),
+R1 = rand:uniform(),
+.fi
+.LP
+Use a specified algorithm:
+.LP
+.nf
+
+_ = rand:seed(exs1024),
+R2 = rand:uniform(),
+.fi
+.LP
+Use a specified algorithm with a constant seed:
+.LP
+.nf
+
+_ = rand:seed(exs1024, {123, 123534, 345345}),
+R3 = rand:uniform(),
+.fi
+.LP
+Use the functional API with a non-constant seed:
+.LP
+.nf
+
+S0 = rand:seed_s(exsplus),
+{R4, S1} = rand:uniform_s(S0),
+.fi
+.LP
+Create a standard normal deviate:
+.LP
+.nf
+
+{SND0, S2} = rand:normal_s(S1),
+.fi
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+This random number generator is not cryptographically strong\&. If a strong cryptographic random number generator is needed, use one of functions in the \fB\fIcrypto\fR\&\fR\& module, for example, \fB\fIcrypto:strong_rand_bytes/1\fR\&\fR\&\&.
+
+.SH DATA TYPES
+.nf
+
+\fBalg()\fR\& = exs64 | exsplus | exs1024
+.br
+.fi
+.nf
+
+\fBstate()\fR\&
+.br
+.fi
+.RS
+.LP
+Algorithm-dependent state\&.
+.RE
+.nf
+
+\fBexport_state()\fR\&
+.br
+.fi
+.RS
+.LP
+Algorithm-dependent state that can be printed or saved to file\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+export_seed() -> undefined | export_state()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the random number state in an external format\&. To be used with \fB\fIseed/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+export_seed_s(X1 :: state()) -> export_state()
+.br
+.fi
+.br
+.RS
+.LP
+Returns the random number generator state in an external format\&. To be used with \fB\fIseed/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+normal() -> float()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a standard normal deviate float (that is, the mean is 0 and the standard deviation is 1) and updates the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+normal_s(State0 :: state()) -> {float(), NewS :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified state, a standard normal deviate float (that is, the mean is 0 and the standard deviation is 1) and a new state\&.
+.RE
+.LP
+.nf
+
+.B
+seed(AlgOrExpState :: alg() | export_state()) -> state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specifed algorithm and time-dependent data if AlgOrExpState is an algorithm\&.
+.LP
+Otherwise recreates the exported seed in the process dictionary, and returns the state\&. See also \fB\fIexport_seed/0\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+seed(Alg :: alg(), S0 :: {integer(), integer(), integer()}) ->
+.B
+        state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specified algorithm and integers in the process dictionary and returns the state\&.
+.RE
+.LP
+.nf
+
+.B
+seed_s(AlgOrExpState :: alg() | export_state()) -> state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specifed algorithm and time-dependent data if AlgOrExpState is an algorithm\&.
+.LP
+Otherwise recreates the exported seed and returns the state\&. See also \fB\fIexport_seed/0\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+seed_s(Alg :: alg(), S0 :: {integer(), integer(), integer()}) ->
+.B
+          state()
+.br
+.fi
+.br
+.RS
+.LP
+Seeds random number generation with the specified algorithm and integers and returns the state\&.
+.RE
+.LP
+.nf
+
+.B
+uniform() -> X :: float()
+.br
+.fi
+.br
+.RS
+.LP
+Returns a random float uniformly distributed in the value range \fI0\&.0 < X < 1\&.0\fR\& and updates the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+uniform(N :: integer() >= 1) -> X :: integer() >= 1
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified integer \fIN >= 1\fR\&, a random integer uniformly distributed in the value range \fI1 <= X <= N\fR\& and updates the state in the process dictionary\&.
+.RE
+.LP
+.nf
+
+.B
+uniform_s(State :: state()) -> {X :: float(), NewS :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified state, random float uniformly distributed in the value range \fI0\&.0 < X < 1\&.0\fR\& and a new state\&.
+.RE
+.LP
+.nf
+
+.B
+uniform_s(N :: integer() >= 1, State :: state()) ->
+.B
+             {X :: integer() >= 1, NewS :: state()}
+.br
+.fi
+.br
+.RS
+.LP
+Returns, for a specified integer \fIN >= 1\fR\& and a state, a random integer uniformly distributed in the value range \fI1 <= X <= N\fR\& and a new state\&.
+.RE

@@ -1,0 +1,82 @@
+.TH edoc_doclet 3 "edoc 0.8.1" "" "Erlang Module Definition"
+.SH NAME
+edoc_doclet \- Standard doclet module for EDoc.
+.SH DESCRIPTION
+.LP
+Standard doclet module for EDoc\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+doclet_gen() = #doclet_gen{sources=[string()], app=\fBno_app()\fR\& | atom(), modules=[atom()]}:
+
+.TP 2
+.B
+doclet_toc() = #doclet_gen{paths=[string()], indir=string()}:
+
+.TP 2
+.B
+edoc_context() = #context{dir=string(), env=\fBedoc_lib:edoc_env()\fR\&, opts=[term()]}:
+
+.TP 2
+.B
+no_app():
+
+.RS 2
+.LP
+A value used to mark absence of an Erlang application context\&. Use the macro \fINO_APP\fR\& defined in edoc_doclet\&.hrl to produce this value\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+run(Command::\fBdoclet_gen()\fR\& | \fBdoclet_toc()\fR\&, Ctxt::\fBedoc_context()\fR\&) -> ok
+.br
+.RS
+.LP
+Main doclet entry point\&. See the file edoc_doclet\&.hrl for the data structures used for passing parameters\&.
+.LP
+Also see \fBedoc:layout/2\fR\& for layout-related options, and \fBedoc:get_doc/2\fR\& for options related to reading source files\&.
+.LP
+Options:
+.RS 2
+.TP 2
+.B
+\fI{file_suffix, string()}\fR\&:
+Specifies the suffix used for output files\&. The default value is \fI"\&.html"\fR\&\&.
+.TP 2
+.B
+\fI{hidden, boolean()}\fR\&:
+If the value is \fItrue\fR\&, documentation of hidden modules and functions will also be included\&. The default value is \fIfalse\fR\&\&.
+.TP 2
+.B
+\fI{overview, edoc:filename()}\fR\&:
+Specifies the name of the overview-file\&. By default, this doclet looks for a file \fI"overview\&.edoc"\fR\& in the target directory\&.
+.TP 2
+.B
+\fI{private, boolean()}\fR\&:
+If the value is \fItrue\fR\&, documentation of private modules and functions will also be included\&. The default value is \fIfalse\fR\&\&.
+.TP 2
+.B
+\fI{stylesheet, string()}\fR\&:
+Specifies the URI used for referencing the stylesheet\&. The default value is \fI"stylesheet\&.css"\fR\&\&. If an empty string is specified, no stylesheet reference will be generated\&.
+.TP 2
+.B
+\fI{stylesheet_file, edoc:filename()}\fR\&:
+Specifies the name of the stylesheet file\&. By default, this doclet uses the file \fI"stylesheet\&.css"\fR\& in the \fIpriv\fR\& subdirectory of the EDoc installation directory\&. The named file will be copied to the target directory\&.
+.TP 2
+.B
+\fI{title, string()}\fR\&:
+Specifies the title of the overview-page\&.
+.RE
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fBedoc\fR\&
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

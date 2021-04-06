@@ -1,0 +1,61 @@
+.TH werl 1 "erts 8.3.5.4" "Ericsson AB" "User Commands"
+.SH NAME
+werl \- The Erlang Emulator
+.SH DESCRIPTION
+.LP
+On Windows, the preferred way to start the Erlang system for interactive use is as follows:
+.LP
+\fIwerl <arguments>\fR\&
+.LP
+This starts Erlang in its own window, with fully functioning command-line editing and scrollbars\&. All flags except \fI-oldshell\fR\& work as they do for \fB\fIerl(1)\fR\&\fR\&\&.
+.RS 2
+.TP 2
+*
+To copy text to the clipboard, use \fICtrl-C\fR\&\&.
+.LP
+.TP 2
+*
+To paste text, use \fICtrl-V\fR\&\&.
+.LP
+.TP 2
+*
+To interrupt the runtime system or the shell process (depending on what has been specified with system flag \fI+B\fR\&), use \fICtrl-Break\fR\&\&.
+.LP
+.RE
+
+.LP
+In cases where you want to redirect standard input and/or standard output or use Erlang in a pipeline, \fIwerl\fR\& is not suitable, and the \fIerl\fR\& program is to be used instead\&.
+.LP
+The \fIwerl\fR\& window is in many ways modeled after the \fIxterm\fR\& window present on other platforms, as the \fIxterm\fR\& model fits well with line-oriented command-based interaction\&. This means that selecting text is line-oriented rather than rectangle-oriented\&.
+.RS 2
+.TP 2
+*
+To select text in the \fIwerl\fR\& window, press and hold the left mouse button and drag the mouse over the text you want to select\&. If the selection crosses line boundaries, the selected text consists of complete lines where applicable (just like in a word processor)\&.
+.LP
+.TP 2
+*
+To select more text than fits in the window, start by selecting a small part in the beginning of the text you want, then use the scrollbar to view the end of the desired selection, point to it, and press the \fIright\fR\& mouse button\&. The whole area between your first selection and the point where you right-clicked is included in the selection\&.
+.LP
+.TP 2
+*
+To copy the selected text to the clipboard, either use \fICtrl-C\fR\&, use the menu, or press the copy button in the toolbar\&.
+.LP
+.RE
+
+.LP
+Pasted text is inserted at the current prompt position and is interpreted by Erlang as usual keyboard input\&.
+.RS 2
+.TP 2
+*
+To retrieve previous command lines, press the \fIUp arrow\fR\& or use \fICtrl-P\fR\&\&.
+.LP
+.RE
+
+.LP
+A drop-down box in the toolbar contains the command history\&. Selecting a command in the drop-down box inserts the command at the prompt, as if you used the keyboard to retrieve the command\&.
+.RS 2
+.TP 2
+*
+To stop the Erlang emulator, close the \fIwerl\fR\& window\&.
+.LP
+.RE

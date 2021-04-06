@@ -1,0 +1,987 @@
+.TH erl_eterm 3 "erl_interface 3.9.3" "Ericsson AB" "C Library Functions"
+.SH NAME
+erl_eterm \- Functions for Erlang term construction.
+.SH DESCRIPTION
+.LP
+This module provides functions for creating and manipulating Erlang terms\&.
+.LP
+An Erlang term is represented by a C structure of type \fIETERM\fR\&\&. Applications should not reference any fields in this structure directly, as it can be changed in future releases to provide faster and more compact term storage\&. Instead, applications should use the macros and functions provided\&.
+.LP
+Each of the following macros takes a single \fIETERM\fR\& pointer as an argument\&. The macros return a non-zero value if the test is true, otherwise \fI0\fR\&\&.
+.RS 2
+.TP 2
+.B
+\fIERL_IS_INTEGER(t)\fR\&:
+True if \fIt\fR\& is an integer\&.
+.TP 2
+.B
+\fIERL_IS_UNSIGNED_INTEGER(t)\fR\&:
+True if \fIt\fR\& is an integer\&.
+.TP 2
+.B
+\fIERL_IS_FLOAT(t)\fR\&:
+True if \fIt\fR\& is a floating point number\&.
+.TP 2
+.B
+\fIERL_IS_ATOM(t)\fR\&:
+True if \fIt\fR\& is an atom\&.
+.TP 2
+.B
+\fIERL_IS_PID(t)\fR\&:
+True if \fIt\fR\& is a pid (process identifier)\&.
+.TP 2
+.B
+\fIERL_IS_PORT(t)\fR\&:
+True if \fIt\fR\& is a port\&.
+.TP 2
+.B
+\fIERL_IS_REF(t)\fR\&:
+True if \fIt\fR\& is a reference\&.
+.TP 2
+.B
+\fIERL_IS_TUPLE(t)\fR\&:
+True if \fIt\fR\& is a tuple\&.
+.TP 2
+.B
+\fIERL_IS_BINARY(t)\fR\&:
+True if \fIt\fR\& is a binary\&.
+.TP 2
+.B
+\fIERL_IS_LIST(t)\fR\&:
+True if \fIt\fR\& is a list with zero or more elements\&.
+.TP 2
+.B
+\fIERL_IS_EMPTY_LIST(t)\fR\&:
+True if \fIt\fR\& is an empty list\&.
+.TP 2
+.B
+\fIERL_IS_CONS(t)\fR\&:
+True if \fIt\fR\& is a list with at least one element\&.
+.RE
+.LP
+The following macros can be used for retrieving parts of Erlang terms\&. None of these do any type checking\&. Results are undefined if you pass an \fIETERM*\fR\& containing the wrong type\&. For example, passing a tuple to \fIERL_ATOM_PTR()\fR\& likely results in garbage\&.
+.RS 2
+.TP 2
+.B
+\fIchar *ERL_ATOM_PTR(t)\fR\&:
+
+.TP 2
+.B
+\fIchar *ERL_ATOM_PTR_UTF8(t)\fR\&:
+A string representing atom \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_ATOM_SIZE(t)\fR\&:
+
+.TP 2
+.B
+\fIint ERL_ATOM_SIZE_UTF8(t)\fR\&:
+The length (in bytes) of atom \fIt\fR\&\&.
+.TP 2
+.B
+\fIvoid *ERL_BIN_PTR(t)\fR\&:
+A pointer to the contents of \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_BIN_SIZE(t)\fR\&:
+The length (in bytes) of binary object \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_INT_VALUE(t)\fR\&:
+The integer of \fIt\fR\&\&.
+.TP 2
+.B
+\fIunsigned int ERL_INT_UVALUE(t)\fR\&:
+The unsigned integer value of \fIt\fR\&\&.
+.TP 2
+.B
+\fIdouble ERL_FLOAT_VALUE(t)\fR\&:
+The floating point value of \fIt\fR\&\&.
+.TP 2
+.B
+\fIETERM *ERL_PID_NODE(t)\fR\&:
+
+.TP 2
+.B
+\fIETERM *ERL_PID_NODE_UTF8(t)\fR\&:
+The node in pid \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_PID_NUMBER(t)\fR\&:
+The sequence number in pid \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_PID_SERIAL(t)\fR\&:
+The serial number in pid \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_PID_CREATION(t)\fR\&:
+The creation number in pid \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_PORT_NUMBER(t)\fR\&:
+The sequence number in port \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_PORT_CREATION(t)\fR\&:
+The creation number in port \fIt\fR\&\&.
+.TP 2
+.B
+\fIETERM *ERL_PORT_NODE(t)\fR\&:
+
+.TP 2
+.B
+\fIETERM *ERL_PORT_NODE_UTF8(t)\fR\&:
+The node in port \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_REF_NUMBER(t)\fR\&:
+The first part of the reference number in ref \fIt\fR\&\&. Use only for compatibility\&.
+.TP 2
+.B
+\fIint ERL_REF_NUMBERS(t)\fR\&:
+Pointer to the array of reference numbers in ref \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_REF_LEN(t)\fR\&:
+The number of used reference numbers in ref \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_REF_CREATION(t)\fR\&:
+The creation number in ref \fIt\fR\&\&.
+.TP 2
+.B
+\fIint ERL_TUPLE_SIZE(t)\fR\&:
+The number of elements in tuple \fIt\fR\&\&.
+.TP 2
+.B
+\fIETERM *ERL_CONS_HEAD(t)\fR\&:
+The head element of list \fIt\fR\&\&.
+.TP 2
+.B
+\fIETERM *ERL_CONS_TAIL(t)\fR\&:
+A list representing the tail elements of list \fIt\fR\&\&.
+.RE
+.SH EXPORTS
+.LP
+.B
+ETERM *erl_cons(head, tail)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *head;
+.br
+ETERM *tail;
+.br
+.RE
+.RE
+.RS
+.LP
+Concatenates two Erlang terms, prepending \fIhead\fR\& onto \fItail\fR\& and thereby creating a \fIcons\fR\& cell\&. To make a proper list, \fItail\fR\& is always to be a list or an empty list\&. Notice that \fINULL\fR\& is not a valid list\&.
+.RS 2
+.TP 2
+*
+\fIhead\fR\& is the new term to be added\&.
+.LP
+.TP 2
+*
+\fItail\fR\& is the existing list to which \fIhead\fR\& is concatenated\&.
+.LP
+.RE
+
+.LP
+The function returns a new list\&.
+.LP
+\fIERL_CONS_HEAD(list)\fR\& and \fIERL_CONS_TAIL(list)\fR\& can be used to retrieve the head and tail components from the list\&. \fIerl_hd(list)\fR\& and \fIerl_tl(list)\fR\& do the same thing, but check that the argument really is a list\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+ETERM *list,*anAtom,*anInt;
+anAtom = erl_mk_atom("madonna");
+anInt  = erl_mk_int(21);
+list   = erl_mk_empty_list();
+list   = erl_cons(anAtom, list);
+list   = erl_cons(anInt, list);
+ ... /* do some work */
+erl_free_compound(list);
+        
+.fi
+.RE
+.LP
+.B
+ETERM *erl_copy_term(term)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *term;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates and returns a copy of the Erlang term \fIterm\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_element(position, tuple)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int position;
+.br
+ETERM *tuple;
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts a specified element from an Erlang tuple\&.
+.RS 2
+.TP 2
+*
+\fIposition\fR\& specifies which element to retrieve from \fItuple\fR\&\&. The elements are numbered starting from 1\&.
+.LP
+.TP 2
+*
+\fItuple\fR\& is an Erlang term containing at least \fIposition\fR\& elements\&.
+.LP
+.RE
+
+.LP
+Returns a new Erlang term corresponding to the requested element, or \fINULL\fR\& if \fIposition\fR\& was greater than the arity of \fItuple\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_hd(list)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *list;
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts the first element from a list\&.
+.LP
+\fIlist\fR\& is an Erlang term containing a list\&.
+.LP
+Returns an Erlang term corresponding to the head head element in the list, or a \fINULL\fR\& pointer if \fIlist\fR\& was not a list\&.
+.RE
+.LP
+.B
+void erl_init(NULL, 0)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+void *NULL;
+.br
+int 0;
+.br
+.RE
+.RE
+.RS
+.LP
+This function must be called before any of the others in the \fIErl_Interface\fR\& library to initialize the library functions\&. The arguments must be specified as \fIerl_init(NULL,0)\fR\&\&.
+.RE
+.LP
+.B
+int erl_iolist_length(list)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *list;
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the length of an I/O list\&.
+.LP
+\fIlist\fR\& is an Erlang term containing an I/O list\&.
+.LP
+Returns the length of \fIlist\fR\&, or \fI-1\fR\& if \fIlist\fR\& is not an I/O list\&.
+.LP
+For the definition of an I/O list, see \fB\fIerl_iolist_to_binary\fR\&\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_iolist_to_binary(term)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *list;
+.br
+.RE
+.RE
+.RS
+.LP
+Converts an I/O list to a binary term\&.
+.LP
+\fIlist\fR\& is an Erlang term containing a list\&.
+.LP
+Returns an Erlang binary term, or \fINULL\fR\& if \fIlist\fR\& was not an I/O list\&.
+.LP
+Informally, an I/O list is a deep list of characters and binaries that can be sent to an Erlang port\&. In BNF, an I/O list is formally defined as follows:
+.LP
+.nf
+
+iolist ::= []
+        |   Binary
+        |   [iohead | iolist]
+        ;
+iohead ::= Binary
+        |   Byte (integer in the range [0..255])
+        |   iolist
+        ;
+        
+.fi
+.RE
+.LP
+.B
+char *erl_iolist_to_string(list)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *list;
+.br
+.RE
+.RE
+.RS
+.LP
+Converts an I/O list to a \fINULL\fR\&-terminated C string\&.
+.LP
+\fIlist\fR\& is an Erlang term containing an I/O list\&. The I/O list must not contain the integer 0, as C strings may not contain this value except as a terminating marker\&.
+.LP
+Returns a pointer to a dynamically allocated buffer containing a string\&. If \fIlist\fR\& is not an I/O list, or if \fIlist\fR\& contains the integer 0, \fINULL\fR\& is returned\&. It is the caller\&'s responsibility to free the allocated buffer with \fIerl_free()\fR\&\&.
+.LP
+For the definition of an I/O list, see \fB\fIerl_iolist_to_binary\fR\&\fR\&\&.
+.RE
+.LP
+.B
+int erl_length(list)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *list;
+.br
+.RE
+.RE
+.RS
+.LP
+Determines the length of a proper list\&.
+.LP
+\fIlist\fR\& is an Erlang term containing a proper list\&. In a proper list, all tails except the last point to another list cell, and the last tail points to an empty list\&.
+.LP
+Returns \fI-1\fR\& if \fIlist\fR\& is not a proper list\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_atom(string)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+const char *string;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an atom\&.
+.LP
+\fIstring\fR\& is the sequence of characters that will be used to create the atom\&.
+.LP
+Returns an Erlang term containing an atom\&. Notice that it is the caller\&'s responsibility to ensure that \fIstring\fR\& contains a valid name for an atom\&.
+.LP
+\fIERL_ATOM_PTR(atom)\fR\& and \fIERL_ATOM_PTR_UTF8(atom)\fR\& can be used to retrieve the atom name (as a \fINULL\fR\&-terminated string)\&. \fIERL_ATOM_SIZE(atom)\fR\& and \fIERL_ATOM_SIZE_UTF8(atom)\fR\& return the length of the atom name\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The UTF-8 variants were introduced in Erlang/OTP R16 and the string returned by \fIERL_ATOM_PTR(atom)\fR\& was not \fINULL\fR\&-terminated on older releases\&.
+
+.RE
+.LP
+.B
+ETERM *erl_mk_binary(bptr, size)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+char *bptr;
+.br
+int size;
+.br
+.RE
+.RE
+.RS
+.LP
+Produces an Erlang binary object from a buffer containing a sequence of bytes\&.
+.RS 2
+.TP 2
+*
+\fIbptr\fR\& is a pointer to a buffer containing data to be converted\&.
+.LP
+.TP 2
+*
+\fIsize\fR\& indicates the length of \fIbptr\fR\&\&.
+.LP
+.RE
+
+.LP
+Returns an Erlang binary object\&.
+.LP
+\fIERL_BIN_PTR(bin)\fR\& retrieves a pointer to the binary data\&. \fIERL_BIN_SIZE(bin)\fR\& retrieves the size\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_empty_list()
+.br
+.RS
+.LP
+Creates and returns an empty Erlang list\&. Notice that \fINULL\fR\& is not used to represent an empty list; Use this function instead\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_estring(string, len)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+char *string;
+.br
+int len;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a list from a sequence of bytes\&.
+.RS 2
+.TP 2
+*
+\fIstring\fR\& is a buffer containing a sequence of bytes\&. The buffer does not need to be \fINULL\fR\&-terminated\&.
+.LP
+.TP 2
+*
+\fIlen\fR\& is the length of \fIstring\fR\&\&.
+.LP
+.RE
+
+.LP
+Returns an Erlang list object corresponding to the character sequence in \fIstring\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_float(f)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+double f;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang float\&.
+.LP
+\fIf\fR\& is a value to be converted to an Erlang float\&.
+.LP
+Returns an Erlang float object with the value specified in \fIf\fR\& or \fINULL\fR\& if \fIf\fR\& is not finite\&.
+.LP
+\fIERL_FLOAT_VALUE(t)\fR\& can be used to retrieve the value from an Erlang float\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_int(n)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+int n;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang integer\&.
+.LP
+\fIn\fR\& is a value to be converted to an Erlang integer\&.
+.LP
+Returns an Erlang integer object with the value specified in \fIn\fR\&\&.
+.LP
+\fIERL_INT_VALUE(t)\fR\& can be used to retrieve the value from an Erlang integer\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_list(array, arrsize)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM **array;
+.br
+int arrsize;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang list from an array of Erlang terms, such that each element in the list corresponds to one element in the array\&.
+.RS 2
+.TP 2
+*
+\fIarray\fR\& is an array of Erlang terms\&.
+.LP
+.TP 2
+*
+\fIarrsize\fR\& is the number of elements in \fIarray\fR\&\&.
+.LP
+.RE
+
+.LP
+The function creates an Erlang list object, whose length \fIarrsize\fR\& and whose elements are taken from the terms in \fIarray\fR\&\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_long_ref(node, n1, n2, n3, creation)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+const char *node;
+.br
+unsigned int n1, n2, n3;
+.br
+unsigned int creation;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang reference, with 82 bits\&.
+.RS 2
+.TP 2
+*
+\fInode\fR\& is the name of the C-node\&.
+.LP
+.TP 2
+*
+\fIn1\fR\&, \fIn2\fR\&, and \fIn3\fR\& can be seen as one big number \fIn1*2^64+n2*2^32+n3\fR\&, which is to be chosen uniquely for each reference created for a given C-node\&.
+.LP
+.TP 2
+*
+\fIcreation\fR\& is an arbitrary number\&.
+.LP
+.RE
+
+.LP
+Notice that \fIn3\fR\& and \fIcreation\fR\& are limited in precision, so only the low 18 and 2 bits of these numbers are used\&.
+.LP
+Returns an Erlang reference object\&.
+.LP
+\fIERL_REF_NODE(ref)\fR\&, \fIERL_REF_NUMBERS(ref)\fR\&, \fIERL_REF_LEN(ref)\fR\&, and \fIERL_REF_CREATION(ref)\fR\& can be used to retrieve the values used to create the reference\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_pid(node, number, serial, creation)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+const char *node;
+.br
+unsigned int number;
+.br
+unsigned int serial;
+.br
+unsigned int creation;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang process identifier (pid)\&. The resulting pid can be used by Erlang processes wishing to communicate with the C-node\&.
+.RS 2
+.TP 2
+*
+\fInode\fR\& is the name of the C-node\&.
+.LP
+.TP 2
+*
+\fInumber\fR\&, \fIserial\fR\&, and \fIcreation\fR\& are arbitrary numbers\&. Notice that these are limited in precision, so only the low 15, 3, and 2 bits of these numbers are used\&.
+.LP
+.RE
+
+.LP
+Returns an Erlang pid object\&.
+.LP
+\fIERL_PID_NODE(pid)\fR\&, \fIERL_PID_NUMBER(pid)\fR\&, \fIERL_PID_SERIAL(pid)\fR\&, and \fIERL_PID_CREATION(pid)\fR\& can be used to retrieve the four values used to create the pid\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_port(node, number, creation)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+const char *node;
+.br
+unsigned int number;
+.br
+unsigned int creation;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang port identifier\&.
+.RS 2
+.TP 2
+*
+\fInode\fR\& is the name of the C-node\&.
+.LP
+.TP 2
+*
+\fInumber\fR\& and \fIcreation\fR\& are arbitrary numbers\&. Notice that these are limited in precision, so only the low 18 and 2 bits of these numbers are used\&.
+.LP
+.RE
+
+.LP
+Returns an Erlang port object\&.
+.LP
+\fIERL_PORT_NODE(port)\fR\&, \fIERL_PORT_NUMBER(port)\fR\&, and \fIERL_PORT_CREATION\fR\& can be used to retrieve the three values used to create the port\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_ref(node, number, creation)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+const char *node;
+.br
+unsigned int number;
+.br
+unsigned int creation;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an old Erlang reference, with only 18 bits - use \fIerl_mk_long_ref\fR\& instead\&.
+.RS 2
+.TP 2
+*
+\fInode\fR\& is the name of the C-node\&.
+.LP
+.TP 2
+*
+\fInumber\fR\& is to be chosen uniquely for each reference created for a given C-node\&.
+.LP
+.TP 2
+*
+\fIcreation\fR\& is an arbitrary number\&.
+.LP
+.RE
+
+.LP
+Notice that \fInumber\fR\& and \fIcreation\fR\& are limited in precision, so only the low 18 and 2 bits of these numbers are used\&.
+.LP
+Returns an Erlang reference object\&.
+.LP
+\fIERL_REF_NODE(ref)\fR\&, \fIERL_REF_NUMBER(ref)\fR\&, and \fIERL_REF_CREATION(ref)\fR\& can be used to retrieve the three values used to create the reference\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_string(string)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+char *string;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates a list from a \fINULL\fR\&-terminated string\&.
+.LP
+\fIstring\fR\& is a \fINULL\fR\&-terminated sequence of characters (that is, a C string) from which the list will be created\&.
+.LP
+Returns an Erlang list\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_tuple(array, arrsize)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM **array;
+.br
+int arrsize;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang tuple from an array of Erlang terms\&.
+.RS 2
+.TP 2
+*
+\fIarray\fR\& is an array of Erlang terms\&.
+.LP
+.TP 2
+*
+\fIarrsize\fR\& is the number of elements in \fIarray\fR\&\&.
+.LP
+.RE
+
+.LP
+The function creates an Erlang tuple, whose arity is \fIsize\fR\& and whose elements are taken from the terms in \fIarray\fR\&\&.
+.LP
+To retrieve the size of a tuple, either use function \fIerl_size\fR\& (which checks the type of the checked term and works for a binary as well as for a tuple) or \fIERL_TUPLE_SIZE(tuple)\fR\& returns the arity of a tuple\&. \fIerl_size()\fR\& does the same thing, but it checks that the argument is a tuple\&. \fIerl_element(index,tuple)\fR\& returns the element corresponding to a given position in the tuple\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_uint(n)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned int n;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an Erlang unsigned integer\&.
+.LP
+\fIn\fR\& is a value to be converted to an Erlang unsigned integer\&.
+.LP
+Returns an Erlang unsigned integer object with the value specified in \fIn\fR\&\&.
+.LP
+\fIERL_INT_UVALUE(t)\fR\& can be used to retrieve the value from an Erlang unsigned integer\&.
+.RE
+.LP
+.B
+ETERM *erl_mk_var(name)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+char *name;
+.br
+.RE
+.RE
+.RS
+.LP
+Creates an unbound Erlang variable\&. The variable can later be bound through pattern matching or assignment\&.
+.LP
+\fIname\fR\& specifies a name for the variable\&.
+.LP
+Returns an Erlang variable object with the name \fIname\fR\&\&.
+.RE
+.LP
+.B
+int erl_print_term(stream, term)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+FILE *stream;
+.br
+ETERM *term;
+.br
+.RE
+.RE
+.RS
+.LP
+Prints the specified Erlang term to the specified output stream\&.
+.RS 2
+.TP 2
+*
+\fIstream\fR\& indicates where the function is to send its output\&.
+.LP
+.TP 2
+*
+\fIterm\fR\& is the Erlang term to print\&.
+.LP
+.RE
+
+.LP
+Returns the number of characters written on success, otherwise a negative value\&.
+.RE
+.LP
+.B
+void erl_set_compat_rel(release_number)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+unsigned release_number;
+.br
+.RE
+.RE
+.RS
+.LP
+By default, the \fIErl_Interface\fR\& library is only guaranteed to be compatible with other Erlang/OTP components from the same release as the \fIErl_Interface\fR\& library itself\&. For example, \fIErl_Interface\fR\& from Erlang/OTP R10 is not compatible with an Erlang emulator from Erlang/OTP R9 by default\&.
+.LP
+A call to \fIerl_set_compat_rel(release_number)\fR\& sets the \fIErl_Interface\fR\& library in compatibility mode of release \fIrelease_number\fR\&\&. Valid range of \fIrelease_number\fR\& is [7, current release]\&. This makes it possible to communicate with Erlang/OTP components from earlier releases\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+If this function is called, it may only be called once directly after the call to function \fBerl_init()\fR\&\&.
+
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+You may run into trouble if this feature is used carelessly\&. Always ensure that all communicating components are either from the same Erlang/OTP release, or from release X and release Y where all components from release Y are in compatibility mode of release X\&.
+
+.RE
+.LP
+.B
+int erl_size(term)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *term;
+.br
+.RE
+.RE
+.RS
+.LP
+Returns either the arity of an Erlang tuple or the number of bytes in an Erlang binary object\&.
+.LP
+\fIterm\fR\& is an Erlang tuple or an Erlang binary object\&.
+.LP
+Returns the size of \fIterm\fR\& as described above, or \fI-1\fR\& if \fIterm\fR\& is not one of the two supported types\&.
+.RE
+.LP
+.B
+ETERM *erl_tl(list)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *list;
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts the tail from a list\&.
+.LP
+\fIlist\fR\& is an Erlang term containing a list\&.
+.LP
+Returns an Erlang list corresponding to the original list minus the first element, or \fINULL\fR\& pointer if \fIlist\fR\& was not a list\&.
+.RE
+.LP
+.B
+ETERM *erl_var_content(term, name)
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ETERM *term;
+.br
+char *name;
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the contents of the specified variable in an Erlang term\&.
+.RS 2
+.TP 2
+*
+\fIterm\fR\& is an Erlang term\&. In order for this function to succeed, \fIterm\fR\& must either be an Erlang variable with the specified name, or it must be an Erlang list or tuple containing a variable with the specified name\&. Other Erlang types cannot contain variables\&.
+.LP
+.TP 2
+*
+\fIname\fR\& is the name of an Erlang variable\&. 
+.LP
+.RE
+
+.LP
+Returns the Erlang object corresponding to the value of \fIname\fR\& in \fIterm\fR\&\&. If no variable with the name \fIname\fR\& is found in \fIterm\fR\&, or if \fIterm\fR\& is not a valid Erlang term, \fINULL\fR\& is returned\&.
+.RE

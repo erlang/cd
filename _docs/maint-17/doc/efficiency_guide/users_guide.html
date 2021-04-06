@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../otp_doc.css" type="text/css">
+<title>Erlang -- Efficiency Guide </title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../erlang-logo.png"><br><small><a href="users_guide.html">User's Guide</a><br><a href="../pdf/otp-system-documentation-6.4.1.6.pdf">PDF</a><br><a href="../index.html">Top</a></small><p><strong>Efficiency Guide</strong><br><strong>User's Guide</strong><br><small>Version 6.4.1.6</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../js/flipmenu">
+<li id="no" title="Introduction" expanded="false">Introduction<ul>
+<li><a href="introduction.html">
+              Top of chapter
+            </a></li>
+<li title="Purpose"><a href="introduction.html#idp27060704">Purpose</a></li>
+<li title="Prerequisites"><a href="introduction.html#idp27036960">Prerequisites</a></li>
+</ul>
+</li>
+<li id="no" title="The Eight Myths of Erlang Performance" expanded="false">The Eight Myths of Erlang Performance<ul>
+<li><a href="myths.html">
+              Top of chapter
+            </a></li>
+<li title="Myth: Funs are slow"><a href="myths.html#idp27034016">Myth: Funs are slow</a></li>
+<li title="Myth: List comprehensions are slow"><a href="myths.html#idp27030400">Myth: List comprehensions are slow</a></li>
+<li title="Myth: Tail-recursive functions are MUCH faster
+    than recursive functions"><a href="myths.html#idp27028240">Myth: Tail-recursive functions are MUCH faster
+    than recursive functions</a></li>
+<li title="Myth: '++' is always bad"><a href="myths.html#idp27018640">Myth: '++' is always bad</a></li>
+<li title="Myth: Strings are slow"><a href="myths.html#idp26896240">Myth: Strings are slow</a></li>
+<li title="Myth: Repairing a Dets file is very slow"><a href="myths.html#idp26483504">Myth: Repairing a Dets file is very slow</a></li>
+<li title="Myth: BEAM is a stack-based byte-code virtual machine (and therefore slow)"><a href="myths.html#idp26482032">Myth: BEAM is a stack-based byte-code virtual machine (and therefore slow)</a></li>
+<li title="Myth: Use '_' to speed up your program when a variable is not used"><a href="myths.html#idp26480432">Myth: Use '_' to speed up your program when a variable is not used</a></li>
+</ul>
+</li>
+<li id="no" title="Common Caveats" expanded="false">Common Caveats<ul>
+<li><a href="commoncaveats.html">
+              Top of chapter
+            </a></li>
+<li title="The timer module"><a href="commoncaveats.html#idp26780384">The timer module</a></li>
+<li title="list_to_atom/1"><a href="commoncaveats.html#idp26576912">list_to_atom/1</a></li>
+<li title="length/1"><a href="commoncaveats.html#idp26468352">length/1</a></li>
+<li title="setelement/3"><a href="commoncaveats.html#idp26573248">setelement/3</a></li>
+<li title="size/1"><a href="commoncaveats.html#idp26802608">size/1</a></li>
+<li title="split_binary/2"><a href="commoncaveats.html#idp26407520">split_binary/2</a></li>
+<li title="The '--' operator"><a href="commoncaveats.html#idp26659200">The '--' operator</a></li>
+</ul>
+</li>
+<li id="no" title="Constructing and matching binaries" expanded="false">Constructing and matching binaries<ul>
+<li><a href="binaryhandling.html">
+              Top of chapter
+            </a></li>
+<li title="How binaries are implemented"><a href="binaryhandling.html#idp26511712">How binaries are implemented</a></li>
+<li title="Constructing binaries"><a href="binaryhandling.html#idp26710224">Constructing binaries</a></li>
+<li title="Matching binaries"><a href="binaryhandling.html#idp27102384">Matching binaries</a></li>
+</ul>
+</li>
+<li id="no" title="List handling" expanded="false">List handling<ul>
+<li><a href="listHandling.html">
+              Top of chapter
+            </a></li>
+<li title="Creating a list"><a href="listHandling.html#idp27180032">Creating a list</a></li>
+<li title="List comprehensions"><a href="listHandling.html#idp27190960">List comprehensions</a></li>
+<li title="Deep and flat lists"><a href="listHandling.html#idp27198656">Deep and flat lists</a></li>
+<li title="Why you should not worry about recursive lists functions"><a href="listHandling.html#idp27215104">Why you should not worry about recursive lists functions</a></li>
+</ul>
+</li>
+<li id="no" title="Functions" expanded="false">Functions<ul>
+<li><a href="functions.html">
+              Top of chapter
+            </a></li>
+<li title="Pattern matching"><a href="functions.html#idp27229648">Pattern matching</a></li>
+<li title="Function Calls "><a href="functions.html#idp27255376">Function Calls </a></li>
+<li title="Memory usage in recursion"><a href="functions.html#idp27272592">Memory usage in recursion</a></li>
+</ul>
+</li>
+<li id="no" title="Tables and databases" expanded="false">Tables and databases<ul>
+<li><a href="tablesDatabases.html">
+              Top of chapter
+            </a></li>
+<li title="Ets, Dets and Mnesia"><a href="tablesDatabases.html#idp27283408">Ets, Dets and Mnesia</a></li>
+<li title="Ets specific"><a href="tablesDatabases.html#idp27329888">Ets specific</a></li>
+<li title="Mnesia specific"><a href="tablesDatabases.html#idp27342304">Mnesia specific</a></li>
+</ul>
+</li>
+<li id="no" title="Processes" expanded="false">Processes<ul>
+<li><a href="processes.html">
+              Top of chapter
+            </a></li>
+<li title="Creation of an Erlang process"><a href="processes.html#idp27354768">Creation of an Erlang process</a></li>
+<li title="Process messages"><a href="processes.html#idp27372544">Process messages</a></li>
+<li title="The SMP emulator"><a href="processes.html#idp27395632">The SMP emulator</a></li>
+</ul>
+</li>
+<li id="no" title="Drivers" expanded="false">Drivers<ul>
+<li><a href="drivers.html">
+              Top of chapter
+            </a></li>
+<li title="Drivers and concurrency"><a href="drivers.html#idp27408000">Drivers and concurrency</a></li>
+<li title="Avoiding copying of binaries when calling a driver"><a href="drivers.html#idp27412880">Avoiding copying of binaries when calling a driver</a></li>
+<li title="Returning small binaries from a driver"><a href="drivers.html#idp27420992">Returning small binaries from a driver</a></li>
+<li title="Returning big binaries without copying from a driver"><a href="drivers.html#idp27425152">Returning big binaries without copying from a driver</a></li>
+</ul>
+</li>
+<li id="no" title="Advanced" expanded="false">Advanced<ul>
+<li><a href="advanced.html">
+              Top of chapter
+            </a></li>
+<li title="Memory"><a href="advanced.html#idp27442048">Memory</a></li>
+<li title="System limits"><a href="advanced.html#idp27484912">System limits</a></li>
+</ul>
+</li>
+<li id="no" title="Profiling" expanded="false">Profiling<ul>
+<li><a href="profiling.html">
+              Top of chapter
+            </a></li>
+<li title="Do not guess about performance - profile"><a href="profiling.html#idp27521472">Do not guess about performance - profile</a></li>
+<li title="Big systems"><a href="profiling.html#idp27531296">Big systems</a></li>
+<li title="What to look for"><a href="profiling.html#idp27533680">What to look for</a></li>
+<li title="Tools"><a href="profiling.html#idp27540576">Tools</a></li>
+<li title="Benchmarking"><a href="profiling.html#idp27601392">Benchmarking</a></li>
+</ul>
+</li>
+</ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Efficiency Guide User's Guide</h1></center>
+<center><h4>Version 6.4.1.6</h4></center>
+<center><h4>June 15, 2018</h4></center>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 2001-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

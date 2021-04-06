@@ -1,0 +1,91 @@
+.TH ssl_crl_cache_api 3 "ssl 8.1.3.1.1" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssl_crl_cache_api \- API for a SSL/TLS CRL (Certificate Revocation List) cache.
+.SH DESCRIPTION
+.LP
+When SSL/TLS performs certificate path validation according to RFC 5280  it should also perform CRL validation checks\&. To enable the CRL checks the application needs access to CRLs\&. A database of CRLs can be set up in many different ways\&. This module provides the behavior of the API needed to integrate an arbitrary CRL cache with the erlang ssl application\&. It is also used by the application itself to provide a simple default implementation of a CRL cache\&.
+.SH "DATA TYPES"
+
+.LP
+The following data types are used in the functions below:
+.RS 2
+.TP 2
+.B
+\fIcache_ref() =\fR\&:
+opaque()
+.TP 2
+.B
+\fIdist_point() =\fR\&:
+#\&'DistributionPoint\&'{} see \fB X509 certificates records\fR\&
+.RE
+.SH EXPORTS
+.LP
+.B
+fresh_crl(DistributionPoint, CRL) -> FreshCRL
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ DistributionPoint = dist_point() 
+.br
+ CRL = [\fBpublic_key:der_encoded()\fR\&] 
+.br
+ FreshCRL = [\fBpublic_key:der_encoded()\fR\&] 
+.br
+.RE
+.RE
+.RS
+.LP
+\fIfun fresh_crl/2 \fR\& will be used as input option \fIupdate_crl\fR\& to \fBpublic_key:pkix_crls_validate/3 \fR\& 
+.RE
+.LP
+.B
+lookup(DistributionPoint, Issuer, DbHandle) -> not_available | CRLs 
+.br
+.B
+lookup(DistributionPoint, DbHandle) -> not_available | CRLs 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ DistributionPoint = dist_point() 
+.br
+ Issuer = \fBpublic_key:issuer_name()\fR\&
+.br
+ DbHandle = cache_ref() 
+.br
+ CRLs = [\fBpublic_key:der_encoded()\fR\&] 
+.br
+.RE
+.RE
+.RS
+.LP
+Lookup the CRLs belonging to the distribution point \fI Distributionpoint\fR\&\&. This function may choose to only look in the cache or to follow distribution point links depending on how the cache is administrated\&.
+.LP
+The \fIIssuer\fR\& argument contains the issuer name of the certificate to be checked\&. Normally the returned CRL should be issued by this issuer, except if the \fIcRLIssuer\fR\& field of \fIDistributionPoint\fR\& has a value, in which case that value should be used instead\&.
+.LP
+In an earlier version of this API, the \fIlookup\fR\& function received two arguments, omitting \fIIssuer\fR\&\&. For compatibility, this is still supported: if there is no \fIlookup/3\fR\& function in the callback module, \fIlookup/2\fR\& is called instead\&.
+.RE
+.LP
+.B
+select(Issuer, DbHandle) -> CRLs 
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ Issuer = \fBpublic_key:issuer_name()\fR\&
+.br
+ DbHandle = cache_ref() 
+.br
+.RE
+.RE
+.RS
+.LP
+Select the CRLs in the cache that are issued by \fIIssuer\fR\& 
+.RE

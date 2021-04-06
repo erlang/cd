@@ -1,0 +1,212 @@
+.TH edoc_extract 3 "edoc 0.8.1" "" "Erlang Module Definition"
+.SH NAME
+edoc_extract \- EDoc documentation extraction.
+.SH DESCRIPTION
+.LP
+EDoc documentation extraction\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+edoc_env() = \fBedoc_lib:edoc_env()\fR\&:
+
+.TP 2
+.B
+filename() = \fBfile:filename()\fR\&:
+
+.TP 2
+.B
+proplist() = \fBproplists:property()\fR\&:
+
+.TP 2
+.B
+syntaxTree() = \fBerl_syntax:syntaxTree()\fR\&:
+
+.RE
+.SH EXPORTS
+.LP
+.B
+file(File::\fBfilename()\fR\&, Context, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = overview
+.br
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Reads a text file and returns the list of tags in the file\&. Any lines of text before the first tag are ignored\&. \fIEnv\fR\& is an environment created by \fBedoc_lib:get_doc_env/3\fR\&\&. Upon error, \fIReason\fR\& is an atom returned from the call to \fBfile:read_file/1\fR\& or the atom \&'invalid_unicode\&'\&.
+.LP
+See \fBtext/4\fR\& for options\&.
+.RE
+.LP
+.B
+header(File::\fBfilename()\fR\&, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Similar to \fBheader/5\fR\&, but reads the syntax tree and the comments from the specified file\&.
+.LP
+\fISee also:\fR\& \fBheader/4\fR\&, \fBedoc:read_comments/2\fR\&, \fBedoc:read_source/2\fR\&\&.
+.RE
+.LP
+.B
+header(Forms, File::\fBfilename()\fR\&, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = \fBsyntaxTree()\fR\& | [\fBsyntaxTree()\fR\&]
+.br
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts EDoc documentation from commented header file syntax trees\&. Similar to \fBsource/5\fR\&, but ignores any documentation that occurs before a module declaration or a function definition\&. (Warning messages are printed if content may be ignored\&.) \fIEnv\fR\& is assumed to already be set up with a suitable module context\&.
+.LP
+\fISee also:\fR\& \fBerl_recomment(3)\fR\&, \fBheader/5\fR\&\&.
+.RE
+.LP
+.B
+header(Forms, Comments::[\fBedoc:comment()\fR\&], File::\fBfilename()\fR\&, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ok, Tags} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = \fBsyntaxTree()\fR\& | [\fBsyntaxTree()\fR\&]
+.br
+Tags = [term()]
+.br
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Similar to \fBheader/4\fR\&, but first inserts the given comments in the syntax trees\&. The syntax trees must contain valid position information\&. (Cf\&. \fBedoc:read_comments/2\fR\&\&.)
+.LP
+\fISee also:\fR\& \fBerl_recomment(3)\fR\&, \fBheader/3\fR\&, \fBheader/4\fR\&\&.
+.RE
+.LP
+.B
+source(File::\fBfilename()\fR\&, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ModuleName, \fBedoc:edoc_module()\fR\&}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+ModuleName = atom()
+.br
+proplist() = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Like \fBsource/5\fR\&, but reads the syntax tree and the comments from the specified file\&.
+.LP
+\fISee also:\fR\& \fBsource/4\fR\&, \fBedoc:read_comments/2\fR\&, \fBedoc:read_source/2\fR\&\&.
+.RE
+.LP
+.B
+source(Forms, File::\fBfilename()\fR\&, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ModuleName, \fBedoc:edoc_module()\fR\&}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = \fBsyntaxTree()\fR\& | [\fBsyntaxTree()\fR\&]
+.br
+ModuleName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Extracts EDoc documentation from commented source code syntax trees\&. The given \fIForms\fR\& must be a single syntax tree of type \fIform_list\fR\&, or a list of syntax trees representing "program forms" (cf\&. \fBedoc:read_source/2\fR\&\&. \fIEnv\fR\& is an environment created by \fBedoc_lib:get_doc_env/3\fR\&\&. The \fIFile\fR\& argument is used for error reporting and output file name generation only\&.
+.LP
+See \fBedoc:get_doc/2\fR\& for descriptions of the \fIdef\fR\&, \fIhidden\fR\&, \fIprivate\fR\&, and \fItodo\fR\& options\&.
+.LP
+\fISee also:\fR\& \fBerl_recomment(3)\fR\&, \fBsource/5\fR\&, \fBedoc:read_comments/2\fR\&, \fBedoc:read_source/2\fR\&\&.
+.RE
+.LP
+.B
+source(Forms, Comments::[\fBedoc:comment()\fR\&], File::\fBfilename()\fR\&, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> {ModuleName, \fBedoc:edoc_module()\fR\&}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Forms = \fBsyntaxTree()\fR\& | [\fBsyntaxTree()\fR\&]
+.br
+ModuleName = atom()
+.br
+.RE
+.RE
+.RS
+.LP
+Like \fBsource/4\fR\&, but first inserts the given comments in the syntax trees\&. The syntax trees must contain valid position information\&. (Cf\&. \fBedoc:read_comments/2\fR\&\&.)
+.LP
+\fISee also:\fR\& \fBerl_recomment(3)\fR\&, \fBsource/3\fR\&, \fBsource/4\fR\&, \fBedoc:read_comments/2\fR\&, \fBedoc:read_source/2\fR\&\&.
+.RE
+.LP
+.B
+text(Text::string(), Context, Env::\fBedoc_env()\fR\&, Options::\fBproplist()\fR\&) -> Tags
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Context = overview
+.br
+Tags = [term()]
+.br
+.RE
+.RE
+.RS
+.LP
+Returns the list of tags in the text\&. Any lines of text before the first tag are ignored\&. \fIEnv\fR\& is an environment created by \fBedoc_lib:get_doc_env/3\fR\&\&.
+.LP
+See \fBsource/4\fR\& for a description of the \fIdef\fR\& option\&.
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fBedoc\fR\&
+.SH AUTHORS
+.LP
+Richard Carlsson
+.I
+<carlsson\&.richard@gmail\&.com>

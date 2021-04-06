@@ -1,0 +1,516 @@
+.TH wxEvtHandler 3 "wx 1.8" "" "Erlang Module Definition"
+.SH NAME
+wxEvtHandler \- The Event handler.
+.SH DESCRIPTION
+.LP
+The Event handler\&.
+.LP
+To get events from wxwidgets objects you subscribe to them by calling connect/[2-3]\&. Events are sent as messages, if no callback was supplied These messages will be \fB#wx{\fR\&} where EventRecord is a record that depends on the \fBevent type\fR\&\&. The records are defined in: wx/include/wx\&.hrl\&.
+.LP
+If a callback was supplied to connect, the callback will be invoked (in another process) to handle the event\&. The callback should be of arity 2\&. fun(EventRecord::wx(), EventObject::wxObject())\&.
+.LP
+Beware that the callback will be in executed in new process each time\&.
+.LP
+ The orginal documentation\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+event() = \fBwxActivate()\fR\& | \fBwxAuiManager()\fR\& | \fBwxAuiNotebook()\fR\& | \fBwxCalendar()\fR\& | \fBwxChildFocus()\fR\& | \fBwxClipboardText()\fR\& | \fBwxClose()\fR\& | \fBwxColourPicker()\fR\& | \fBwxCommand()\fR\& | \fBwxContextMenu()\fR\& | \fBwxDate()\fR\& | \fBwxDisplayChanged()\fR\& | \fBwxDropFiles()\fR\& | \fBwxErase()\fR\& | \fBwxFileDirPicker()\fR\& | \fBwxFocus()\fR\& | \fBwxFontPicker()\fR\& | \fBwxGrid()\fR\& | \fBwxHelp()\fR\& | \fBwxHtmlLink()\fR\& | \fBwxIconize()\fR\& | \fBwxIdle()\fR\& | \fBwxInitDialog()\fR\& | \fBwxJoystick()\fR\& | \fBwxKey()\fR\& | \fBwxList()\fR\& | \fBwxMaximize()\fR\& | \fBwxMenu()\fR\& | \fBwxMouse()\fR\& | \fBwxMouseCaptureChanged()\fR\& | \fBwxMouseCaptureLost()\fR\& | \fBwxMove()\fR\& | \fBwxNavigationKey()\fR\& | \fBwxNotebook()\fR\& | \fBwxPaint()\fR\& | \fBwxPaletteChanged()\fR\& | \fBwxQueryNewPalette()\fR\& | \fBwxSash()\fR\& | \fBwxScroll()\fR\& | \fBwxScrollWin()\fR\& | \fBwxSetCursor()\fR\& | \fBwxShow()\fR\& | \fBwxSize()\fR\& | \fBwxSpin()\fR\& | \fBwxSplitter()\fR\& | \fBwxStyledText()\fR\& | \fBwxSysColourChanged()\fR\& | \fBwxTaskBarIcon()\fR\& | \fBwxTree()\fR\& | \fBwxUpdateUI()\fR\& | \fBwxWindowCreate()\fR\& | \fBwxWindowDestroy()\fR\&:
+
+.TP 2
+.B
+wx() = #wx{id=integer(), obj=\fBwx:wx_object()\fR\&, userData=term(), event=\fBevent()\fR\&}:
+
+.TP 2
+.B
+wxActivate() = #wxActivate{type=\fBwxActivateEventType()\fR\&, active=boolean()}:
+
+.TP 2
+.B
+wxActivateEventType() = activate | activate_app | hibernate:
+
+.TP 2
+.B
+wxAuiManager() = #wxAuiManager{type=\fBwxAuiManagerEventType()\fR\&, manager=\fBwxAuiManager:wxAuiManager()\fR\&, pane=\fBwxAuiPaneInfo:wxAuiPaneInfo()\fR\&, button=integer(), veto_flag=boolean(), canveto_flag=boolean(), dc=\fBwxDC:wxDC()\fR\&}:
+
+.TP 2
+.B
+wxAuiManagerEventType() = aui_pane_button | aui_pane_close | aui_pane_maximize | aui_pane_restore | aui_pane_activated | aui_render | aui_find_manager:
+
+.TP 2
+.B
+wxAuiNotebook() = #wxAuiNotebook{type=\fBwxAuiNotebookEventType()\fR\&, old_selection=integer(), selection=integer(), drag_source=\fBwxAuiNotebook:wxAuiNotebook()\fR\&}:
+
+.TP 2
+.B
+wxAuiNotebookEventType() = command_auinotebook_page_close | command_auinotebook_page_changed | command_auinotebook_page_changing | command_auinotebook_button | command_auinotebook_begin_drag | command_auinotebook_end_drag | command_auinotebook_drag_motion | command_auinotebook_allow_dnd | command_auinotebook_tab_middle_down | command_auinotebook_tab_middle_up | command_auinotebook_tab_right_down | command_auinotebook_tab_right_up | command_auinotebook_page_closed | command_auinotebook_drag_done | command_auinotebook_bg_dclick:
+
+.TP 2
+.B
+wxCalendar() = #wxCalendar{type=\fBwxCalendarEventType()\fR\&, wday=\fBwx:wx_enum()\fR\&, date=\fBwx:wx_datetime()\fR\&}:
+
+.TP 2
+.B
+wxCalendarEventType() = calendar_sel_changed | calendar_day_changed | calendar_month_changed | calendar_year_changed | calendar_doubleclicked | calendar_weekday_clicked:
+
+.TP 2
+.B
+wxChildFocus() = #wxChildFocus{type=\fBwxChildFocusEventType()\fR\&}:
+
+.TP 2
+.B
+wxChildFocusEventType() = child_focus:
+
+.TP 2
+.B
+wxClipboardText() = #wxClipboardText{type=\fBwxClipboardTextEventType()\fR\&}:
+
+.TP 2
+.B
+wxClipboardTextEventType() = command_text_copy | command_text_cut | command_text_paste:
+
+.TP 2
+.B
+wxClose() = #wxClose{type=\fBwxCloseEventType()\fR\&}:
+
+.TP 2
+.B
+wxCloseEventType() = close_window | end_session | query_end_session:
+
+.TP 2
+.B
+wxColourPicker() = #wxColourPicker{type=\fBwxColourPickerEventType()\fR\&, colour=\fBwx:wx_colour()\fR\&}:
+
+.TP 2
+.B
+wxColourPickerEventType() = command_colourpicker_changed:
+
+.TP 2
+.B
+wxCommand() = #wxCommand{type=\fBwxCommandEventType()\fR\&, cmdString=\fBunicode:chardata()\fR\&, commandInt=integer(), extraLong=integer()}:
+
+.TP 2
+.B
+wxCommandEventType() = command_button_clicked | command_checkbox_clicked | command_choice_selected | command_listbox_selected | command_listbox_doubleclicked | command_text_updated | command_text_enter | command_menu_selected | command_slider_updated | command_radiobox_selected | command_radiobutton_selected | command_scrollbar_updated | command_vlbox_selected | command_combobox_selected | command_tool_rclicked | command_tool_enter | command_checklistbox_toggled | command_togglebutton_clicked | command_left_click | command_left_dclick | command_right_click | command_set_focus | command_kill_focus | command_enter:
+
+.TP 2
+.B
+wxContextMenu() = #wxContextMenu{type=\fBwxContextMenuEventType()\fR\&, pos={X::integer(), Y::integer()}}:
+
+.TP 2
+.B
+wxContextMenuEventType() = context_menu:
+
+.TP 2
+.B
+wxDate() = #wxDate{type=\fBwxDateEventType()\fR\&, date=\fBwx:wx_datetime()\fR\&}:
+
+.TP 2
+.B
+wxDateEventType() = date_changed:
+
+.TP 2
+.B
+wxDisplayChanged() = #wxDisplayChanged{type=\fBwxDisplayChangedEventType()\fR\&}:
+
+.TP 2
+.B
+wxDisplayChangedEventType() = display_changed:
+
+.TP 2
+.B
+wxDropFiles() = #wxDropFiles{type=\fBwxDropFilesEventType()\fR\&, noFiles=integer(), pos={X::integer(), Y::integer()}, files=[\fBunicode:chardata()\fR\&]}:
+
+.TP 2
+.B
+wxDropFilesEventType() = drop_files:
+
+.TP 2
+.B
+wxErase() = #wxErase{type=\fBwxEraseEventType()\fR\&, dc=\fBwxDC:wxDC()\fR\&}:
+
+.TP 2
+.B
+wxEraseEventType() = erase_background:
+
+.TP 2
+.B
+wxEventType() = \fBwxActivateEventType()\fR\& | \fBwxAuiManagerEventType()\fR\& | \fBwxAuiNotebookEventType()\fR\& | \fBwxCalendarEventType()\fR\& | \fBwxChildFocusEventType()\fR\& | \fBwxClipboardTextEventType()\fR\& | \fBwxCloseEventType()\fR\& | \fBwxColourPickerEventType()\fR\& | \fBwxCommandEventType()\fR\& | \fBwxContextMenuEventType()\fR\& | \fBwxDateEventType()\fR\& | \fBwxDisplayChangedEventType()\fR\& | \fBwxDropFilesEventType()\fR\& | \fBwxEraseEventType()\fR\& | \fBwxFileDirPickerEventType()\fR\& | \fBwxFocusEventType()\fR\& | \fBwxFontPickerEventType()\fR\& | \fBwxGridEventType()\fR\& | \fBwxHelpEventType()\fR\& | \fBwxHtmlLinkEventType()\fR\& | \fBwxIconizeEventType()\fR\& | \fBwxIdleEventType()\fR\& | \fBwxInitDialogEventType()\fR\& | \fBwxJoystickEventType()\fR\& | \fBwxKeyEventType()\fR\& | \fBwxListEventType()\fR\& | \fBwxMaximizeEventType()\fR\& | \fBwxMenuEventType()\fR\& | \fBwxMouseCaptureChangedEventType()\fR\& | \fBwxMouseCaptureLostEventType()\fR\& | \fBwxMouseEventType()\fR\& | \fBwxMoveEventType()\fR\& | \fBwxNavigationKeyEventType()\fR\& | \fBwxNotebookEventType()\fR\& | \fBwxPaintEventType()\fR\& | \fBwxPaletteChangedEventType()\fR\& | \fBwxQueryNewPaletteEventType()\fR\& | \fBwxSashEventType()\fR\& | \fBwxScrollEventType()\fR\& | \fBwxScrollWinEventType()\fR\& | \fBwxSetCursorEventType()\fR\& | \fBwxShowEventType()\fR\& | \fBwxSizeEventType()\fR\& | \fBwxSpinEventType()\fR\& | \fBwxSplitterEventType()\fR\& | \fBwxStyledTextEventType()\fR\& | \fBwxSysColourChangedEventType()\fR\& | \fBwxTaskBarIconEventType()\fR\& | \fBwxTreeEventType()\fR\& | \fBwxUpdateUIEventType()\fR\& | \fBwxWindowCreateEventType()\fR\& | \fBwxWindowDestroyEventType()\fR\&:
+
+.TP 2
+.B
+wxEvtHandler() = \fBwx:wx_object()\fR\&:
+
+.TP 2
+.B
+wxFileDirPicker() = #wxFileDirPicker{type=\fBwxFileDirPickerEventType()\fR\&, path=\fBunicode:chardata()\fR\&}:
+
+.TP 2
+.B
+wxFileDirPickerEventType() = command_filepicker_changed | command_dirpicker_changed:
+
+.TP 2
+.B
+wxFocus() = #wxFocus{type=\fBwxFocusEventType()\fR\&, win=\fBwxWindow:wxWindow()\fR\&}:
+
+.TP 2
+.B
+wxFocusEventType() = set_focus | kill_focus:
+
+.TP 2
+.B
+wxFontPicker() = #wxFontPicker{type=\fBwxFontPickerEventType()\fR\&, font=\fBwxFont:wxFont()\fR\&}:
+
+.TP 2
+.B
+wxFontPickerEventType() = command_fontpicker_changed:
+
+.TP 2
+.B
+wxGrid() = #wxGrid{type=\fBwxGridEventType()\fR\&, row=integer(), col=integer(), x=integer(), y=integer(), selecting=boolean(), control=boolean(), meta=boolean(), shift=boolean(), alt=boolean()}:
+
+.TP 2
+.B
+wxGridEventType() = grid_cell_left_click | grid_cell_right_click | grid_cell_left_dclick | grid_cell_right_dclick | grid_label_left_click | grid_label_right_click | grid_label_left_dclick | grid_label_right_dclick | grid_row_size | grid_col_size | grid_range_select | grid_cell_change | grid_select_cell | grid_editor_shown | grid_editor_hidden | grid_editor_created | grid_cell_begin_drag:
+
+.TP 2
+.B
+wxHelp() = #wxHelp{type=\fBwxHelpEventType()\fR\&}:
+
+.TP 2
+.B
+wxHelpEventType() = help | detailed_help:
+
+.TP 2
+.B
+wxHtmlLink() = #wxHtmlLink{type=\fBwxHtmlLinkEventType()\fR\&, linkInfo=\fBwx:wx_wxHtmlLinkInfo()\fR\&}:
+
+.TP 2
+.B
+wxHtmlLinkEventType() = command_html_link_clicked:
+
+.TP 2
+.B
+wxIconize() = #wxIconize{type=\fBwxIconizeEventType()\fR\&, iconized=boolean()}:
+
+.TP 2
+.B
+wxIconizeEventType() = iconize:
+
+.TP 2
+.B
+wxIdle() = #wxIdle{type=\fBwxIdleEventType()\fR\&}:
+
+.TP 2
+.B
+wxIdleEventType() = idle:
+
+.TP 2
+.B
+wxInitDialog() = #wxInitDialog{type=\fBwxInitDialogEventType()\fR\&}:
+
+.TP 2
+.B
+wxInitDialogEventType() = init_dialog:
+
+.TP 2
+.B
+wxJoystick() = #wxJoystick{type=\fBwxJoystickEventType()\fR\&, pos={X::integer(), Y::integer()}, zPosition=integer(), buttonChange=integer(), buttonState=integer(), joyStick=integer()}:
+
+.TP 2
+.B
+wxJoystickEventType() = joy_button_down | joy_button_up | joy_move | joy_zmove:
+
+.TP 2
+.B
+wxKey() = #wxKey{type=\fBwxKeyEventType()\fR\&, x=integer(), y=integer(), keyCode=integer(), controlDown=boolean(), shiftDown=boolean(), altDown=boolean(), metaDown=boolean(), scanCode=boolean(), uniChar=integer(), rawCode=integer(), rawFlags=integer()}:
+
+.TP 2
+.B
+wxKeyEventType() = char | char_hook | key_down | key_up:
+
+.TP 2
+.B
+wxList() = #wxList{type=\fBwxListEventType()\fR\&, code=integer(), oldItemIndex=integer(), itemIndex=integer(), col=integer(), pointDrag={X::integer(), Y::integer()}}:
+
+.TP 2
+.B
+wxListEventType() = command_list_begin_drag | command_list_begin_rdrag | command_list_begin_label_edit | command_list_end_label_edit | command_list_delete_item | command_list_delete_all_items | command_list_key_down | command_list_insert_item | command_list_col_click | command_list_col_right_click | command_list_col_begin_drag | command_list_col_dragging | command_list_col_end_drag | command_list_item_selected | command_list_item_deselected | command_list_item_right_click | command_list_item_middle_click | command_list_item_activated | command_list_item_focused | command_list_cache_hint:
+
+.TP 2
+.B
+wxMaximize() = #wxMaximize{type=\fBwxMaximizeEventType()\fR\&}:
+
+.TP 2
+.B
+wxMaximizeEventType() = maximize:
+
+.TP 2
+.B
+wxMenu() = #wxMenu{type=\fBwxMenuEventType()\fR\&, menuId=integer(), menu=\fBwxMenu:wxMenu()\fR\&}:
+
+.TP 2
+.B
+wxMenuEventType() = menu_open | menu_close | menu_highlight:
+
+.TP 2
+.B
+wxMouse() = #wxMouse{type=\fBwxMouseEventType()\fR\&, x=integer(), y=integer(), leftDown=boolean(), middleDown=boolean(), rightDown=boolean(), controlDown=boolean(), shiftDown=boolean(), altDown=boolean(), metaDown=boolean(), wheelRotation=integer(), wheelDelta=integer(), linesPerAction=integer()}:
+
+.TP 2
+.B
+wxMouseCaptureChanged() = #wxMouseCaptureChanged{type=\fBwxMouseCaptureChangedEventType()\fR\&}:
+
+.TP 2
+.B
+wxMouseCaptureChangedEventType() = mouse_capture_changed:
+
+.TP 2
+.B
+wxMouseCaptureLost() = #wxMouseCaptureLost{type=\fBwxMouseCaptureLostEventType()\fR\&}:
+
+.TP 2
+.B
+wxMouseCaptureLostEventType() = mouse_capture_lost:
+
+.TP 2
+.B
+wxMouseEventType() = left_down | left_up | middle_down | middle_up | right_down | right_up | motion | enter_window | leave_window | left_dclick | middle_dclick | right_dclick | mousewheel:
+
+.TP 2
+.B
+wxMove() = #wxMove{type=\fBwxMoveEventType()\fR\&, pos={X::integer(), Y::integer()}, rect={X::integer(), Y::integer(), W::integer(), H::integer()}}:
+
+.TP 2
+.B
+wxMoveEventType() = move:
+
+.TP 2
+.B
+wxNavigationKey() = #wxNavigationKey{type=\fBwxNavigationKeyEventType()\fR\&, flags=integer(), focus=\fBwxWindow:wxWindow()\fR\&}:
+
+.TP 2
+.B
+wxNavigationKeyEventType() = navigation_key:
+
+.TP 2
+.B
+wxNotebook() = #wxNotebook{type=\fBwxNotebookEventType()\fR\&, nSel=integer(), nOldSel=integer()}:
+
+.TP 2
+.B
+wxNotebookEventType() = command_notebook_page_changed | command_notebook_page_changing:
+
+.TP 2
+.B
+wxPaint() = #wxPaint{type=\fBwxPaintEventType()\fR\&}:
+
+.TP 2
+.B
+wxPaintEventType() = paint:
+
+.TP 2
+.B
+wxPaletteChanged() = #wxPaletteChanged{type=\fBwxPaletteChangedEventType()\fR\&}:
+
+.TP 2
+.B
+wxPaletteChangedEventType() = palette_changed:
+
+.TP 2
+.B
+wxQueryNewPalette() = #wxQueryNewPalette{type=\fBwxQueryNewPaletteEventType()\fR\&}:
+
+.TP 2
+.B
+wxQueryNewPaletteEventType() = query_new_palette:
+
+.TP 2
+.B
+wxSash() = #wxSash{type=\fBwxSashEventType()\fR\&, edge=\fBwx:wx_enum()\fR\&, dragRect={X::integer(), Y::integer(), W::integer(), H::integer()}, dragStatus=\fBwx:wx_enum()\fR\&}:
+
+.TP 2
+.B
+wxSashEventType() = sash_dragged:
+
+.TP 2
+.B
+wxScroll() = #wxScroll{type=\fBwxScrollEventType()\fR\&, commandInt=integer(), extraLong=integer()}:
+
+.TP 2
+.B
+wxScrollEventType() = scroll_top | scroll_bottom | scroll_lineup | scroll_linedown | scroll_pageup | scroll_pagedown | scroll_thumbtrack | scroll_thumbrelease | scroll_changed:
+
+.TP 2
+.B
+wxScrollWin() = #wxScrollWin{type=\fBwxScrollWinEventType()\fR\&, commandInt=integer(), extraLong=integer()}:
+
+.TP 2
+.B
+wxScrollWinEventType() = scrollwin_top | scrollwin_bottom | scrollwin_lineup | scrollwin_linedown | scrollwin_pageup | scrollwin_pagedown | scrollwin_thumbtrack | scrollwin_thumbrelease:
+
+.TP 2
+.B
+wxSetCursor() = #wxSetCursor{type=\fBwxSetCursorEventType()\fR\&, x=integer(), y=integer(), cursor=\fBwxCursor:wxCursor()\fR\&}:
+
+.TP 2
+.B
+wxSetCursorEventType() = set_cursor:
+
+.TP 2
+.B
+wxShow() = #wxShow{type=\fBwxShowEventType()\fR\&, show=boolean()}:
+
+.TP 2
+.B
+wxShowEventType() = show:
+
+.TP 2
+.B
+wxSize() = #wxSize{type=\fBwxSizeEventType()\fR\&, size={W::integer(), H::integer()}, rect={X::integer(), Y::integer(), W::integer(), H::integer()}}:
+
+.TP 2
+.B
+wxSizeEventType() = size:
+
+.TP 2
+.B
+wxSpin() = #wxSpin{type=\fBwxSpinEventType()\fR\&, commandInt=integer()}:
+
+.TP 2
+.B
+wxSpinEventType() = command_spinctrl_updated | spin_up | spin_down | spin:
+
+.TP 2
+.B
+wxSplitter() = #wxSplitter{type=\fBwxSplitterEventType()\fR\&}:
+
+.TP 2
+.B
+wxSplitterEventType() = command_splitter_sash_pos_changed | command_splitter_sash_pos_changing | command_splitter_doubleclicked | command_splitter_unsplit:
+
+.TP 2
+.B
+wxStyledText() = #wxStyledText{type=\fBwxStyledTextEventType()\fR\&, position=integer(), key=integer(), modifiers=integer(), modificationType=integer(), text=\fBunicode:chardata()\fR\&, length=integer(), linesAdded=integer(), line=integer(), foldLevelNow=integer(), foldLevelPrev=integer(), margin=integer(), message=integer(), wParam=integer(), lParam=integer(), listType=integer(), x=integer(), y=integer(), dragText=\fBunicode:chardata()\fR\&, dragAllowMove=boolean(), dragResult=\fBwx:wx_enum()\fR\&}:
+
+.TP 2
+.B
+wxStyledTextEventType() = stc_change | stc_styleneeded | stc_charadded | stc_savepointreached | stc_savepointleft | stc_romodifyattempt | stc_key | stc_doubleclick | stc_updateui | stc_modified | stc_macrorecord | stc_marginclick | stc_needshown | stc_painted | stc_userlistselection | stc_uridropped | stc_dwellstart | stc_dwellend | stc_start_drag | stc_drag_over | stc_do_drop | stc_zoom | stc_hotspot_click | stc_hotspot_dclick | stc_calltip_click | stc_autocomp_selection:
+
+.TP 2
+.B
+wxSysColourChanged() = #wxSysColourChanged{type=\fBwxSysColourChangedEventType()\fR\&}:
+
+.TP 2
+.B
+wxSysColourChangedEventType() = sys_colour_changed:
+
+.TP 2
+.B
+wxTaskBarIcon() = #wxTaskBarIcon{type=\fBwxTaskBarIconEventType()\fR\&}:
+
+.TP 2
+.B
+wxTaskBarIconEventType() = taskbar_move | taskbar_left_down | taskbar_left_up | taskbar_right_down | taskbar_right_up | taskbar_left_dclick | taskbar_right_dclick:
+
+.TP 2
+.B
+wxTree() = #wxTree{type=\fBwxTreeEventType()\fR\&, item=integer(), itemOld=integer(), pointDrag={X::integer(), Y::integer()}}:
+
+.TP 2
+.B
+wxTreeEventType() = command_tree_begin_drag | command_tree_begin_rdrag | command_tree_begin_label_edit | command_tree_end_label_edit | command_tree_delete_item | command_tree_get_info | command_tree_set_info | command_tree_item_expanded | command_tree_item_expanding | command_tree_item_collapsed | command_tree_item_collapsing | command_tree_sel_changed | command_tree_sel_changing | command_tree_key_down | command_tree_item_activated | command_tree_item_right_click | command_tree_item_middle_click | command_tree_end_drag | command_tree_state_image_click | command_tree_item_gettooltip | command_tree_item_menu:
+
+.TP 2
+.B
+wxUpdateUI() = #wxUpdateUI{type=\fBwxUpdateUIEventType()\fR\&}:
+
+.TP 2
+.B
+wxUpdateUIEventType() = update_ui:
+
+.TP 2
+.B
+wxWindowCreate() = #wxWindowCreate{type=\fBwxWindowCreateEventType()\fR\&}:
+
+.TP 2
+.B
+wxWindowCreateEventType() = create:
+
+.TP 2
+.B
+wxWindowDestroy() = #wxWindowDestroy{type=\fBwxWindowDestroyEventType()\fR\&}:
+
+.TP 2
+.B
+wxWindowDestroyEventType() = destroy:
+
+.RE
+.SH EXPORTS
+.LP
+.B
+connect(This::\fBwxEvtHandler()\fR\&, EventType::\fBwxEventType()\fR\&) -> ok
+.br
+.RS
+.LP
+Equivalent to \fBconnect(This, EventType, [])\fR\&
+.RE
+.LP
+.B
+connect(This::\fBwxEvtHandler()\fR\&, EventType::\fBwxEventType()\fR\&, Options::[Option]) -> ok
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Option = {id, integer()} | {lastId, integer()} | {skip, boolean()} | callback | {callback, function()} | {userData, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+This function subscribes the to events of EventType, in the range id, lastId\&. The events will be received as messages if no callback is supplied\&.
+.LP
+Options: {id, integer()}, The identifier (or first of the identifier range) to be associated with this event handler\&. Default ?wxID_ANY {lastId, integer()}, The second part of the identifier range\&. If used \&'id\&' must be set as the starting identifier range\&. Default ?wxID_ANY {skip, boolean()}, If skip is true further event_handlers will be called\&. This is not used if the \&'callback\&' option is used\&. Default false\&. {callback, function()} Use a callback fun(EventRecord::wx(), EventObject::wxObject()) to process the event\&. Default not specfied i\&.e\&. a message will be delivered to the process calling this function\&. {userData, term()} An erlang term that will be sent with the event\&. Default: []\&.
+.RE
+.LP
+.B
+disconnect(This::\fBwxEvtHandler()\fR\&) -> boolean()
+.br
+.RS
+.LP
+Equivalent to \fBdisconnect(This, null, [])\fR\& Can also have an optional callback Fun() as an additional last argument\&.
+.RE
+.LP
+.B
+disconnect(This::\fBwxEvtHandler()\fR\&, EventType::\fBwxEventType()\fR\&) -> boolean()
+.br
+.RS
+.LP
+Equivalent to \fBdisconnect(This, EventType, [])\fR\&
+.RE
+.LP
+.B
+disconnect(This::\fBwxEvtHandler()\fR\&, EventType::\fBwxEventType()\fR\&, Opts::[Option]) -> boolean()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Option = {id, integer()} | {lastId, integer()} | {callback, function()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation This function unsubscribes the process or callback fun from the event handler\&. EventType may be the atom \&'null\&' to match any eventtype\&. Notice that the options skip and userdata is not used to match the eventhandler\&.
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

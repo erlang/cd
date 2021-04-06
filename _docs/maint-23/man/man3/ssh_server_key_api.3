@@ -1,0 +1,81 @@
+.TH ssh_server_key_api 3 "ssh 4.10.5" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_server_key_api \- 
+    -behaviour(ssh_server_key_api).
+  
+.SH DESCRIPTION
+.LP
+Behaviour describing the API for public key handling of an SSH server\&. By implementing the callbacks defined in this behavior, the public key handling of an SSH server can be customized\&. By default the SSH application implements this behavior with help of the standard OpenSSH files, see the  ssh(6) application manual\&.
+.SH DATA TYPES
+.nf
+
+\fBdaemon_key_cb_options(T)\fR\& = 
+.br
+    [{key_cb_private, [T]} | ssh:daemon_option()]
+.br
+.fi
+.RS
+.LP
+Options provided to ssh:daemon/2,3\&.
+.LP
+The option list given in the \fIkey_cb\fR\& option is available with the key \fIkey_cb_private\fR\&\&.
+.RE
+.SH EXPORTS
+.LP
+.B
+Module:host_key(Algorithm, DaemonOptions) -> {ok, PrivateKey} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = ssh:pubkey_alg()
+.br
+.RS 2
+Host key algorithm\&.
+.RE
+DaemonOptions = daemon_key_cb_options()
+.br
+PrivateKey = public_key:private_key() | crypto:engine_key_ref()
+.br
+.RS 2
+Private key of the host matching the \fIAlgorithm\fR\&\&. It may be a reference to a \&'ssh-rsa\&', rsa-sha2-* or \&'ssh-dss\&' (NOT ecdsa) key stored in a loaded Engine\&.
+.RE
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches the private key of the host\&.
+.RE
+.LP
+.B
+Module:is_auth_key(PublicUserKey, User, DaemonOptions) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+PublicUserKey = public_key:public_key()
+.br
+.RS 2
+Normally an RSA, DSA or ECDSA public key, but handling of other public keys can be added
+.RE
+User = string()
+.br
+.RS 2
+User owning the public key\&.
+.RE
+DaemonOptions = daemon_key_cb_options()
+.br
+Result = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+Checks if the user key is authorized\&.
+.RE

@@ -1,0 +1,246 @@
+.TH wxGraphicsRenderer 3 "wx 1.9.1" "" "Erlang Module Definition"
+.SH NAME
+wxGraphicsRenderer \- See external documentation: wxGraphicsRenderer.
+.SH DESCRIPTION
+.LP
+See external documentation: wxGraphicsRenderer\&.
+.SH "DATA TYPES"
+
+.RS 2
+.TP 2
+.B
+wxGraphicsRenderer():
+
+.RS 2
+.LP
+An object reference, The representation is internal and can be changed without notice\&. It can\&'t be used for comparsion stored on disc or distributed for use on other nodes\&.
+.RE
+.RE
+.SH EXPORTS
+.LP
+.B
+getDefaultRenderer() -> wxGraphicsRenderer()
+.br
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createContext(This, Dc) -> wxGraphicsContext:wxGraphicsContext()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Dc = wxWindowDC:wxWindowDC() | wxWindow:wxWindow()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createPen(This, Pen) -> wxGraphicsPen:wxGraphicsPen()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Pen = wxPen:wxPen()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createBrush(This, Brush) -> wxGraphicsBrush:wxGraphicsBrush()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Brush = wxBrush:wxBrush()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createLinearGradientBrush(This, X1, Y1, X2, Y2, C1, C2) -> wxGraphicsBrush:wxGraphicsBrush()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+X1 = number()
+.br
+Y1 = number()
+.br
+X2 = number()
+.br
+Y2 = number()
+.br
+C1 = wx:wx_colour()
+.br
+C2 = wx:wx_colour()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIThis function is deprecated: \fR\&not available in wxWidgets-2\&.9 and later
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createRadialGradientBrush(This, Xo, Yo, Xc, Yc, Radius, OColor, CColor) -> wxGraphicsBrush:wxGraphicsBrush()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Xo = number()
+.br
+Yo = number()
+.br
+Xc = number()
+.br
+Yc = number()
+.br
+Radius = number()
+.br
+OColor = wx:wx_colour()
+.br
+CColor = wx:wx_colour()
+.br
+.RE
+.RE
+.RS
+.LP
+\fIThis function is deprecated: \fR\&not available in wxWidgets-2\&.9 and later
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createFont(This, Font) -> wxGraphicsFont:wxGraphicsFont()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Font = wxFont:wxFont()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to createFont(This, Font, [])\&.
+.RE
+.LP
+.B
+createFont(This, Font, Options::[Option]) -> wxGraphicsFont:wxGraphicsFont()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Font = wxFont:wxFont()
+.br
+Option = {col, wx:wx_colour()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createMatrix(This) -> wxGraphicsMatrix:wxGraphicsMatrix()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+.RE
+.RE
+.RS
+.LP
+Equivalent to createMatrix(This, [])\&.
+.RE
+.LP
+.B
+createMatrix(This, Options::[Option]) -> wxGraphicsMatrix:wxGraphicsMatrix()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+Option = {a, number()} | {b, number()} | {c, number()} | {d, number()} | {tx, number()} | {ty, number()}
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.LP
+.B
+createPath(This) -> wxGraphicsPath:wxGraphicsPath()
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+This = wxGraphicsRenderer()
+.br
+.RE
+.RE
+.RS
+.LP
+See external documentation\&.
+.RE
+.SH AUTHORS
+.LP
+
+.I
+<>

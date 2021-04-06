@@ -1,0 +1,72 @@
+.TH diameter_sctp 3 "diameter 2.1.4" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+diameter_sctp \- Diameter transport over SCTP.
+.SH DESCRIPTION
+.LP
+This module implements diameter transport over SCTP using \fBgen_sctp(3)\fR\&\&. It can be specified as the value of a transport_module option to \fBdiameter:add_transport/2\fR\& and implements the behaviour documented in \fBdiameter_transport(3)\fR\&\&.
+.SH EXPORTS
+.LP
+.B
+start({Type, Ref}, Svc, [Opt]) -> {ok, Pid, [LAddr]} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Type = connect | accept
+.br
+Ref = \fBdiameter:transport_ref()\fR\&
+.br
+Svc = #diameter_service{}
+.br
+Opt = OwnOpt | SctpOpt
+.br
+Pid = pid()
+.br
+LAddr = \fBinet:ip_address()\fR\&
+.br
+Reason = term()
+.br
+OwnOpt = {raddr, \fBinet:ip_address()\fR\&} | {rport, integer()} | {accept, Match} | {unordered, boolean() | pos_integer()} | {packet, boolean() | raw} | {message_cb, \fBdiameter:eval()\fR\&} | {sender, boolean()}
+.br
+SctpOpt = term()
+.br
+Match = \fBinet:ip_address()\fR\& | string() | [Match]
+.br
+.RE
+.RE
+.RS
+.LP
+The start function required by \fBdiameter_transport(3)\fR\&\&.
+.LP
+Options \fIraddr\fR\& and \fIrport\fR\& specify the remote address and port for a connecting transport and not valid for a listening transport: the former is required while latter defaults to 3868 if unspecified\&. Multiple \fIraddr\fR\& options can be specified, in which case the connecting transport in question attempts each in sequence until an association is established\&.
+.LP
+Option \fIaccept\fR\& specifies remote addresses for a listening transport and is not valid for a connecting transport\&. If specified, a remote address that does not match one of the specified addresses causes the association to be aborted\&. Multiple \fIaccept\fR\& options can be specified\&. A string-valued \fIMatch\fR\& that does not parse as an address is interpreted as a regular expression\&.
+.LP
+Option \fIunordered\fR\& specifies whether or not to use unordered delivery, integer \fIN\fR\& being equivalent to \fIN =< OS\fR\&, where \fIOS\fR\& is the number of outbound streams negotiated on the association in question\&. Regardless of configuration, sending is ordered on stream 0 until reception of a second incoming message, to ensure that a peer receives capabilities exchange messages before any other\&. Defaults to \fIfalse\fR\&\&.
+.LP
+Option \fIpacket\fR\& determines how/if an incoming message is packaged into a diameter_packet record\&. If \fIfalse\fR\& then messages are received as binary()\&. If \fItrue\fR\& then as a record with the binary() message in the \fIbin\fR\& field and a \fI{stream, Id}\fR\& tuple in the \fItransport_data\fR\& field, where \fIId\fR\& is the identifier of the inbound stream the message was received on\&. If \fIraw\fR\& then as a record with the received ancillary sctp_sndrcvinfo record in the \fItransport_data\fR\& field\&. Defaults to \fItrue\fR\&\&.
+.LP
+Options \fImessage_cb\fR\& and \fIsender\fR\& have semantics identical to those documented in \fBdiameter_tcp(3)\fR\&, but with the message argument to a \fIrecv\fR\& callback being as directed by the \fIpacket\fR\& option\&.
+.LP
+An \fI{outstream, Id}\fR\& tuple in the \fItransport_data\fR\& field of a outgoing diameter_packet record sets the outbound stream on which the message is sent, modulo the negotiated number of outbound streams\&. Any other value causes successive such sends to cycle though all outbound streams\&.
+.LP
+Remaining options are any accepted by \fBgen_sctp:open/1\fR\&, with the exception of options \fImode\fR\&, \fIbinary\fR\&, \fIlist\fR\&, \fIactive\fR\& and \fIsctp_events\fR\&\&. Note that options \fIip\fR\& and \fIport\fR\& specify the local address and port respectively\&.
+.LP
+Multiple \fIip\fR\& options can be specified for a multihomed peer\&. If none are specified then the values of \fIHost-IP-Address\fR\& in the \fIdiameter_service\fR\& record are used\&. Option \fIport\fR\& defaults to 3868 for a listening transport and 0 for a connecting transport\&.
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+An small receive buffer may result in a peer having to resend incoming messages: set the \fBinet(3)\fR\& option \fIrecbuf\fR\& to increase the buffer size\&.
+.LP
+An small send buffer may result in outgoing messages being discarded: set the \fBinet(3)\fR\& option \fIsndbuf\fR\& to increase the buffer size\&.
+
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fBdiameter(3)\fR\&, \fBdiameter_transport(3)\fR\&, \fBgen_sctp(3)\fR\&, \fBinet(3)\fR\&

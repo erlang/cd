@@ -1,0 +1,661 @@
+.TH array 3 "stdlib 3.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+array \- Functional, extendible arrays.
+.SH DESCRIPTION
+.LP
+Functional, extendible arrays\&. Arrays can have fixed size, or can grow automatically as needed\&. A default value is used for entries that have not been explicitly set\&.
+.LP
+Arrays uses \fIzero\fR\&-based indexing\&. This is a deliberate design choice and differs from other Erlang data structures, for example, tuples\&.
+.LP
+Unless specified by the user when the array is created, the default value is the atom \fIundefined\fR\&\&. There is no difference between an unset entry and an entry that has been explicitly set to the same value as the default one (compare \fB\fIreset/2\fR\&\fR\&)\&. If you need to differentiate between unset and set entries, ensure that the default value cannot be confused with the values of set entries\&.
+.LP
+The array never shrinks automatically\&. If an index \fII\fR\& has been used to set an entry successfully, all indices in the range [0,\fII\fR\&] stay accessible unless the array size is explicitly changed by calling \fB\fIresize/2\fR\&\fR\&\&.
+.LP
+\fIExamples:\fR\&
+.LP
+Create a fixed-size array with entries 0-9 set to \fIundefined\fR\&:
+.LP
+.nf
+
+A0 = array:new(10).
+10 = array:size(A0).
+.fi
+.LP
+Create an extendible array and set entry 17 to \fItrue\fR\&, causing the array to grow automatically:
+.LP
+.nf
+
+A1 = array:set(17, true, array:new()).
+18 = array:size(A1).
+.fi
+.LP
+Read back a stored value:
+.LP
+.nf
+
+true = array:get(17, A1).
+.fi
+.LP
+Accessing an unset entry returns default value:
+.LP
+.nf
+
+undefined = array:get(3, A1)
+.fi
+.LP
+Accessing an entry beyond the last set entry also returns the default value, if the array does not have fixed size:
+.LP
+.nf
+
+undefined = array:get(18, A1).
+.fi
+.LP
+"Sparse" functions ignore default-valued entries:
+.LP
+.nf
+
+A2 = array:set(4, false, A1).
+[{4, false}, {17, true}] = array:sparse_to_orddict(A2).
+.fi
+.LP
+An extendible array can be made fixed-size later:
+.LP
+.nf
+
+A3 = array:fix(A2).
+.fi
+.LP
+A fixed-size array does not grow automatically and does not allow accesses beyond the last set entry:
+.LP
+.nf
+
+{'EXIT',{badarg,_}} = (catch array:set(18, true, A3)).
+{'EXIT',{badarg,_}} = (catch array:get(18, A3)).
+.fi
+.SH DATA TYPES
+.nf
+
+\fBarray(Type)\fR\&
+.br
+.fi
+.RS
+.LP
+A functional, extendible array\&. The representation is not documented and is subject to change without notice\&. Notice that arrays cannot be directly compared for equality\&.
+.RE
+.nf
+
+\fBarray()\fR\& = \fBarray\fR\&(term())
+.br
+.fi
+.nf
+
+\fBarray_indx()\fR\& = integer() >= 0
+.br
+.fi
+.nf
+
+\fBarray_opts()\fR\& = \fBarray_opt()\fR\& | [\fBarray_opt()\fR\&]
+.br
+.fi
+.nf
+
+\fBarray_opt()\fR\& = 
+.br
+    {fixed, boolean()} |
+.br
+    fixed |
+.br
+    {default, Type :: term()} |
+.br
+    {size, N :: integer() >= 0} |
+.br
+    (N :: integer() >= 0)
+.br
+.fi
+.nf
+
+\fBindx_pairs(Type)\fR\& = [\fBindx_pair\fR\&(Type)]
+.br
+.fi
+.nf
+
+\fBindx_pair(Type)\fR\& = {Index :: \fBarray_indx()\fR\&, Type}
+.br
+.fi
+.SH EXPORTS
+.LP
+.nf
+
+.B
+default(Array :: array(Type)) -> Value :: Type
+.br
+.fi
+.br
+.RS
+.LP
+Gets the value used for uninitialized entries\&.
+.LP
+See also \fB\fInew/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+fix(Array :: array(Type)) -> array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Fixes the array size\&. This prevents it from growing automatically upon insertion\&.
+.LP
+See also \fB\fIset/3\fR\&\fR\& and \fB\fIrelax/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+foldl(Function, InitialAcc :: A, Array :: array(Type)) -> B
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = 
+.br
+    fun((Index :: \fBarray_indx()\fR\&, Value :: Type, Acc :: A) -> B)
+.br
+.RE
+.RE
+.RS
+.LP
+Folds the array elements using the specified function and initial accumulator value\&. The elements are visited in order from the lowest index to the highest\&. If \fIFunction\fR\& is not a function, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fIfoldr/3\fR\&\fR\&, \fB\fImap/2\fR\&\fR\&, \fB\fIsparse_foldl/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+foldr(Function, InitialAcc :: A, Array :: array(Type)) -> B
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = 
+.br
+    fun((Index :: \fBarray_indx()\fR\&, Value :: Type, Acc :: A) -> B)
+.br
+.RE
+.RE
+.RS
+.LP
+Folds the array elements right-to-left using the specified function and initial accumulator value\&. The elements are visited in order from the highest index to the lowest\&. If \fIFunction\fR\& is not a function, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fIfoldl/3\fR\&\fR\&, \fB\fImap/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+from_list(List :: [Value :: Type]) -> array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Equivalent to \fB\fIfrom_list(List, undefined)\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+from_list(List :: [Value :: Type], Default :: term()) ->
+.B
+             array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Converts a list to an extendible array\&. \fIDefault\fR\& is used as the value for uninitialized entries of the array\&. If \fIList\fR\& is not a proper list, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fInew/2\fR\&\fR\&, \fB\fIto_list/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+from_orddict(Orddict :: indx_pairs(Value :: Type)) -> array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Equivalent to \fB\fIfrom_orddict(Orddict, undefined)\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+from_orddict(Orddict :: indx_pairs(Value :: Type),
+.B
+             Default :: Type) ->
+.B
+                array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Converts an ordered list of pairs \fI{Index, Value}\fR\& to a corresponding extendible array\&. \fIDefault\fR\& is used as the value for uninitialized entries of the array\&. If \fIOrddict\fR\& is not a proper, ordered list of pairs whose first elements are non-negative integers, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fInew/2\fR\&\fR\&, \fB\fIto_orddict/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+get(I :: array_indx(), Array :: array(Type)) -> Value :: Type
+.br
+.fi
+.br
+.RS
+.LP
+Gets the value of entry \fII\fR\&\&. If \fII\fR\& is not a non-negative integer, or if the array has fixed size and \fII\fR\& is larger than the maximum index, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+If the array does not have fixed size, the default value for any index \fII\fR\& greater than \fIsize(Array)-1\fR\& is returned\&.
+.LP
+See also \fB\fIset/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_array(X :: term()) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Returns \fItrue\fR\& if \fIX\fR\& is an array, otherwise \fIfalse\fR\&\&. Notice that the check is only shallow, as there is no guarantee that \fIX\fR\& is a well-formed array representation even if this function returns \fItrue\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+is_fix(Array :: array()) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Checks if the array has fixed size\&. Returns \fItrue\fR\& if the array is fixed, otherwise \fIfalse\fR\&\&.
+.LP
+See also \fB\fIfix/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+map(Function, Array :: array(Type1)) -> array(Type2)
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = fun((Index :: \fBarray_indx()\fR\&, Type1) -> Type2)
+.br
+.RE
+.RE
+.RS
+.LP
+Maps the specified function onto each array element\&. The elements are visited in order from the lowest index to the highest\&. If \fIFunction\fR\& is not a function, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fIfoldl/3\fR\&\fR\&, \fB\fIfoldr/3\fR\&\fR\&, \fB\fIsparse_map/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+new() -> array()
+.br
+.fi
+.br
+.RS
+.LP
+Creates a new, extendible array with initial size zero\&.
+.LP
+See also \fB\fInew/1\fR\&\fR\&, \fB\fInew/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+new(Options :: array_opts()) -> array()
+.br
+.fi
+.br
+.RS
+.LP
+Creates a new array according to the specified otions\&. By default, the array is extendible and has initial size zero\&. Array indices start at \fI0\fR\&\&.
+.LP
+\fIOptions\fR\& is a single term or a list of terms, selected from the following:
+.RS 2
+.TP 2
+.B
+\fIN::integer() >= 0\fR\& or \fI{size, N::integer() >= 0}\fR\&:
+Specifies the initial array size; this also implies \fI{fixed, true}\fR\&\&. If \fIN\fR\& is not a non-negative integer, the call fails with reason \fIbadarg\fR\&\&.
+.TP 2
+.B
+\fIfixed\fR\& or \fI{fixed, true}\fR\&:
+Creates a fixed-size array\&. See also \fB\fIfix/1\fR\&\fR\&\&.
+.TP 2
+.B
+\fI{fixed, false}\fR\&:
+Creates an extendible (non-fixed-size) array\&.
+.TP 2
+.B
+\fI{default, Value}\fR\&:
+Sets the default value for the array to \fIValue\fR\&\&.
+.RE
+.LP
+Options are processed in the order they occur in the list, that is, later options have higher precedence\&.
+.LP
+The default value is used as the value of uninitialized entries, and cannot be changed once the array has been created\&.
+.LP
+\fIExamples:\fR\&
+.LP
+.nf
+
+array:new(100)
+.fi
+.LP
+creates a fixed-size array of size 100\&.
+.LP
+.nf
+
+array:new({default,0})
+.fi
+.LP
+creates an empty, extendible array whose default value is \fI0\fR\&\&.
+.LP
+.nf
+
+array:new([{size,10},{fixed,false},{default,-1}])
+.fi
+.LP
+creates an extendible array with initial size 10 whose default value is \fI-1\fR\&\&.
+.LP
+See also \fB\fIfix/1\fR\&\fR\&, \fB\fIfrom_list/2\fR\&\fR\&, \fB\fIget/2\fR\&\fR\&, \fB\fInew/0\fR\&\fR\&, \fB\fInew/2\fR\&\fR\&, \fB\fIset/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+new(Size :: integer() >= 0, Options :: array_opts()) -> array()
+.br
+.fi
+.br
+.RS
+.LP
+Creates a new array according to the specified size and options\&. If \fISize\fR\& is not a non-negative integer, the call fails with reason \fIbadarg\fR\&\&. By default, the array has fixed size\&. Notice that any size specifications in \fIOptions\fR\& override parameter \fISize\fR\&\&.
+.LP
+If \fIOptions\fR\& is a list, this is equivalent to \fInew([{size, Size} | Options]\fR\&, otherwise it is equivalent to \fInew([{size, Size} | [Options]]\fR\&\&. However, using this function directly is more efficient\&.
+.LP
+\fIExample:\fR\&
+.LP
+.nf
+
+array:new(100, {default,0})
+.fi
+.LP
+creates a fixed-size array of size 100, whose default value is \fI0\fR\&\&.
+.LP
+See also \fB\fInew/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+relax(Array :: array(Type)) -> array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Makes the array resizable\&. (Reverses the effects of \fB\fIfix/1\fR\&\fR\&\&.)
+.LP
+See also \fB\fIfix/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+reset(I :: array_indx(), Array :: array(Type)) -> array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Resets entry \fII\fR\& to the default value for the array\&. If the value of entry \fII\fR\& is the default value, the array is returned unchanged\&. Reset never changes the array size\&. Shrinking can be done explicitly by calling \fB\fIresize/2\fR\&\fR\&\&.
+.LP
+If \fII\fR\& is not a non-negative integer, or if the array has fixed size and \fII\fR\& is larger than the maximum index, the call fails with reason \fIbadarg\fR\&; compare \fB\fIset/3\fR\&\fR\&
+.LP
+See also \fB\fInew/2\fR\&\fR\&, \fB\fIset/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+resize(Array :: array(Type)) -> array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Changes the array size to that reported by \fB\fIsparse_size/1\fR\&\fR\&\&. If the specified array has fixed size, also the resulting array has fixed size\&.
+.LP
+See also \fB\fIresize/2\fR\&\fR\&, \fB\fIsparse_size/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+resize(Size :: integer() >= 0, Array :: array(Type)) ->
+.B
+          array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Change the array size\&. If \fISize\fR\& is not a non-negative integer, the call fails with reason \fIbadarg\fR\&\&. If the specified array has fixed size, also the resulting array has fixed size\&.
+.RE
+.LP
+.nf
+
+.B
+set(I :: array_indx(), Value :: Type, Array :: array(Type)) ->
+.B
+       array(Type)
+.br
+.fi
+.br
+.RS
+.LP
+Sets entry \fII\fR\& of the array to \fIValue\fR\&\&. If \fII\fR\& is not a non-negative integer, or if the array has fixed size and \fII\fR\& is larger than the maximum index, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+If the array does not have fixed size, and \fII\fR\& is greater than \fIsize(Array)-1\fR\&, the array grows to size \fII+1\fR\&\&.
+.LP
+See also \fB\fIget/2\fR\&\fR\&, \fB\fIreset/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+size(Array :: array()) -> integer() >= 0
+.br
+.fi
+.br
+.RS
+.LP
+Gets the number of entries in the array\&. Entries are numbered from \fI0\fR\& to \fIsize(Array)-1\fR\&\&. Hence, this is also the index of the first entry that is guaranteed to not have been previously set\&.
+.LP
+See also \fB\fIset/3\fR\&\fR\&, \fB\fIsparse_size/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sparse_foldl(Function, InitialAcc :: A, Array :: array(Type)) -> B
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = 
+.br
+    fun((Index :: \fBarray_indx()\fR\&, Value :: Type, Acc :: A) -> B)
+.br
+.RE
+.RE
+.RS
+.LP
+Folds the array elements using the specified function and initial accumulator value, skipping default-valued entries\&. The elements are visited in order from the lowest index to the highest\&. If \fIFunction\fR\& is not a function, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fIfoldl/3\fR\&\fR\&, \fB\fIsparse_foldr/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sparse_foldr(Function, InitialAcc :: A, Array :: array(Type)) -> B
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = 
+.br
+    fun((Index :: \fBarray_indx()\fR\&, Value :: Type, Acc :: A) -> B)
+.br
+.RE
+.RE
+.RS
+.LP
+Folds the array elements right-to-left using the specified function and initial accumulator value, skipping default-valued entries\&. The elements are visited in order from the highest index to the lowest\&. If \fIFunction\fR\& is not a function, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fIfoldr/3\fR\&\fR\&, \fB\fIsparse_foldl/3\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sparse_map(Function, Array :: array(Type1)) -> array(Type2)
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Function = fun((Index :: \fBarray_indx()\fR\&, Type1) -> Type2)
+.br
+.RE
+.RE
+.RS
+.LP
+Maps the specified function onto each array element, skipping default-valued entries\&. The elements are visited in order from the lowest index to the highest\&. If \fIFunction\fR\& is not a function, the call fails with reason \fIbadarg\fR\&\&.
+.LP
+See also \fB\fImap/2\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sparse_size(Array :: array()) -> integer() >= 0
+.br
+.fi
+.br
+.RS
+.LP
+Gets the number of entries in the array up until the last non-default-valued entry\&. That is, returns \fII+1\fR\& if \fII\fR\& is the last non-default-valued entry in the array, or zero if no such entry exists\&.
+.LP
+See also \fB\fIresize/1\fR\&\fR\&, \fB\fIsize/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sparse_to_list(Array :: array(Type)) -> [Value :: Type]
+.br
+.fi
+.br
+.RS
+.LP
+Converts the array to a list, skipping default-valued entries\&.
+.LP
+See also \fB\fIto_list/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+sparse_to_orddict(Array :: array(Type)) ->
+.B
+                     indx_pairs(Value :: Type)
+.br
+.fi
+.br
+.RS
+.LP
+Converts the array to an ordered list of pairs \fI{Index, Value}\fR\&, skipping default-valued entries\&.
+.LP
+See also \fB\fIto_orddict/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+to_list(Array :: array(Type)) -> [Value :: Type]
+.br
+.fi
+.br
+.RS
+.LP
+Converts the array to a list\&.
+.LP
+See also \fB\fIfrom_list/2\fR\&\fR\&, \fB\fIsparse_to_list/1\fR\&\fR\&\&.
+.RE
+.LP
+.nf
+
+.B
+to_orddict(Array :: array(Type)) -> indx_pairs(Value :: Type)
+.br
+.fi
+.br
+.RS
+.LP
+Converts the array to an ordered list of pairs \fI{Index, Value}\fR\&\&.
+.LP
+See also \fB\fIfrom_orddict/2\fR\&\fR\&, \fB\fIsparse_to_orddict/1\fR\&\fR\&\&.
+.RE

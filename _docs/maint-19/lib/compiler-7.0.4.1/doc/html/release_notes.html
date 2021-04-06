@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:erl="http://erlang.org" xmlns:fn="http://www.w3.org/2005/02/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="stylesheet" href="../../../../doc/otp_doc.css" type="text/css">
+<title>Erlang -- </title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000ff" vlink="#ff00ff" alink="#ff0000"><div id="container">
+<script id="js" type="text/javascript" language="JavaScript" src="../../../../doc/js/flipmenu/flipmenu.js"></script><script id="js2" type="text/javascript" src="../../../../doc/js/erlresolvelinks.js"></script><script language="JavaScript" type="text/javascript">
+            <!--
+              function getWinHeight() {
+                var myHeight = 0;
+                if( typeof( window.innerHeight ) == 'number' ) {
+                  //Non-IE
+                  myHeight = window.innerHeight;
+                } else if( document.documentElement && ( document.documentElement.clientWidth ||
+                                                         document.documentElement.clientHeight ) ) {
+                  //IE 6+ in 'standards compliant mode'
+                  myHeight = document.documentElement.clientHeight;
+                } else if( document.body && ( document.body.clientWidth || document.body.clientHeight ) ) {
+                  //IE 4 compatible
+                  myHeight = document.body.clientHeight;
+                }
+                return myHeight;
+              }
+
+              function setscrollpos() {
+                var objf=document.getElementById('loadscrollpos');
+                 document.getElementById("leftnav").scrollTop = objf.offsetTop - getWinHeight()/2;
+              }
+
+              function addEvent(obj, evType, fn){
+                if (obj.addEventListener){
+                obj.addEventListener(evType, fn, true);
+                return true;
+              } else if (obj.attachEvent){
+                var r = obj.attachEvent("on"+evType, fn);
+                return r;
+              } else {
+                return false;
+              }
+             }
+
+             addEvent(window, 'load', setscrollpos);
+
+             //--></script><div id="leftnav"><div class="innertube">
+<img alt="Erlang logo" src="../../../../doc/erlang-logo.png"><br><small><a href="index.html">Reference Manual</a><br><a href="release_notes.html">Release Notes</a><br><a href="../pdf/compiler-7.0.4.1.pdf">PDF</a><br><a href="../../../../doc/index.html">Top</a></small><p><strong>Compiler</strong><br><strong>Release Notes</strong><br><small>Version 7.0.4.1</small></p>
+<br><a href="javascript:openAllFlips()">Expand All</a><br><a href="javascript:closeAllFlips()">Contract All</a><p><small><strong>Chapters</strong></small></p>
+<ul class="flipMenu" imagepath="../../../../doc/js/flipmenu"><li id="no" title="Compiler Release Notes" expanded="false">Compiler Release Notes<ul>
+<li><a href="notes.html">
+              Top of chapter
+            </a></li>
+<li title="Compiler 7.0.4.1"><a href="notes.html#idm3676896">Compiler 7.0.4.1</a></li>
+<li title="Compiler 7.0.4"><a href="notes.html#idm3673360">Compiler 7.0.4</a></li>
+<li title="Compiler 7.0.3"><a href="notes.html#idm3710768">Compiler 7.0.3</a></li>
+<li title="Compiler 7.0.2"><a href="notes.html#idm3430352">Compiler 7.0.2</a></li>
+<li title="Compiler 7.0.1"><a href="notes.html#idm3845520">Compiler 7.0.1</a></li>
+<li title="Compiler 7.0"><a href="notes.html#idm3841824">Compiler 7.0</a></li>
+<li title="Compiler 6.0.3"><a href="notes.html#idp25074320">Compiler 6.0.3</a></li>
+<li title="Compiler 6.0.2"><a href="notes.html#idp25084304">Compiler 6.0.2</a></li>
+<li title="Compiler 6.0.1"><a href="notes.html#idp25089808">Compiler 6.0.1</a></li>
+<li title="Compiler 6.0"><a href="notes.html#idp25094880">Compiler 6.0</a></li>
+<li title="Compiler 5.0.4"><a href="notes.html#idp25121792">Compiler 5.0.4</a></li>
+<li title="Compiler 5.0.3"><a href="notes.html#idp25135504">Compiler 5.0.3</a></li>
+<li title="Compiler 5.0.2"><a href="notes.html#idp25141600">Compiler 5.0.2</a></li>
+<li title="Compiler 5.0.1"><a href="notes.html#idp25145216">Compiler 5.0.1</a></li>
+<li title="Compiler 5.0"><a href="notes.html#idp25151152">Compiler 5.0</a></li>
+<li title="Compiler 4.9.4"><a href="notes.html#idp25203488">Compiler 4.9.4</a></li>
+<li title="Compiler 4.9.3"><a href="notes.html#idp25209968">Compiler 4.9.3</a></li>
+<li title="Compiler 4.9.2"><a href="notes.html#idp25224128">Compiler 4.9.2</a></li>
+<li title="Compiler 4.9.1"><a href="notes.html#idp25235008">Compiler 4.9.1</a></li>
+<li title="Compiler 4.9"><a href="notes.html#idp25245520">Compiler 4.9</a></li>
+<li title="Compiler 4.8.2"><a href="notes.html#idp25256384">Compiler 4.8.2</a></li>
+<li title="Compiler 4.8.1"><a href="notes.html#idp25272144">Compiler 4.8.1</a></li>
+<li title="Compiler 4.8"><a href="notes.html#idp25288720">Compiler 4.8</a></li>
+<li title="Compiler 4.7.5"><a href="notes.html#idp25307840">Compiler 4.7.5</a></li>
+<li title="Compiler 4.7.4"><a href="notes.html#idp25314400">Compiler 4.7.4</a></li>
+<li title="Compiler 4.7.3"><a href="notes.html#idp25319792">Compiler 4.7.3</a></li>
+<li title="Compiler 4.7.2"><a href="notes.html#idp25329168">Compiler 4.7.2</a></li>
+<li title="Compiler 4.7.1"><a href="notes.html#idp25340208">Compiler 4.7.1</a></li>
+<li title="Compiler 4.7"><a href="notes.html#idp25343808">Compiler 4.7</a></li>
+<li title="Compiler 4.6.5"><a href="notes.html#idp25368496">Compiler 4.6.5</a></li>
+<li title="Compiler 4.6.4"><a href="notes.html#idp25382752">Compiler 4.6.4</a></li>
+<li title="Compiler 4.6.3"><a href="notes.html#idp25394688">Compiler 4.6.3</a></li>
+<li title="Compiler 4.6.2"><a href="notes.html#idp25402240">Compiler 4.6.2</a></li>
+<li title="Compiler 4.6.1"><a href="notes.html#idp25406464">Compiler 4.6.1</a></li>
+<li title="Compiler 4.6.0.1"><a href="notes.html#idp25414464">Compiler 4.6.0.1</a></li>
+<li title="Compiler 4.6"><a href="notes.html#idp25420416">Compiler 4.6</a></li>
+<li title="Compiler 4.5.5"><a href="notes.html#idp25460544">Compiler 4.5.5</a></li>
+<li title="Compiler 4.5.4"><a href="notes.html#idp25470560">Compiler 4.5.4</a></li>
+<li title="Compiler 4.5.3"><a href="notes.html#idp25474352">Compiler 4.5.3</a></li>
+<li title="Compiler 4.5.2.1"><a href="notes.html#idp25478832">Compiler 4.5.2.1</a></li>
+<li title="Compiler 4.5.2"><a href="notes.html#idp25482560">Compiler 4.5.2</a></li>
+<li title="Compiler 4.5.1.1"><a href="notes.html#idp25490816">Compiler 4.5.1.1</a></li>
+<li title="Compiler 4.5.1"><a href="notes.html#idp25501552">Compiler 4.5.1</a></li>
+<li title="Compiler 4.5"><a href="notes.html#idp25523184">Compiler 4.5</a></li>
+<li title="Compiler 4.4.5"><a href="notes.html#idp25555776">Compiler 4.4.5</a></li>
+<li title="Compiler 4.4.4"><a href="notes.html#idp25563632">Compiler 4.4.4</a></li>
+<li title="Compiler 4.4.3"><a href="notes.html#idp25567616">Compiler 4.4.3</a></li>
+<li title="Compiler 4.4.2.1"><a href="notes.html#idp25577456">Compiler 4.4.2.1</a></li>
+<li title="Compiler 4.4.2"><a href="notes.html#idp25581440">Compiler 4.4.2</a></li>
+<li title="Compiler 4.4.1"><a href="notes.html#idp25596688">Compiler 4.4.1</a></li>
+<li title="Compiler 4.4"><a href="notes.html#idp25605792">Compiler 4.4</a></li>
+<li title="Compiler 4.3.12"><a href="notes.html#idp25629424">Compiler 4.3.12</a></li>
+<li title="Compiler 4.3.11"><a href="notes.html#idp25636304">Compiler 4.3.11</a></li>
+<li title="Compiler 4.3.10"><a href="notes.html#idp25640832">Compiler 4.3.10</a></li>
+<li title="Compiler 4.3.9"><a href="notes.html#idp25651872">Compiler 4.3.9</a></li>
+<li title="Compiler 4.3.8"><a href="notes.html#idp25659936">Compiler 4.3.8</a></li>
+<li title="Compiler 4.3.7"><a href="notes.html#idp25671840">Compiler 4.3.7</a></li>
+<li title="Compiler 4.3.6"><a href="notes.html#idp25676224">Compiler 4.3.6</a></li>
+<li title="Compiler 4.3.5"><a href="notes.html#idp25685968">Compiler 4.3.5</a></li>
+<li title="Compiler 4.3.4"><a href="notes.html#idp25690000">Compiler 4.3.4</a></li>
+<li title="Compiler 4.3.3"><a href="notes.html#idp25694688">Compiler 4.3.3</a></li>
+<li title="Compiler 4.3.2"><a href="notes.html#idp25707568">Compiler 4.3.2</a></li>
+<li title="Compiler 4.3.1"><a href="notes.html#idp25713456">Compiler 4.3.1</a></li>
+</ul>
+</li></ul>
+</div></div>
+<div id="content">
+<div class="innertube">
+<div class="frontpage"></div>
+<center><h1>Compiler Release Notes</h1></center>
+<center><h4>Version 7.0.4.1</h4></center>
+<center><h4>June 15, 2018</h4></center>
+<div class="extrafrontpageinfo"><center></center></div>
+</div>
+<div class="footer">
+<hr>
+<p>Copyright © 1997-2018 Ericsson AB. All Rights Reserved.</p>
+</div>
+</div>
+</div></body>
+</html>

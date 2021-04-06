@@ -1,0 +1,144 @@
+.TH ssh_client_key_api 3 "ssh 4.2.2.6" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_client_key_api \- 
+     -behaviour(ssh_client_key_api).
+  
+.SH DESCRIPTION
+.LP
+Behavior describing the API for public key handling of an SSH client\&. By implementing the callbacks defined in this behavior, the public key handling of an SSH client can be customized\&. By default the \fIssh\fR\& application implements this behavior with help of the standard OpenSSH files, see the \fB ssh(6)\fR\& application manual\&.
+.SH "DATA TYPES"
+
+.LP
+Type definitions that are used more than once in this module, or abstractions to indicate the intended use of the data type, or both\&. For more details on public key data types, refer to Section 2 Public Key Records in the \fB public_key user\&'s guide:\fR\& 
+.RS 2
+.TP 2
+.B
+\fIboolean() =\fR\&:
+\fItrue | false\fR\&
+.TP 2
+.B
+\fIstring() =\fR\&:
+\fI[byte()]\fR\&
+.TP 2
+.B
+\fIpublic_key() =\fR\&:
+\fI#\&'RSAPublicKey\&'{}| {integer(), #\&'Dss-Parms\&'{}}| term()\fR\&
+.TP 2
+.B
+\fIprivate_key() =\fR\&:
+\fI#\&'RSAPrivateKey\&'{} | #\&'DSAPrivateKey\&'{} | term()\fR\&
+.TP 2
+.B
+\fIpublic_key_algorithm() =\fR\&:
+\fI\&'ssh-rsa\&'| \&'ssh-dss\&' | atom()\fR\&
+.RE
+.SH EXPORTS
+.LP
+.B
+Module:add_host_key(HostNames, Key, ConnectOptions) -> ok | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+HostNames = string()
+.br
+.RS 2
+Description of the host that owns the \fIPublicKey\fR\&\&.
+.RE
+Key = public_key()
+.br
+.RS 2
+Normally an RSA or DSA public key, but handling of other public keys can be added\&.
+.RE
+ConnectOptions = proplists:proplist()
+.br
+.RS 2
+Options provided to \fBssh:connect/[3,4]\fR\&
+.RE
+Reason = term()\&.
+.br
+.RE
+.RE
+.RS
+.LP
+Adds a host key to the set of trusted host keys\&.
+.RE
+.LP
+.B
+Module:is_host_key(Key, Host, Algorithm, ConnectOptions) -> Result
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = public_key() 
+.br
+.RS 2
+Normally an RSA or DSA public key, but handling of other public keys can be added\&.
+.RE
+Host = string()
+.br
+.RS 2
+Description of the host\&.
+.RE
+Algorithm = public_key_algorithm()
+.br
+.RS 2
+Host key algorithm\&. Is to support \fI\&'ssh-rsa\&'| \&'ssh-dss\&'\fR\&, but more algorithms can be handled\&.
+.RE
+ConnectOptions = proplists:proplist() 
+.br
+.RS 2
+Options provided to \fBssh:connect/[3,4]\fR\&\&.
+.RE
+Result = boolean()
+.br
+.RE
+.RE
+.RS
+.LP
+Checks if a host key is trusted\&.
+.RE
+.LP
+.B
+Module:user_key(Algorithm, ConnectOptions) -> {ok, PrivateKey} | {error, Reason}
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = public_key_algorithm()
+.br
+.RS 2
+Host key algorithm\&. Is to support \fI\&'ssh-rsa\&'| \&'ssh-dss\&'\fR\& but more algorithms can be handled\&.
+.RE
+ConnectOptions = proplists:proplist()
+.br
+.RS 2
+Options provided to \fBssh:connect/[3,4]\fR\&
+.RE
+PrivateKey = private_key()
+.br
+.RS 2
+Private key of the user matching the \fIAlgorithm\fR\&\&.
+.RE
+Reason = term()
+.br
+.RE
+.RE
+.RS
+.LP
+Fetches the users \fIpublic key\fR\& matching the \fIAlgorithm\fR\&\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The private key contains the public key\&.
+
+.RE

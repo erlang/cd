@@ -1,0 +1,563 @@
+.TH ssh_file 3 "ssh 4.10.3" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+ssh_file \- Default callback module for the client's and server's database operations in the ssh application
+.SH DESCRIPTION
+.LP
+This module is the default callback handler for the client\&'s and the server\&'s user and host "database" operations\&. All data, for instance key pairs, are stored in files in the normal file system\&. This page documents the files, where they are stored and configuration options for this callback module\&.
+.LP
+The intention is to be compatible with the OpenSSH storage in files\&. Therefore it mimics directories and filenames of OpenSSH\&.
+.LP
+Ssh_file implements the ssh_server_key_api and the ssh_client_key_api\&. This enables the user to make an own interface using for example a database handler\&.
+.LP
+Such another callback module could be used by setting the option \fIkey_cb\fR\& when starting a client or a server (with for example ssh:connect, ssh:daemon of ssh:shell )\&.
+.LP
+
+.RS -4
+.B
+Note:
+.RE
+The functions are \fICallbacks\fR\&  for the SSH app\&. They are not intended to be called from the user\&'s code!
+
+.SH "FILES, DIRECTORIES AND WHO USES THEM"
+
+.SS "Daemons"
+
+.LP
+Daemons uses all files stored in the SYSDIR directory\&.
+.LP
+Optionaly, in case of \fIpublickey\fR\& authorization, one or more of the remote user\&'s public keys in the USERDIR directory are used\&. See the files \fIUSERDIR/authorized_keys\fR\& and \fIUSERDIR/authorized_keys2\fR\&\&.
+.SS "Clients"
+
+.LP
+Clients uses all files stored in the USERDIR directory\&.
+.SS "Directory contents"
+
+.RS 2
+.TP 2
+.B
+LOCALUSER:
+The user name of the OS process running the Erlang virtual machine (emulator)\&.
+.TP 2
+.B
+SYSDIR:
+This is the directory holding the server\&'s files:
+.RS 2
+.TP 2
+*
+\fIssh_host_dsa_key\fR\& - private dss host key (optional)
+.LP
+.TP 2
+*
+\fIssh_host_rsa_key\fR\& - private rsa host key (optional)
+.LP
+.TP 2
+*
+\fIssh_host_ecdsa_key\fR\& - private ecdsa host key (optional)
+.LP
+.TP 2
+*
+\fIssh_host_ed25519_key\fR\& - private eddsa host key for curve 25519 (optional)
+.LP
+.TP 2
+*
+\fIssh_host_ed448_key\fR\& - private eddsa host key for curve 448 (optional)
+.LP
+.RE
+
+.RS 2
+.LP
+The key files could be generated with OpenSSH\&'s ssh-keygen command\&.
+.RE
+.RS 2
+.LP
+At least one host key must be defined\&. The default value of SYSDIR is \fI/etc/ssh\fR\&\&.
+.RE
+.RS 2
+.LP
+For security reasons, this directory is normally accessible only to the root user\&.
+.RE
+.RS 2
+.LP
+To change the SYSDIR, see the system_dir option\&.
+.RE
+.TP 2
+.B
+USERDIR:
+This is the directory holding the files:
+.RS 2
+.TP 2
+*
+\fIauthorized_keys\fR\& and, as second alternative \fIauthorized_keys2\fR\& - the user\&'s public keys are stored concatenated in one of those files\&. 
+.RS 2
+.LP
+It is composed of lines as for OpenSSH:
+.RE
+.LP
+.nf
+(options)? keytype base64-encoded-key comment
+.fi
+.RS 2
+.LP
+where
+.RE
+.LP
+.nf
+
+options :: option(,option)*
+option :: % All options are skipped
+keytype :: 'ssh-dsa'
+         | 'ssh-rsa'
+         | 'ssh-ecdsa-nistp256'
+	 | 'ssh-ecdsa-nistp384'
+         | 'ssh-ecdsa-nistp521'
+         | 'ssh-ed25519'
+	 | 'ssh-ed448'
+base64-encoded-key :: % The user's public key
+comment :: % Comments are skipped
+	  
+.fi
+.LP
+.TP 2
+*
+\fIknown_hosts\fR\& - host keys from hosts visited concatenated\&. The file is created and used by the client\&. 
+.RS 2
+.LP
+It is composed of lines as for OpenSSH:
+.RE
+.LP
+.nf
+(option)? pattern(,pattern)* keytype key (comment)?
+.fi
+.RS 2
+.LP
+where
+.RE
+.LP
+.nf
+
+option :: '@revoked'
+pattern :: host | '[' host ']:' port
+host :: ip-address | hostname | '*'
+port :: portnumber | '*'
+keytype :: 'ssh-dsa'
+         | 'ssh-rsa'
+         | 'ssh-ecdsa-nistp256'
+	 | 'ssh-ecdsa-nistp384'
+         | 'ssh-ecdsa-nistp521'
+         | 'ssh-ed25519'
+	 | 'ssh-ed448'
+key :: % encoded key from eg ssh_host_*.pub
+
+.fi
+.LP
+.TP 2
+*
+\fIid_dsa\fR\& - private dss user key (optional)
+.LP
+.TP 2
+*
+\fIid_rsa\fR\& - private rsa user key (optional)
+.LP
+.TP 2
+*
+\fIid_ecdsa\fR\& - private ecdsa user key (optional)
+.LP
+.TP 2
+*
+\fIid_ed25519\fR\& - private eddsa user key for curve 25519 (optional)
+.LP
+.TP 2
+*
+\fIid_ed448\fR\& - private eddsa user key for curve 448 (optional)
+.LP
+.RE
+
+.RS 2
+.LP
+The key files could be generated with OpenSSH\&'s ssh-keygen command\&.
+.RE
+.RS 2
+.LP
+The default value of USERDIR is \fI/home/\fR\&\fILOCALUSER\fR\&\fI/\&.ssh\fR\&\&.
+.RE
+.RS 2
+.LP
+To change the USERDIR, see the user_dir option
+.RE
+.RE
+.SH DATA TYPES
+.SS Options for the default ssh_file callback module
+.nf
+
+\fBuser_dir_common_option()\fR\& = {user_dir, string()}
+.br
+.fi
+.RS
+.LP
+Sets the user directory\&.
+.RE
+.nf
+
+\fBuser_dir_fun_common_option()\fR\& = {user_dir_fun, user2dir()}
+.br
+.fi
+.nf
+
+\fBuser2dir()\fR\& = 
+.br
+    fun((RemoteUserName :: string()) -> UserDir :: string())
+.br
+.fi
+.RS
+.LP
+Sets the user directory dynamically by evaluating the \fIuser2dir\fR\& function\&.
+.RE
+.nf
+
+\fBsystem_dir_daemon_option()\fR\& = {system_dir, string()}
+.br
+.fi
+.RS
+.LP
+Sets the system directory\&.
+.RE
+.nf
+
+\fBpubkey_passphrase_client_options()\fR\& = 
+.br
+    {dsa_pass_phrase, string()} |
+.br
+    {rsa_pass_phrase, string()} |
+.br
+    {ecdsa_pass_phrase, string()}
+.br
+.fi
+.RS
+.LP
+If the user\&'s DSA, RSA or ECDSA key is protected by a passphrase, it can be supplied with thoose options\&.
+.LP
+Note that EdDSA passhrases (Curves 25519 and 448) are not implemented\&.
+.RE
+.nf
+
+\fBoptimize_key_lookup()\fR\& = {optimize, time | space}
+.br
+.fi
+.RS
+.LP
+Make the handling of large files fast by setting \fItime\fR\&, but this will use more memory\&. The \fIspace\fR\& variant shrinks the memory requirements, but with a higher time consumption\&.
+.LP
+To set it, set the option \fI{key_cb, {ssh_file, [{optimize,TimeOrSpace}]}\fR\& in the call of "ssh:connect/3, ssh:daemon/2 or similar function call that initiates an ssh connection\&.
+.RE
+.SH EXPORTS
+.LP
+.nf
+
+.B
+host_key(Algorithm, Options) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = ssh:pubkey_alg()
+.br
+Result = {ok, public_key:private_key()} | {error, term()}
+.br
+Options = ssh_server_key_api:daemon_key_cb_options(none())
+.br
+.RE
+.RE
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in ssh_server_key_api, Module:host_key/2\&.
+.LP
+\fBOptions\fR\& 
+.RS 2
+.TP 2
+*
+system_dir
+.LP
+.RE
+
+.LP
+\fBFiles\fR\& 
+.RS 2
+.TP 2
+*
+\fISYSDIR/ssh_host_rsa_key\fR\&
+.LP
+.TP 2
+*
+\fISYSDIR/ssh_host_dsa_key\fR\&
+.LP
+.TP 2
+*
+\fISYSDIR/ssh_host_ecdsa_key\fR\&
+.LP
+.TP 2
+*
+\fISYSDIR/ssh_host_ed25519_key\fR\&
+.LP
+.TP 2
+*
+\fISYSDIR/ssh_host_ed448_key\fR\&c>
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+is_auth_key(Key, User, Options) -> boolean()
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = public_key:public_key()
+.br
+User = string()
+.br
+Options = 
+.br
+    ssh_server_key_api:daemon_key_cb_options(optimize_key_lookup())
+.br
+.RE
+.RE
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in ssh_server_key_api: Module:is_auth_key/3\&.
+.LP
+\fBOptions\fR\& 
+.RS 2
+.TP 2
+*
+user_dir_fun
+.LP
+.TP 2
+*
+user_dir
+.LP
+.RE
+
+.LP
+\fBFiles\fR\& 
+.RS 2
+.TP 2
+*
+\fIUSERDIR/authorized_keys\fR\&
+.LP
+.TP 2
+*
+\fIUSERDIR/authorized_keys2\fR\&
+.LP
+.RE
+
+.LP
+This functions discards all options in the begining of the lines of thoose files when reading them\&.
+.RE
+.LP
+.nf
+
+.B
+add_host_key(Host, Port, Key, Options) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Host = 
+.br
+    inet:ip_address() |
+.br
+    inet:hostname() |
+.br
+    [inet:ip_address() | inet:hostname()]
+.br
+Port = inet:port_number()
+.br
+Key = public_key:public_key()
+.br
+Options = ssh_client_key_api:client_key_cb_options(none())
+.br
+Result = ok | {error, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in ssh_client_key_api, Module:add_host_key/4\&.
+.LP
+Note that the alternative, the old Module:add_host_key/3 is no longer supported by \fIssh_file\fR\&\&.
+.LP
+\fBOption\fR\& 
+.RS 2
+.TP 2
+*
+user_dir
+.LP
+.RE
+
+.LP
+\fBFile\fR\& 
+.RS 2
+.TP 2
+*
+\fIUSERDIR/known_hosts\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+is_host_key(Key, Host, Port, Algorithm, Options) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Key = public_key:public_key()
+.br
+Host = 
+.br
+    inet:ip_address() |
+.br
+    inet:hostname() |
+.br
+    [inet:ip_address() | inet:hostname()]
+.br
+Port = inet:port_number()
+.br
+Algorithm = ssh:pubkey_alg()
+.br
+Options = 
+.br
+    ssh_client_key_api:client_key_cb_options(optimize_key_lookup())
+.br
+Result = boolean() | {error, term()}
+.br
+.RE
+.RE
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in ssh_client_key_api, Module:is_host_key/5\&.
+.LP
+Note that the alternative, the old Module:is_host_key/4 is no longer supported by \fIssh_file\fR\&\&.
+.LP
+\fBOption\fR\& 
+.RS 2
+.TP 2
+*
+user_dir
+.LP
+.RE
+
+.LP
+\fBFile\fR\& 
+.RS 2
+.TP 2
+*
+\fIUSERDIR/known_hosts\fR\&
+.LP
+.RE
+
+.RE
+.LP
+.nf
+
+.B
+user_key(Algorithm, Options) -> Result
+.br
+.fi
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+Algorithm = ssh:pubkey_alg()
+.br
+Result = {ok, public_key:private_key()} | {error, string()}
+.br
+Options = ssh_client_key_api:client_key_cb_options(none())
+.br
+.RE
+.RE
+.RS
+.LP
+\fBTypes and description\fR\& 
+.LP
+See the api description in ssh_client_key_api, Module:user_key/2\&.
+.LP
+\fBOptions\fR\& 
+.RS 2
+.TP 2
+*
+user_dir
+.LP
+.TP 2
+*
+dsa_pass_phrase
+.LP
+.TP 2
+*
+rsa_pass_phrase
+.LP
+.TP 2
+*
+ecdsa_pass_phrase
+.LP
+.RE
+
+.LP
+Note that EdDSA passhrases (Curves 25519 and 448) are not implemented\&.
+.LP
+\fBFiles\fR\&  
+.RS 2
+.TP 2
+*
+\fIUSERDIR/id_dsa\fR\&
+.LP
+.TP 2
+*
+\fIUSERDIR/id_rsa\fR\&
+.LP
+.TP 2
+*
+\fIUSERDIR/id_ecdsa\fR\&
+.LP
+.TP 2
+*
+\fIUSERDIR/id_ed25519\fR\&
+.LP
+.TP 2
+*
+\fIUSERDIR/id_ed448\fR\&
+.LP
+.RE
+
+.RE

@@ -1,0 +1,126 @@
+.TH overload 3 "sasl 2.7" "Ericsson AB" "Erlang Module Definition"
+.SH NAME
+overload \- An Overload Regulation Process
+.SH DESCRIPTION
+.LP
+
+.RS -4
+.B
+Warning:
+.RE
+All functions in this module are deprecated and will be removed in a future release\&.
+
+.LP
+\fIoverload\fR\& is a process that indirectly regulates the CPU usage in the system\&. The idea is that a main application calls function \fB\fIrequest/0\fR\&\fR\& before starting a major job and proceeds with the job if the return value is positive; otherwise the job must not be started\&.
+.LP
+\fIoverload\fR\& is part of the \fISASL\fR\& application and all configuration parameters are defined there\&.
+.LP
+A set of two intensities are maintained, the \fItotal intensity\fR\& and the \fIaccept intensity\fR\&\&. For that purpose, there are two configuration parameters, \fIMaxIntensity\fR\& and \fIWeight\fR\&; both are measured in 1/second\&.
+.LP
+Then total and accept intensities are calculated as follows\&. Assume that the time of the current call to \fIrequest/0\fR\& is \fIT(n)\fR\& and that the time of the previous call was \fIT(n-1)\fR\&\&.
+.RS 2
+.TP 2
+*
+The current \fItotal intensity\fR\&, denoted \fITI(n)\fR\&, is calculated according to the formula
+.RS 2
+.LP
+\fITI(n) = exp(-Weight*(T(n) - T(n-1)) * TI(n-1) + Weight\fR\&,
+.RE
+.RS 2
+.LP
+where \fITI(n-1)\fR\& is the previous \fItotal intensity\fR\&\&.
+.RE
+.LP
+.TP 2
+*
+The current \fIaccept intensity\fR\&, denoted \fIAI(n)\fR\&, is determined by the formula
+.RS 2
+.LP
+\fIAI(n) = exp(-Weight*(T(n) - T(n-1)) * AI(n-1) + Weight\fR\&,
+.RE
+.RS 2
+.LP
+where \fIAI(n-1)\fR\& is the previous \fIaccept intensity\fR\&, if the value of \fIexp(-Weight*(T(n) - T(n-1)) * AI(n-1)\fR\& is less than \fIMaxIntensity\fR\&\&. Otherwise the value is
+.RE
+.RS 2
+.LP
+\fIAI(n) = exp(-Weight*(T(n) - T(n-1)) * AI(n-1)\fR\&
+.RE
+.LP
+.RE
+
+.LP
+The value of configuration parameter \fIWeight\fR\& controls the speed with which the calculations of intensities react to changes in the underlying input intensity\&. The inverted value of \fIWeight\fR\&, \fIT = 1/Weight\fR\&, can be thought of as the "time constant" of the intensity calculation formulas\&. For example, if \fIWeight = 0\&.1\fR\&, a change in the underlying input intensity is reflected in \fItotal intensity\fR\& and \fIaccept intensity\fR\& within about 10 seconds\&.
+.LP
+The overload process defines one alarm, which it sets using \fIalarm_handler:set_alarm(Alarm)\fR\&\&. \fIAlarm\fR\& is defined as follows:
+.RS 2
+.TP 2
+.B
+\fI{overload, []}\fR\&:
+This alarm is set when the current \fIaccept intensity\fR\& exceeds \fIMaxIntensity\fR\&\&.
+.RE
+.LP
+A new request is not accepted until the current \fIaccept intensity\fR\& has fallen below \fIMaxIntensity\fR\&\&. To prevent the overload process from generating many set/reset alarms, the alarm is not reset until the current \fIaccept intensity\fR\& has fallen below 75% of \fIMaxIntensity\fR\&; it is not until then that the alarm can be set again\&.
+.SH EXPORTS
+.LP
+.B
+request() -> accept | reject
+.br
+.RS
+.LP
+Returns \fIaccept\fR\& or \fIreject\fR\& depending on the current value of the \fIaccept intensity\fR\&\&.
+.LP
+The application calling this function is to proceed with the job in question if the return value is \fIaccept\fR\&; otherwise it is not to continue with that job\&.
+.RE
+.LP
+.B
+get_overload_info() -> OverloadInfo
+.br
+.RS
+.LP
+Types:
+
+.RS 3
+OverloadInfo = [{total_intensity, TotalIntensity}, {accept_intensity, AcceptIntensity}, {max_intensity, MaxIntensity}, {weight, Weight}, {total_requests, TotalRequests}, {accepted_requests, AcceptedRequests}]\&.
+.br
+TotalIntensity = float() > 0
+.br
+AcceptIntensity = float() > 0
+.br
+MaxIntensity = float() > 0
+.br
+Weight = float() > 0
+.br
+TotalRequests = integer()
+.br
+AcceptedRequests = integer()
+.br
+.RE
+.RE
+.RS
+.LP
+Returns:
+.RS 2
+.TP 2
+*
+Current total and accept intensities
+.LP
+.TP 2
+*
+Configuration parameters
+.LP
+.TP 2
+*
+Absolute counts of the total number of requests
+.LP
+.TP 2
+*
+Accepted number of requests (since the overload process was started)
+.LP
+.RE
+
+.RE
+.SH "SEE ALSO"
+
+.LP
+\fB\fIalarm_handler(3)\fR\&\fR\&, \fB\fIsasl(6)\fR\&\fR\&
